@@ -1,18 +1,12 @@
 -- ================================================
---   VonixeLib-- ================================================
 --   VonixeLib v1.0
 --   Custom Roblox UI Library
 --   Style: Dark + Orange
---   Author: Vonixe Hub
+--   Author: SCombat10
 --
 --   Usage:
---   local VonixeLib = loadstring(game:HttpGet("YOUR_RAW_URL"))()
+--   local VonixeLib = loadstring(game:HttpGet("RAW_URL"))()
 --   local Window = VonixeLib:CreateWindow({ Title = "My Hub" })
--- ================================================
-
- - Custom UI Library
---   Style: Dark + Orange (sama kayak stats window)
---   Author: SCombat10
 -- ================================================
 
 local VonixeLib = {}
@@ -1174,15 +1168,6 @@ function VonixeLib:CreateWindow(config)
             stroke(Theme.STROKE2, 1, inputBox)
             padding(0, 8, 8, 0, inputBox)
 
-            inputBox.Changed:Connect(function(prop)
-                if prop == "Text" then InObj.Value = inputBox.Text end
-            end)
-            inputBox.FocusLost:Connect(function()
-                InObj.Value = inputBox.Text
-                if iConfig.Callback then
-                    task.spawn(iConfig.Callback, inputBox.Text)
-                end
-            end)
             inputBox.Focused:Connect(function()
                 tween(inputBox, 0.1, {BackgroundColor3 = Color3.fromRGB(24, 16, 10)})
             end)
@@ -1192,6 +1177,17 @@ function VonixeLib:CreateWindow(config)
 
             local InObj = {}
             InObj.Value = inputBox.Text
+
+            inputBox.Changed:Connect(function(prop)
+                if prop == "Text" then InObj.Value = inputBox.Text end
+            end)
+            inputBox.FocusLost:Connect(function()
+                InObj.Value = inputBox.Text
+                if iConfig.Callback then
+                    task.spawn(iConfig.Callback, inputBox.Text)
+                end
+            end)
+
             function InObj:SetValue(v) inputBox.Text = v; InObj.Value = v end
             function InObj:SetTitle(t) nameLbl.Text = t end
             return InObj

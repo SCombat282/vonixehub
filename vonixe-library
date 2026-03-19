@@ -3,7 +3,7 @@
 --   VonixeLib v1.0
 --   Custom Roblox UI Library
 --   Style: Dark + Orange
---   Author: SCombat10
+--   Author: Vonixe Hub
 --
 --   Usage:
 --   local VonixeLib = loadstring(game:HttpGet("YOUR_RAW_URL"))()

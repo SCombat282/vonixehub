@@ -961,7 +961,7 @@ function VonixeLib:CreateWindow(config)
         -- DROPDOWN
         -- ================================================
         function Tab:AddDropdown(dConfig)
-            local options  = dConfig.Options or {}
+            local options  = dConfig.Options or dConfig.Values or {}
             local selected = dConfig.Value or (options[1] or "")
             local opened   = false
 
@@ -1340,6 +1340,19 @@ function VonixeLib:CreateWindow(config)
             function LbObj:SetColor(c) lbl.TextColor3 = c end
             return LbObj
         end
+
+        -- ================================================
+        -- ALIASES (WindUI compat)
+        -- ================================================
+        Tab.Button   = Tab.AddButton
+        Tab.Toggle   = Tab.AddToggle
+        Tab.Slider   = Tab.AddSlider
+        Tab.Dropdown = Tab.AddDropdown
+        Tab.Input    = Tab.AddInput
+        Tab.Label    = Tab.AddLabel
+        Tab.Section  = Tab.AddSection
+        Tab.Space    = function() end -- no-op
+        Tab.MissionBar = Tab.AddMissionBar
 
         return Tab
     end
@@ -1731,6 +1744,16 @@ function VonixeLib:CreateWindow(config)
         end
 
         return Monitor
+    end
+
+    -- Window-level aliases (WindUI compat)
+    Window.Section = function(self, cfg)
+        -- WindUI Window:Section() returns a section object with :Tab()
+        local fakeSection = {}
+        fakeSection.Tab = function(self2, tabCfg)
+            return Window:AddTab(tabCfg)
+        end
+        return fakeSection
     end
 
     return Window

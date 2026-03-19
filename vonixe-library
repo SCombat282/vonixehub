@@ -841,6 +841,11 @@ function VonixeLib:CreateWindow(config)
                 set(v, true)
                 TogObj.Value = v
             end
+            function TogObj:SetValueSilent(v)
+                -- Update UI tanpa fire callback
+                set(v, false)
+                TogObj.Value = v
+            end
             function TogObj:SetTitle(t) nameLbl.Text = t end
             return TogObj
         end

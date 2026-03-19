@@ -44,7 +44,7 @@ end
 
 -- Teks fallback kalau icon gagal load
 local textFallback = {
-    ["x"]               = "✕",  ["minus"]         = "—",
+    ["x"]               = "X",  ["minus"]         = "—",
     ["chevron-right"]   = "›",  ["chevron-down"]  = "⌄",
     ["check-circle"]    = "✓",  ["x-circle"]      = "✕",
     ["triangle-alert"]  = "!",  ["info"]          = "i",

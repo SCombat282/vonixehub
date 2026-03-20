@@ -237,8 +237,8 @@ end
 local function makeDragConn(dragFrame, moveFrame)
     local dragging, dragStart, startPos = false, nil, nil
     dragFrame.InputBegan:Connect(function(i)
-    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
-    or i.UserInputType == Enum.UserInputType.Touch) then
+        if i.UserInputType == Enum.UserInputType.MouseButton1
+        or i.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = i.Position
             startPos = moveFrame.Position
@@ -261,6 +261,7 @@ local function makeDragConn(dragFrame, moveFrame)
         end
     end)
 end
+
 -- ================================================
 -- WINDOW
 -- ================================================

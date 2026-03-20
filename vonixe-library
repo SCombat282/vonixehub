@@ -1835,7 +1835,8 @@ function VonixeLib:CreateKeySystem(config)
     closeBtn.TextColor3=Color3.fromRGB(220,180,180); closeBtn.TextSize=13
     closeBtn.Font=Enum.Font.GothamBold; closeBtn.AutoButtonColor=false
     closeBtn.BorderSizePixel=0; closeBtn.ZIndex=10; closeBtn.Parent=inner
-    mkCorner(99,closeBtn)
+    -- Pakai UDim Scale 0.5 supaya selalu lingkaran sempurna
+    local closeCorn=Instance.new("UICorner"); closeCorn.CornerRadius=UDim.new(0.5,0); closeCorn.Parent=closeBtn
     local closeStroke=Instance.new("UIStroke");closeStroke.Color=Color3.fromRGB(120,40,40);closeStroke.Thickness=1;closeStroke.Parent=closeBtn
     closeBtn.MouseEnter:Connect(function() tw(closeBtn,0.1,{BackgroundColor3=Color3.fromRGB(180,40,40)}) end)
     closeBtn.MouseLeave:Connect(function() tw(closeBtn,0.1,{BackgroundColor3=Color3.fromRGB(50,20,20)}) end)

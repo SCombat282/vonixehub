@@ -337,9 +337,12 @@ function VonixeLib:CreateWindow(config)
     local function getScale()
     	local vp = camera.ViewportSize
     	local ratio = math.min(vp.X / W, vp.Y / H)
-    	if isMobile then
-    		-- Mobile: scale lebih kecil supaya UI fit di layar portrait
-    		ratio = math.clamp(ratio, 0.42, 0.75)
+    	-- Deteksi mobile dari viewport size (lebih reliable dari TouchEnabled)
+    	local isMobileScreen = vp.X < 1000 and vp.Y < 650
+    	if isMobileScreen then
+    		-- Mobile: sesuaikan supaya UI ~85% lebar layar, tidak gepeng
+    		local maxScale = math.min(vp.X * 0.9 / W, vp.Y * 0.88 / H)
+    		ratio = math.clamp(maxScale, 0.55, 0.88)
     	else
     		-- PC: scale normal
     		ratio = math.clamp(ratio, 0.6, 1.1)

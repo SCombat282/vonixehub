@@ -1764,4 +1764,215 @@ function VonixeLib:CreateWindow(config)
     return Window
 end
 
+-- ================================================
+-- KEY SYSTEM
+-- ================================================
+function VonixeLib:CreateKeySystem(config)
+    local title    = config.Title    or "Key System"
+    local desc     = config.Desc     or "Enter your key to continue"
+    local logoId   = config.Logo     or "rbxassetid://86119635566201"
+    local onVerify = config.OnVerify -- function(key) return true/false end
+    local onGetKey = config.OnGetKey -- function() end
+
+    local Players      = game:GetService("Players")
+    local TweenService = game:GetService("TweenService")
+    local RunService   = game:GetService("RunService")
+    local Player       = Players.LocalPlayer
+
+    local verified = false
+
+    local sg = Instance.new("ScreenGui")
+    sg.Name             = "VonixeKeySystem"
+    sg.ResetOnSpawn     = false
+    sg.ZIndexBehavior   = Enum.ZIndexBehavior.Sibling
+    sg.IgnoreGuiInset   = true
+    sg.DisplayOrder     = 9999
+    pcall(function()
+        if syn and syn.protect_gui then syn.protect_gui(sg) end
+        sg.Parent = game:GetService("CoreGui")
+    end)
+    if not sg.Parent or not sg.Parent.Name then sg.Parent = Player.PlayerGui end
+
+    local function tw(obj, t, props)
+        TweenService:Create(obj, TweenInfo.new(t, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props):Play()
+    end
+    local function mkCorner(r, p)
+        local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0,r); c.Parent = p
+    end
+    local function mkGrad(c1, c2, rot, p)
+        local g = Instance.new("UIGradient"); g.Color = ColorSequence.new(c1,c2); g.Rotation = rot; g.Parent = p
+    end
+    local function mkFrame(props, p)
+        local f = Instance.new("Frame"); f.BorderSizePixel = 0
+        for k,v in pairs(props) do f[k]=v end; f.Parent=p; return f
+    end
+    local function mkLabel(txt, sz, font, col, xa, p)
+        local l = Instance.new("TextLabel"); l.BackgroundTransparency=1; l.BorderSizePixel=0
+        l.Text=txt; l.TextSize=sz; l.Font=font; l.TextColor3=col
+        l.TextXAlignment=xa or Enum.TextXAlignment.Center; l.Parent=p; return l
+    end
+
+    -- Overlay
+    local overlay = mkFrame({Size=UDim2.new(1,0,1,0), BackgroundColor3=Color3.fromRGB(0,0,0), BackgroundTransparency=0.6, ZIndex=1}, sg)
+
+    -- Card
+    local W, H = 440, 320
+    local card = mkFrame({
+        Size=UDim2.new(0,W,0,H),
+        Position=UDim2.new(0.5,-W/2,0.5,-H/2),
+        BackgroundColor3=Color3.fromRGB(10,10,14),
+        ZIndex=2,
+        ClipsDescendants=false,
+    }, sg)
+    mkCorner(16, card)
+
+    -- Gradient border
+    local bfr = mkFrame({Size=UDim2.new(1,4,1,4), Position=UDim2.new(0,-2,0,-2), BackgroundColor3=Color3.fromRGB(200,60,0), ZIndex=1}, card)
+    mkCorner(18, bfr)
+    mkGrad(Color3.fromRGB(220,60,0), Color3.fromRGB(255,180,0), 135, bfr)
+
+    local inner = mkFrame({Size=UDim2.new(1,0,1,0), BackgroundColor3=Color3.fromRGB(10,10,14), ZIndex=2}, card)
+    mkCorner(15, inner)
+
+    -- Top glow
+    local glow = mkFrame({Size=UDim2.new(1,0,0,160), BackgroundColor3=Color3.fromRGB(200,50,0), BackgroundTransparency=0.88, ZIndex=3}, inner)
+    mkGrad(Color3.fromRGB(255,80,0), Color3.fromRGB(10,10,14), 90, glow)
+
+    -- Logo
+    local logoFrame = mkFrame({
+        Size=UDim2.new(0,64,0,64), Position=UDim2.new(0.5,-32,0,20),
+        BackgroundColor3=Color3.fromRGB(18,12,8), ZIndex=4
+    }, inner)
+    mkCorner(99, logoFrame)
+    local logoStroke = Instance.new("UIStroke"); logoStroke.Color=Color3.fromRGB(220,80,0); logoStroke.Thickness=2; logoStroke.Parent=logoFrame
+    local logoImg = Instance.new("ImageLabel")
+    logoImg.Size=UDim2.new(0.82,0,0.82,0); logoImg.Position=UDim2.new(0.09,0,0.09,0)
+    logoImg.BackgroundTransparency=1; logoImg.Image=logoId
+    logoImg.ScaleType=Enum.ScaleType.Fit; logoImg.ZIndex=5; logoImg.Parent=logoFrame
+
+    -- Pulse logo border
+    local t2 = 0
+    local pulseConn = RunService.Heartbeat:Connect(function(dt)
+        t2 = t2 + dt * 2
+        local a = (math.sin(t2)+1)/2
+        logoStroke.Color = Color3.fromRGB(220,60,0):Lerp(Color3.fromRGB(255,200,50), a*0.6)
+    end)
+
+    -- Title
+    local titleLbl = mkLabel(title, 20, Enum.Font.GothamBlack, Color3.fromRGB(255,255,255), Enum.TextXAlignment.Center, inner)
+    titleLbl.Size=UDim2.new(1,0,0,24); titleLbl.Position=UDim2.new(0,0,0,92); titleLbl.ZIndex=4
+
+    -- Desc
+    local descLbl = mkLabel(desc, 11, Enum.Font.Gotham, Color3.fromRGB(140,120,100), Enum.TextXAlignment.Center, inner)
+    descLbl.Size=UDim2.new(1,-40,0,14); descLbl.Position=UDim2.new(0,20,0,118); descLbl.ZIndex=4
+
+    -- Divider
+    local div = mkFrame({Size=UDim2.new(0,180,0,1), Position=UDim2.new(0.5,-90,0,140), BackgroundColor3=Color3.fromRGB(200,60,0), ZIndex=4}, inner)
+    mkGrad(Color3.fromRGB(200,60,0), Color3.fromRGB(255,180,0), 0, div)
+
+    -- Input bg
+    local inputBg = mkFrame({
+        Size=UDim2.new(1,-48,0,42),
+        Position=UDim2.new(0,24,0,152),
+        BackgroundColor3=Color3.fromRGB(16,12,10),
+        ZIndex=4,
+    }, inner)
+    mkCorner(10, inputBg)
+    local inputStroke = Instance.new("UIStroke"); inputStroke.Color=Color3.fromRGB(60,40,20); inputStroke.Thickness=1; inputStroke.Parent=inputBg
+
+    local inputBox = Instance.new("TextBox")
+    inputBox.Size=UDim2.new(1,-20,1,0); inputBox.Position=UDim2.new(0,10,0,0)
+    inputBox.BackgroundTransparency=1; inputBox.Text=""
+    inputBox.PlaceholderText="Paste key kamu di sini..."
+    inputBox.PlaceholderColor3=Color3.fromRGB(80,65,50)
+    inputBox.TextColor3=Color3.fromRGB(255,255,255)
+    inputBox.TextSize=13; inputBox.Font=Enum.Font.Gotham
+    inputBox.TextXAlignment=Enum.TextXAlignment.Left
+    inputBox.ClearTextOnFocus=false; inputBox.ZIndex=5; inputBox.Parent=inputBg
+
+    inputBox.Focused:Connect(function() tw(inputStroke, 0.15, {Color=Color3.fromRGB(200,100,0)}) end)
+    inputBox.FocusLost:Connect(function() tw(inputStroke, 0.15, {Color=Color3.fromRGB(60,40,20)}) end)
+
+    -- Status label
+    local statusLbl = mkLabel("", 11, Enum.Font.GothamBold, Color3.fromRGB(255,220,50), Enum.TextXAlignment.Center, inner)
+    statusLbl.Size=UDim2.new(1,-40,0,14); statusLbl.Position=UDim2.new(0,20,0,200); statusLbl.ZIndex=4
+
+    -- Buttons row
+    local function makeBtn(label2, x, w, accent, hoverAccent)
+        local btn = Instance.new("TextButton")
+        btn.Size=UDim2.new(0,w,0,34); btn.Position=UDim2.new(0,x,0,222)
+        btn.BackgroundColor3=accent; btn.Text=""; btn.AutoButtonColor=false
+        btn.BorderSizePixel=0; btn.ZIndex=4; btn.Parent=inner
+        mkCorner(8, btn)
+        local lbl = Instance.new("TextLabel")
+        lbl.Size=UDim2.new(1,0,1,0); lbl.BackgroundTransparency=1
+        lbl.Text=label2; lbl.TextColor3=Color3.fromRGB(255,255,255)
+        lbl.TextSize=13; lbl.Font=Enum.Font.GothamBold
+        lbl.TextXAlignment=Enum.TextXAlignment.Center; lbl.ZIndex=5; lbl.Parent=btn
+        btn.MouseEnter:Connect(function() tw(btn, 0.1, {BackgroundColor3=hoverAccent}) end)
+        btn.MouseLeave:Connect(function() tw(btn, 0.1, {BackgroundColor3=accent}) end)
+        return btn, lbl
+    end
+
+    local bW = (W-48-8) / 2
+    local verifyBtn, verifyLbl = makeBtn("Verifikasi Key", 24, bW, Color3.fromRGB(180,60,0), Color3.fromRGB(220,80,0))
+    local getkeyBtn, getkeyLbl = makeBtn("Dapatkan Key",   24+bW+8, bW, Color3.fromRGB(30,22,14), Color3.fromRGB(50,35,18))
+    local getkeyStroke = Instance.new("UIStroke"); getkeyStroke.Color=Color3.fromRGB(80,50,20); getkeyStroke.Thickness=1; getkeyStroke.Parent=getkeyBtn
+
+    -- Accent bar on verify btn
+    local vAcc = mkFrame({Size=UDim2.new(1,0,0,2), BackgroundColor3=Color3.fromRGB(220,80,0), ZIndex=5}, verifyBtn)
+    mkGrad(Color3.fromRGB(200,60,0), Color3.fromRGB(255,200,0), 0, vAcc)
+
+    -- Verify logic
+    verifyBtn.MouseButton1Click:Connect(function()
+        local key = inputBox.Text
+        if key == "" then
+            statusLbl.Text = "Key tidak boleh kosong!"
+            statusLbl.TextColor3 = Color3.fromRGB(255,80,80)
+            tw(inputBg, 0.1, {BackgroundColor3=Color3.fromRGB(30,10,10)})
+            task.delay(0.2, function() tw(inputBg, 0.15, {BackgroundColor3=Color3.fromRGB(16,12,10)}) end)
+            return
+        end
+        statusLbl.Text = "Memverifikasi..."
+        statusLbl.TextColor3 = Color3.fromRGB(255,220,50)
+        verifyLbl.Text = "..."
+        task.spawn(function()
+            local ok = false
+            if onVerify then
+                local s, r = pcall(onVerify, key)
+                ok = s and r
+            end
+            if ok then
+                statusLbl.Text = "Key valid!"
+                statusLbl.TextColor3 = Color3.fromRGB(80,220,120)
+                verifyLbl.Text = "✓"
+                tw(verifyBtn, 0.2, {BackgroundColor3=Color3.fromRGB(30,120,60)})
+                tw(card, 0.4, {BackgroundTransparency=1})
+                tw(overlay, 0.4, {BackgroundTransparency=1})
+                task.wait(0.8)
+                pulseConn:Disconnect()
+                sg:Destroy()
+                verified = true
+            else
+                statusLbl.Text = "Key tidak valid atau expired!"
+                statusLbl.TextColor3 = Color3.fromRGB(255,80,80)
+                verifyLbl.Text = "Verifikasi Key"
+                tw(inputBg, 0.1, {BackgroundColor3=Color3.fromRGB(30,10,10)})
+                task.delay(0.3, function() tw(inputBg, 0.2, {BackgroundColor3=Color3.fromRGB(16,12,10)}) end)
+            end
+        end)
+    end)
+
+    getkeyBtn.MouseButton1Click:Connect(function()
+        if onGetKey then pcall(onGetKey) end
+    end)
+
+    -- Animate in
+    card.Size = UDim2.new(0,W,0,0)
+    tw(card, 0.4, {Size=UDim2.new(0,W,0,H)})
+
+    -- Wait until verified
+    while not verified do task.wait(0.1) end
+end
+
 return VonixeLib

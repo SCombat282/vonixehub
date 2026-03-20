@@ -314,16 +314,13 @@ function VonixeLib:CreateWindow(config)
     local camera   = workspace.CurrentCamera
 
     local function getScale()
-        local vp = camera.ViewportSize
-        local baseW = 560
-        local ratio = math.min(vp.X / baseW, vp.Y / 420)
-        if isMobile then
-            ratio = math.clamp(ratio, 0.55, 0.95)
-        else
-            ratio = math.clamp(ratio, 0.7, 1.2)
-        end
-        return ratio
-    end
+    	local vp = camera.ViewportSize
+    	local baseW = 560
+    	-- Pakai dimensi terbesar (landscape) supaya UI menyamping
+    	local ratio = math.max(vp.X, vp.Y) / baseW
+    	ratio = math.clamp(ratio, 0.7, 1.1)
+    	return ratio
+	end
 
     local uiScale = Instance.new("UIScale")
     uiScale.Scale  = getScale()
@@ -344,11 +341,12 @@ function VonixeLib:CreateWindow(config)
     end)
 
     -- Mobile: fullscreen-ish
-    if isMobile then
-        local vp = camera.ViewportSize
-        local s = getScale()
-        main.Position = UDim2.new(0, (vp.X - W*s)/2, 0, (vp.Y - H*s)/2)
-    end
+    -- Mobile: fullscreen-ish
+	if isMobile then
+    	local vp = camera.ViewportSize
+    	local s = getScale()
+    	main.Position = UDim2.new(0, (vp.X - W*s)/2, 0, (vp.Y - H*s)/2)
+	end
 
     -- Gradient border
     local bfr = frame({

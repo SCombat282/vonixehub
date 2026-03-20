@@ -332,17 +332,17 @@ function VonixeLib:CreateWindow(config)
     	local scaledW = W * s
     	local scaledH = H * s
     	main.Position = UDim2.new(
-       	 0, math.clamp((vp.X - scaledW) / 2, 0, vp.X - scaledW),
-       	 0, math.clamp((vp.Y - scaledH) / 2, 0, vp.Y - scaledH)
-    	)
+            0, (vp.X - scaledW) / 2,
+            0, (vp.Y - scaledH) / 2
+        )
 	end)
 
     -- Mobile: fullscreen-ish
     -- Mobile: fullscreen-ish
 	-- centering universal
-	local vp = camera.ViewportSize
-	local s = getScale()
-	main.Position = UDim2.new(0, (vp.X - W*s)/2, 0, (vp.Y - H*s)/2)
+	local vp0 = camera.ViewportSize
+    local s0 = getScale()
+    main.Position = UDim2.new(0, (vp0.X - W*s0)/2, 0, (vp0.Y - H*s0)/2)
 
     -- Gradient border
     local bfr = frame({

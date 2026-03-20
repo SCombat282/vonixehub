@@ -1828,18 +1828,58 @@ function VonixeLib:CreateKeySystem(config)
     local glow = mkFrame({Size=UDim2.new(1,0,0,160),BackgroundColor3=Color3.fromRGB(200,50,0),BackgroundTransparency=0.88,ZIndex=3},inner)
     mkGrad(Color3.fromRGB(255,80,0),Color3.fromRGB(10,10,14),90,glow)
 
-    -- X close button - di dalam inner, pojok kanan atas
+    -- X close button - sama persis style dengan window close button di library
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Size=UDim2.new(0,26,0,26); closeBtn.Position=UDim2.new(1,-36,0,10)
-    closeBtn.BackgroundColor3=Color3.fromRGB(50,20,20); closeBtn.Text="✕"
-    closeBtn.TextColor3=Color3.fromRGB(220,180,180); closeBtn.TextSize=13
-    closeBtn.Font=Enum.Font.GothamBold; closeBtn.AutoButtonColor=false
+    closeBtn.Size=UDim2.new(0,28,0,28)
+    closeBtn.Position=UDim2.new(1,-38,0,13)
+    closeBtn.BackgroundColor3=Color3.fromRGB(50,20,20)
+    closeBtn.Text=""; closeBtn.AutoButtonColor=false
     closeBtn.BorderSizePixel=0; closeBtn.ZIndex=10; closeBtn.Parent=inner
-    -- Pakai UDim Scale 0.5 supaya selalu lingkaran sempurna
-    local closeCorn=Instance.new("UICorner"); closeCorn.CornerRadius=UDim.new(0.5,0); closeCorn.Parent=closeBtn
-    local closeStroke=Instance.new("UIStroke");closeStroke.Color=Color3.fromRGB(120,40,40);closeStroke.Thickness=1;closeStroke.Parent=closeBtn
-    closeBtn.MouseEnter:Connect(function() tw(closeBtn,0.1,{BackgroundColor3=Color3.fromRGB(180,40,40)}) end)
-    closeBtn.MouseLeave:Connect(function() tw(closeBtn,0.1,{BackgroundColor3=Color3.fromRGB(50,20,20)}) end)
+    local closeCorn=Instance.new("UICorner"); closeCorn.CornerRadius=UDim.new(0,99); closeCorn.Parent=closeBtn
+    -- Icon X pakai ImageLabel sama persis kayak window button
+    local closeIco=Instance.new("Frame")
+    closeIco.BackgroundTransparency=1; closeIco.Size=UDim2.new(0,14,0,14)
+    closeIco.AnchorPoint=Vector2.new(0.5,0.5); closeIco.Position=UDim2.new(0.5,0,0.5,0)
+    closeIco.ZIndex=11; closeIco.Parent=closeBtn
+    local closeIcoImg=Instance.new("ImageLabel")
+    closeIcoImg.BackgroundTransparency=1; closeIcoImg.Size=UDim2.new(1,0,1,0)
+    closeIcoImg.ImageColor3=Color3.fromRGB(220,200,190)
+    closeIcoImg.ScaleType=Enum.ScaleType.Fit; closeIcoImg.ZIndex=12; closeIcoImg.Parent=closeIco
+    -- Load icon X dari library icons
+    task.spawn(function()
+        local ok,r=pcall(function()
+            local src=game:GetService("HttpService"):GetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
+            local lib=loadstring(src)(); lib.SetIconsType("lucide")
+            return lib.Icon("x")
+        end)
+        if ok and r and r[1] then
+            closeIcoImg.Image=r[1]
+            if r[2] and r[2].ImageRectSize and r[2].ImageRectSize.X>0 then
+                closeIcoImg.ImageRectSize=r[2].ImageRectSize
+                closeIcoImg.ImageRectOffset=r[2].ImageRectPosition or Vector2.new(0,0)
+            end
+        else
+            -- Fallback: teks X kalau icon gagal
+            closeIcoImg:Destroy()
+            local xt=Instance.new("TextLabel")
+            xt.BackgroundTransparency=1; xt.Size=UDim2.new(1,0,1,0)
+            xt.Text="X"; xt.TextColor3=Color3.fromRGB(220,200,190)
+            xt.TextSize=12; xt.Font=Enum.Font.GothamBold
+            xt.TextXAlignment=Enum.TextXAlignment.Center
+            xt.ZIndex=12; xt.Parent=closeIco
+        end
+    end)
+    local function setCloseBtnColor(col)
+        if closeIcoImg and closeIcoImg.Parent then closeIcoImg.ImageColor3=col end
+    end
+    closeBtn.MouseEnter:Connect(function()
+        tw(closeBtn,0.1,{BackgroundColor3=Color3.fromRGB(180,40,40)})
+        setCloseBtnColor(Color3.new(1,1,1))
+    end)
+    closeBtn.MouseLeave:Connect(function()
+        tw(closeBtn,0.1,{BackgroundColor3=Color3.fromRGB(50,20,20)})
+        setCloseBtnColor(Color3.fromRGB(220,200,190))
+    end)
 
     -- Logo
     local logoFrame = mkFrame({

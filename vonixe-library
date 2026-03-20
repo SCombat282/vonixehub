@@ -320,9 +320,15 @@ end
 function VonixeLib:CreateWindow(config)
     local title    = config.Title or "VonixeLib"
     local subtitle = config.Subtitle or ""
-    local W        = config.Width or 560
-    local H        = config.Height or 420
-    local sideW    = config.SidebarWidth or 160
+
+    -- Deteksi mobile dari viewport SEBELUM buat window
+    -- Mobile: window diperkecil secara pixel (BUKAN scale/stretch)
+    local vp0      = workspace.CurrentCamera.ViewportSize
+    local isMobile = vp0.X < 1000 and vp0.Y < 650
+
+    local W     = config.Width        or (isMobile and 430 or 560)
+    local H     = config.Height       or (isMobile and 320 or 420)
+    local sideW = config.SidebarWidth or (isMobile and 120 or 160)
 
     local Window = {}
     Window._tabs       = {}

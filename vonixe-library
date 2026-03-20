@@ -316,7 +316,6 @@ function VonixeLib:CreateWindow(config)
     local function getScale()
     	local vp = camera.ViewportSize
     	local baseW = 560
-    	-- Pakai dimensi terbesar (landscape) supaya UI menyamping
     	local ratio = math.max(vp.X, vp.Y) / baseW
     	ratio = math.clamp(ratio, 0.7, 1.1)
     	return ratio
@@ -328,24 +327,28 @@ function VonixeLib:CreateWindow(config)
 
     -- Re-center dan rescale on viewport change
     camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-        local s = getScale()
-        tween(uiScale, 0.2, {Scale = s})
-        -- Re-center
-        local vp = camera.ViewportSize
-        local scaledW = W * s
-        local scaledH = H * s
-        main.Position = UDim2.new(
-            0, (vp.X - scaledW) / 2,
-            0, (vp.Y - scaledH) / 2
-        )
-    end)
+    	local s = getScale()
+    	tween(uiScale, 0.2, {Scale = s})
+    	local vp = camera.ViewportSize
+    	local scaledW = W * s
+    	local scaledH = H * s
+    	main.Position = UDim2.new(
+       	 0, math.clamp((vp.X - scaledW) / 2, 0, vp.X - scaledW),
+       	 0, math.clamp((vp.Y - scaledH) / 2, 0, vp.Y - scaledH)
+    	)
+	end)
 
     -- Mobile: fullscreen-ish
     -- Mobile: fullscreen-ish
 	if isMobile then
     	local vp = camera.ViewportSize
     	local s = getScale()
-    	main.Position = UDim2.new(0, (vp.X - W*s)/2, 0, (vp.Y - H*s)/2)
+    	local scaledW = W * s
+    	local scaledH = H * s
+    	main.Position = UDim2.new(
+        	0, math.clamp((vp.X - scaledW) / 2, 0, vp.X - scaledW),
+        	0, math.clamp((vp.Y - scaledH) / 2, 0, vp.Y - scaledH)
+    	)
 	end
 
     -- Gradient border

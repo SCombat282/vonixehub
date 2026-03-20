@@ -1,24 +1,33 @@
 -- ================================================
---   VonixeLib v1.1 — MOBILE FIX
+--   VonixeLib v1.0 — MOBILE FIX
 --   Custom Roblox UI Library
 --   Style: Dark + Orange
 --   Author: Vonixe Hub
+--
+--   FIX:
+--   - UIScale dihapus → window langsung 78% lebar, 62% tinggi
+--     (proporsional seperti screenshot, bukan fullscreen)
+--   - makeDragConn support Touch input
+--   - Slider drag support Touch
+--   - Tab button support Touch
+--   - Icon format "solar:xxx-bold" diekstrak otomatis
+--   - Restore button drag+tap pisah (tidak konflik)
 -- ================================================
 
 local VonixeLib = {}
 VonixeLib.__index = VonixeLib
 
+-- ================================================
+-- SERVICES
+-- ================================================
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService       = game:GetService("RunService")
 local Players          = game:GetService("Players")
 local Player           = Players.LocalPlayer
+local camera           = workspace.CurrentCamera
 
--- ================================================
--- MOBILE DETECTION
--- ================================================
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-local camera   = workspace.CurrentCamera
 
 -- ================================================
 -- ICON SYSTEM
@@ -26,7 +35,7 @@ local camera   = workspace.CurrentCamera
 local Icons = nil
 pcall(function()
     local HttpService = game:GetService("HttpService")
-    local src = game:HttpGetAsync
+    local src = game.HttpGetAsync
         and game:HttpGetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
         or HttpService:GetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
     local lib = loadstring(src)()
@@ -42,11 +51,23 @@ local function getIcon(name)
 end
 
 local textFallback = {
-    ["x"]="X",["minus"]="—",["chevron-right"]="›",["chevron-down"]="⌄",
-    ["check-circle"]="✓",["x-circle"]="✕",["triangle-alert"]="!",["info"]="i",
-    ["bell"]="🔔",["activity"]="≋",["fish"]="≋",["settings"]="⚙",
-    ["map-pin"]="◎",["shopping-cart"]="🛒",["layout-dashboard"]="⊞",
+    ["x"]               = "X",  ["minus"]         = "—",
+    ["chevron-right"]   = "›",  ["chevron-down"]  = "⌄",
+    ["check-circle"]    = "✓",  ["x-circle"]      = "✕",
+    ["triangle-alert"]  = "!",  ["info"]          = "i",
+    ["bell"]            = "🔔", ["activity"]      = "≋",
+    ["fish"]            = "≋",  ["settings"]      = "⚙",
+    ["map-pin"]         = "◎",  ["shopping-cart"] = "🛒",
+    ["layout-dashboard"]= "⊞",  ["ghost"]         = "≋",
 }
+
+-- FIX: ekstrak nama ikon dari format "solar:fish-bold" → "fish"
+local function extractIconName(raw)
+    if not raw or raw == "" then return "chevron-right" end
+    -- format "solar:fish-bold" atau "solar:fish-2-bold" → ambil bagian tengah
+    local extracted = raw:match(":(.-)%-") or raw:match(":(.+)")
+    return extracted or raw
+end
 
 local function mkIcon(name, size, col, parent, zindex)
     local container = Instance.new("Frame")
@@ -115,26 +136,26 @@ end
 -- TEMA
 -- ================================================
 local Theme = {
-    BG      = Color3.fromRGB(12, 12, 18),
-    BG2     = Color3.fromRGB(18, 14, 12),
-    BG3     = Color3.fromRGB(22, 16, 12),
-    BG4     = Color3.fromRGB(26, 20, 14),
-    SIDEBAR = Color3.fromRGB(14, 10, 8),
-    ACCENT1 = Color3.fromRGB(200, 60, 0),
-    ACCENT2 = Color3.fromRGB(255, 160, 0),
-    ACCENT3 = Color3.fromRGB(220, 80, 0),
-    TEXT    = Color3.fromRGB(255, 255, 255),
-    TEXT2   = Color3.fromRGB(200, 195, 190),
-    TEXT3   = Color3.fromRGB(130, 120, 110),
-    TEXT_DIM= Color3.fromRGB(70, 60, 50),
-    STROKE  = Color3.fromRGB(50, 30, 10),
-    STROKE2 = Color3.fromRGB(80, 40, 0),
-    TOGGLE_ON  = Color3.fromRGB(255, 120, 0),
-    TOGGLE_OFF = Color3.fromRGB(40, 32, 28),
-    INPUT_BG   = Color3.fromRGB(16, 12, 10),
-    GREEN  = Color3.fromRGB(80, 220, 120),
-    YELLOW = Color3.fromRGB(255, 220, 50),
-    RED    = Color3.fromRGB(255, 80, 80),
+    BG          = Color3.fromRGB(12, 12, 18),
+    BG2         = Color3.fromRGB(18, 14, 12),
+    BG3         = Color3.fromRGB(22, 16, 12),
+    BG4         = Color3.fromRGB(26, 20, 14),
+    SIDEBAR     = Color3.fromRGB(14, 10,  8),
+    ACCENT1     = Color3.fromRGB(200, 60,  0),
+    ACCENT2     = Color3.fromRGB(255,160,  0),
+    ACCENT3     = Color3.fromRGB(220, 80,  0),
+    TEXT        = Color3.fromRGB(255,255,255),
+    TEXT2       = Color3.fromRGB(200,195,190),
+    TEXT3       = Color3.fromRGB(130,120,110),
+    TEXT_DIM    = Color3.fromRGB( 70, 60, 50),
+    STROKE      = Color3.fromRGB( 50, 30, 10),
+    STROKE2     = Color3.fromRGB( 80, 40,  0),
+    TOGGLE_ON   = Color3.fromRGB(255,120,  0),
+    TOGGLE_OFF  = Color3.fromRGB( 40, 32, 28),
+    INPUT_BG    = Color3.fromRGB( 16, 12, 10),
+    GREEN       = Color3.fromRGB( 80,220,120),
+    YELLOW      = Color3.fromRGB(255,220, 50),
+    RED         = Color3.fromRGB(255, 80, 80),
 }
 
 -- ================================================
@@ -144,12 +165,12 @@ local function corner(r, p)
     local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, r); c.Parent = p; return c
 end
 local function stroke(col, thick, p, trans)
-    local s = Instance.new("UIStroke")
-    s.Color = col; s.Thickness = thick or 1; s.Transparency = trans or 0; s.Parent = p; return s
+    local s = Instance.new("UIStroke"); s.Color = col; s.Thickness = thick or 1
+    s.Transparency = trans or 0; s.Parent = p; return s
 end
 local function gradient(col1, col2, rot, p)
-    local g = Instance.new("UIGradient")
-    g.Color = ColorSequence.new(col1, col2); g.Rotation = rot or 0; g.Parent = p; return g
+    local g = Instance.new("UIGradient"); g.Color = ColorSequence.new(col1, col2)
+    g.Rotation = rot or 0; g.Parent = p; return g
 end
 local function padding(t, l, r, b, p)
     local pd = Instance.new("UIPadding")
@@ -164,7 +185,7 @@ local function listLayout(dir, halign, valign, pad, p)
     ll.VerticalAlignment   = valign or Enum.VerticalAlignment.Top
     ll.Padding             = UDim.new(0, pad or 0)
     ll.SortOrder           = Enum.SortOrder.LayoutOrder
-    ll.Parent = p; return ll
+    ll.Parent              = p; return ll
 end
 local function tween(obj, t, props, style, dir)
     TweenService:Create(obj,
@@ -187,76 +208,64 @@ local function label(txt, size, font, col, xa, p)
     l.Parent = p; return l
 end
 
--- ================================================
--- DRAG HELPER — SUPPORT MOUSE + TOUCH
--- ================================================
+-- FIX: drag support Mouse + Touch
+-- Koneksi Changed & Ended di UserInputService supaya tidak putus
+-- waktu jari/kursor keluar dari dragFrame
 local function makeDragConn(dragFrame, moveFrame)
-    local dragging = false
-    local dragStart = nil
-    local startPos  = nil
-
-    local function onInputBegan(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
+    local dragging, dragStart, startPos = false, nil, nil
+    dragFrame.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1
+        or i.UserInputType == Enum.UserInputType.Touch then
             dragging  = true
-            dragStart = input.Position
+            dragStart = i.Position
             startPos  = moveFrame.Position
         end
-    end
-
-    local function onInputChanged(input)
-        if dragging and (
-            input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch
-        ) then
-            local d = input.Position - dragStart
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
+            or i.UserInputType == Enum.UserInputType.Touch) then
+            local d = i.Position - dragStart
             moveFrame.Position = UDim2.new(
                 startPos.X.Scale, startPos.X.Offset + d.X,
-                startPos.Y.Scale, startPos.Y.Offset + d.Y
-            )
+                startPos.Y.Scale, startPos.Y.Offset + d.Y)
         end
-    end
-
-    local function onInputEnded(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1
+        or i.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
+    end)
+end
+
+local function setIconColor(iconContainer, col)
+    if not iconContainer or not iconContainer.Parent then return end
+    local inner = iconContainer:FindFirstChildWhichIsA("ImageLabel")
+        or iconContainer:FindFirstChildWhichIsA("TextLabel")
+    if inner then
+        if inner:IsA("ImageLabel") then tween(inner, 0.15, {ImageColor3 = col})
+        else tween(inner, 0.15, {TextColor3 = col}) end
     end
-
-    dragFrame.InputBegan:Connect(onInputBegan)
-    -- Changed + Ended perlu di UserInputService supaya tidak terputus
-    -- waktu jari/kursor keluar dari dragFrame
-    local c1 = UserInputService.InputChanged:Connect(onInputChanged)
-    local c2 = UserInputService.InputEnded:Connect(onInputEnded)
-
-    return c1, c2  -- kembalikan koneksi kalau perlu disconnect
 end
 
 -- ================================================
 -- WINDOW
 -- ================================================
 function VonixeLib:CreateWindow(config)
-    local title    = config.Title or "VonixeLib"
-    local subtitle = config.Subtitle or ""
+    local title    = config.Title    or "VonixeLib"
+    local subtitle = config.Subtitle or config.SubTitle or ""
 
-    -- ── Ukuran adaptif mobile ──────────────────────
-    local vp     = camera.ViewportSize
-    local BASE_W = 560
-    local BASE_H = 420
+    -- FIX: ukuran adaptif tanpa UIScale
+    -- Mobile: ~78% lebar, ~62% tinggi → proporsional seperti screenshot
+    -- Desktop: pakai config atau default 560×420
+    local vp = camera.ViewportSize
+    local W = isMobile and math.floor(vp.X * 0.78) or (config.Width  or 560)
+    local H = isMobile and math.floor(vp.Y * 0.62) or (config.Height or 420)
+    local sideW = isMobile and math.min(130, math.floor(W * 0.27)) or (config.SidebarWidth or 160)
 
-    -- Mobile: ambil hampir seluruh layar (92%)
-    -- Desktop: ukuran normal
-    local W, H, sideW
-    if isMobile then
-        W     = math.floor(vp.X * 0.92)
-        H     = math.floor(vp.Y * 0.82)
-        sideW = math.min(130, math.floor(W * 0.27))
-    else
-        W     = config.Width or BASE_W
-        H     = config.Height or BASE_H
-        sideW = config.SidebarWidth or 160
-    end
+    -- Ukuran elemen: sedikit lebih besar di mobile supaya mudah disentuh
+    local EH = isMobile and 40 or 36   -- element height
+    local TS = isMobile and 12 or 13   -- text size
 
     local Window = {}
     Window._tabs     = {}
@@ -270,17 +279,23 @@ function VonixeLib:CreateWindow(config)
     sg.IgnoreGuiInset = true
     sg.DisplayOrder   = 999
     local ok = pcall(function()
-        if syn and syn.protect_gui then syn.protect_gui(sg) end
+        local syn = syn or {}
+        if syn.protect_gui then syn.protect_gui(sg) end
         sg.Parent = game:GetService("CoreGui")
     end)
     if not ok then sg.Parent = Player.PlayerGui end
     Window._sg = sg
 
-    -- Main frame — posisi tengah layar, NO UIScale
-    -- Mobile langsung pakai ukuran absolut yang pas
+    -- FIX: posisi absolut (bukan 0.5 scale) → lebih stabil di mobile
+    local function centeredPos(w, h)
+        local v = camera.ViewportSize
+        return UDim2.new(0, math.floor((v.X - w) / 2), 0, math.floor((v.Y - h) / 2))
+    end
+
+    -- Main frame
     local main = frame({
         Size             = UDim2.new(0, W, 0, H),
-        Position         = UDim2.new(0.5, -W/2, 0.5, -H/2),
+        Position         = centeredPos(W, H),
         BackgroundColor3 = Theme.BG,
         ClipsDescendants = false,
         ZIndex           = 1,
@@ -288,20 +303,16 @@ function VonixeLib:CreateWindow(config)
     corner(14, main)
     Window._main = main
 
-    -- Re-center saat viewport berubah (rotate HP, resize PC)
+    -- Re-center saat viewport berubah (rotate HP / resize PC)
     camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-        local newVP = camera.ViewportSize
+        local nv = camera.ViewportSize
         if isMobile then
-            local newW = math.floor(newVP.X * 0.92)
-            local newH = math.floor(newVP.Y * 0.82)
-            -- Hanya resize kalau belum di-drag user
-            tween(main, 0.2, {
-                Size     = UDim2.new(0, newW, 0, newH),
-                Position = UDim2.new(0, (newVP.X - newW)/2, 0, (newVP.Y - newH)/2)
-            })
+            local nW = math.floor(nv.X * 0.78)
+            local nH = math.floor(nv.Y * 0.62)
+            main.Size     = UDim2.new(0, nW, 0, nH)
+            main.Position = UDim2.new(0, math.floor((nv.X-nW)/2), 0, math.floor((nv.Y-nH)/2))
         else
-            -- Desktop: cukup re-center saja
-            main.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
+            main.Position = centeredPos(W, H)
         end
     end)
 
@@ -310,8 +321,7 @@ function VonixeLib:CreateWindow(config)
         Size=UDim2.new(1,4,1,4), Position=UDim2.new(0,-2,0,-2),
         BackgroundColor3=Theme.ACCENT1, ZIndex=0,
     }, main)
-    corner(16, bfr)
-    gradient(Theme.ACCENT1, Theme.ACCENT2, 135, bfr)
+    corner(16, bfr); gradient(Theme.ACCENT1, Theme.ACCENT2, 135, bfr)
 
     -- Inner bg
     local bgo = frame({
@@ -327,49 +337,50 @@ function VonixeLib:CreateWindow(config)
     }, bgo)
     gradient(Color3.fromRGB(255,80,0), Theme.BG, 90, topGlow)
 
-    -- ── HEADER ─────────────────────────────────────
-    local headerH = isMobile and 48 or 54
+    -- ── HEADER ───────────────────────────────────
+    local headerH = isMobile and 46 or 54
     local header = frame({
         Size=UDim2.new(1,0,0,headerH), BackgroundTransparency=1, ZIndex=5,
     }, bgo)
 
+    -- Dot
     local dot = frame({
-        Size=UDim2.new(0,8,0,8), Position=UDim2.new(0,14,0.5,-4),
+        Size=UDim2.new(0,8,0,8), Position=UDim2.new(0,16,0,headerH/2-4),
         BackgroundColor3=Theme.ACCENT1, ZIndex=6,
     }, header)
     corner(99, dot)
 
+    -- Title
     local titleLbl = label(title, isMobile and 13 or 15, Enum.Font.GothamBlack, Theme.TEXT, Enum.TextXAlignment.Left, header)
-    titleLbl.Size     = UDim2.new(1, -90, 0, 20)
-    titleLbl.Position = UDim2.new(0, 30, 0.5, -10)
+    titleLbl.Size     = UDim2.new(1,-90,0,20)
+    titleLbl.Position = UDim2.new(0,30,0,headerH/2-18)
     titleLbl.ZIndex   = 6
 
+    -- Subtitle
     if subtitle ~= "" then
         local subLbl = label(subtitle, 9, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Left, header)
-        subLbl.Size     = UDim2.new(1, -90, 0, 12)
-        subLbl.Position = UDim2.new(0, 30, 0.5, 2)
+        subLbl.Size     = UDim2.new(1,-90,0,12)
+        subLbl.Position = UDim2.new(0,30,0,headerH/2+2)
         subLbl.ZIndex   = 6
     end
 
     -- Icon buttons kanan header
-    local iconBtnSize = isMobile and 32 or 28
+    local iconBtnSize = isMobile and 30 or 28
     local iconBtnY    = (headerH/2) - (iconBtnSize/2)
+    local iconBtnGap  = iconBtnSize + 6
 
     local function makeIconBtn(xOffset, iconName, bgCol, hoverCol)
         local btn = Instance.new("TextButton")
-        btn.Size            = UDim2.new(0, iconBtnSize, 0, iconBtnSize)
-        btn.Position        = UDim2.new(1, xOffset, 0, iconBtnY)
+        btn.Size            = UDim2.new(0,iconBtnSize,0,iconBtnSize)
+        btn.Position        = UDim2.new(1,xOffset,0,iconBtnY)
         btn.BackgroundColor3 = bgCol
-        btn.Text            = ""
-        btn.AutoButtonColor = false
-        btn.BorderSizePixel = 0
-        btn.ZIndex          = 10
-        btn.Parent          = bgo
+        btn.Text            = ""; btn.AutoButtonColor = false
+        btn.BorderSizePixel = 0; btn.ZIndex = 10; btn.Parent = bgo
         corner(99, btn)
         local ico = mkIcon(iconName, 14, Color3.fromRGB(220,200,190), btn, 11)
-        ico.AnchorPoint = Vector2.new(0.5, 0.5)
-        ico.Position    = UDim2.new(0.5, 0, 0.5, 0)
-        ico.Size        = UDim2.new(0, 14, 0, 14)
+        ico.AnchorPoint = Vector2.new(0.5,0.5)
+        ico.Position    = UDim2.new(0.5,0,0.5,0)
+        ico.Size        = UDim2.new(0,14,0,14)
         local function setColor(col)
             local inner = ico:FindFirstChildWhichIsA("ImageLabel") or ico:FindFirstChildWhichIsA("TextLabel")
             if inner then
@@ -382,16 +393,14 @@ function VonixeLib:CreateWindow(config)
         return btn
     end
 
-    local gap = isMobile and 40 or 36
-    local closeBtn = makeIconBtn(-gap,    "x",     Color3.fromRGB(50,20,20),  Color3.fromRGB(180,40,40))
-    local minBtn   = makeIconBtn(-gap*2+4,"minus",  Color3.fromRGB(35,28,10),  Color3.fromRGB(100,70,10))
-
+    local closeBtn = makeIconBtn(-(iconBtnGap),    "x",     Color3.fromRGB(50,20,20),  Color3.fromRGB(180,40,40))
+    local minBtn   = makeIconBtn(-(iconBtnGap*2)+4, "minus",  Color3.fromRGB(35,28,10),  Color3.fromRGB(100,70,10))
     closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
 
     -- Floating restore button
     local restoreBtn = Instance.new("ImageButton")
-    restoreBtn.Size             = UDim2.new(0, isMobile and 58 or 52, 0, isMobile and 58 or 52)
-    restoreBtn.Position         = UDim2.new(0.5, -26, 0, 12)
+    restoreBtn.Size             = UDim2.new(0, isMobile and 54 or 52, 0, isMobile and 54 or 52)
+    restoreBtn.Position         = UDim2.new(0.5,-27,0,12)
     restoreBtn.BackgroundColor3 = Color3.fromRGB(18,12,6)
     restoreBtn.BorderSizePixel  = 0
     restoreBtn.Image            = "rbxassetid://107213987130538"
@@ -407,14 +416,16 @@ function VonixeLib:CreateWindow(config)
     restoreBtn.MouseEnter:Connect(function()
         tween(restoreBtn,0.15,{BackgroundColor3=Color3.fromRGB(35,22,8)})
         tween(glowStroke,0.15,{Color=Theme.ACCENT2})
+        tween(restoreBtn,0.15,{Size=UDim2.new(0,58,0,58)})
     end)
     restoreBtn.MouseLeave:Connect(function()
         tween(restoreBtn,0.15,{BackgroundColor3=Color3.fromRGB(18,12,6)})
         tween(glowStroke,0.15,{Color=Theme.ACCENT1})
+        tween(restoreBtn,0.15,{Size=UDim2.new(0,isMobile and 54 or 52,0,isMobile and 54 or 52)})
     end)
-    -- Restore button draggable (touch + mouse)
-    local rbDragging,rbDragStart,rbStartPos = false,nil,nil
-    local rbMoved = false
+
+    -- FIX: drag & tap restore button pisah (tidak konflik)
+    local rbDragging, rbDragStart, rbStartPos, rbMoved = false, nil, nil, false
     restoreBtn.InputBegan:Connect(function(i)
         if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
             rbDragging=true; rbDragStart=i.Position; rbStartPos=restoreBtn.Position; rbMoved=false
@@ -422,14 +433,14 @@ function VonixeLib:CreateWindow(config)
     end)
     UserInputService.InputChanged:Connect(function(i)
         if rbDragging and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-            rbMoved=true
-            local d=i.Position-rbDragStart
-            restoreBtn.Position=UDim2.new(rbStartPos.X.Scale,rbStartPos.X.Offset+d.X,rbStartPos.Y.Scale,rbStartPos.Y.Offset+d.Y)
+            local d = i.Position - rbDragStart
+            if math.abs(d.X)+math.abs(d.Y) > 4 then rbMoved=true end
+            restoreBtn.Position = UDim2.new(rbStartPos.X.Scale,rbStartPos.X.Offset+d.X,rbStartPos.Y.Scale,rbStartPos.Y.Offset+d.Y)
         end
     end)
     UserInputService.InputEnded:Connect(function(i)
-        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-            if not rbMoved and rbDragging then
+        if (i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch) and rbDragging then
+            if not rbMoved then
                 restoreBtn.Visible=false; main.Visible=true
                 main.Size=UDim2.new(0,W,0,0)
                 tween(main,0.3,{Size=UDim2.new(0,W,0,H)},Enum.EasingStyle.Quint)
@@ -450,10 +461,10 @@ function VonixeLib:CreateWindow(config)
     }, bgo)
     gradient(Theme.ACCENT1, Theme.ACCENT2, 0, sep)
 
-    -- Drag window (touch + mouse)
+    -- FIX: drag header support Touch
     makeDragConn(header, main)
 
-    -- ── SIDEBAR ────────────────────────────────────
+    -- ── SIDEBAR ──────────────────────────────────
     local sidebar = frame({
         Size=UDim2.new(0,sideW,1,-(headerH+1)),
         Position=UDim2.new(0,0,0,headerH+1),
@@ -468,18 +479,17 @@ function VonixeLib:CreateWindow(config)
     sideScroll.CanvasSize            = UDim2.new(0,0,0,0)
     sideScroll.AutomaticCanvasSize   = Enum.AutomaticSize.Y
     sideScroll.ScrollingDirection    = Enum.ScrollingDirection.Y
-    -- Mobile: aktifkan touch scroll
     sideScroll.ScrollingEnabled      = true
     sideScroll.Parent                = sidebar
-    padding(4, isMobile and 3 or 6, isMobile and 3 or 6, 4, sideScroll)
+    padding(4, isMobile and 4 or 6, isMobile and 4 or 6, 4, sideScroll)
     listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Top, 3, sideScroll)
 
-    frame({
+    local sideLine = frame({
         Size=UDim2.new(0,1,1,0), Position=UDim2.new(1,0,0,0),
         BackgroundColor3=Theme.STROKE2, ZIndex=4,
     }, sidebar)
 
-    -- ── CONTENT AREA ───────────────────────────────
+    -- ── CONTENT AREA ─────────────────────────────
     local contentArea = frame({
         Size=UDim2.new(1,-(sideW+1),1,-(headerH+1)),
         Position=UDim2.new(0,sideW+1,0,headerH+1),
@@ -487,18 +497,22 @@ function VonixeLib:CreateWindow(config)
     }, bgo)
 
     -- ================================================
-    -- TAB
+    -- TAB FUNCTION
     -- ================================================
     function Window:AddTab(tabConfig)
         local tabName = tabConfig.Title or "Tab"
+
         local Tab = {}
         Tab._elements = {}
 
+        -- FIX: ekstrak nama icon dari format "solar:fish-bold"
+        local rawIcon = tabConfig.Icon or ""
+        local iconName = extractIconName(rawIcon)
+
         -- Tab button (sidebar)
-        -- Mobile: lebih tinggi supaya mudah disentuh
-        local tabBtnH = isMobile and 40 or 34
+        local tabBtnH = isMobile and 38 or 34
         local tabBtn = Instance.new("TextButton")
-        tabBtn.Size            = UDim2.new(1, 0, 0, tabBtnH)
+        tabBtn.Size            = UDim2.new(1,0,0,tabBtnH)
         tabBtn.BackgroundColor3 = Theme.BG2
         tabBtn.BackgroundTransparency = 1
         tabBtn.BorderSizePixel = 0
@@ -508,20 +522,14 @@ function VonixeLib:CreateWindow(config)
         tabBtn.Parent          = sideScroll
         corner(8, tabBtn)
 
-        local iconName = tabConfig.Icon or "chevron-right"
-        local iconDot  = mkIcon(iconName, isMobile and 12 or 14, Theme.TEXT3, tabBtn, 7)
+        local iconDot = mkIcon(iconName, isMobile and 13 or 14, Theme.TEXT3, tabBtn, 7)
         iconDot.AnchorPoint = Vector2.new(0, 0.5)
-        iconDot.Position    = UDim2.new(0, isMobile and 7 or 10, 0.5, 0)
+        iconDot.Position    = UDim2.new(0, isMobile and 8 or 10, 0.5, 0)
 
         local tabNameLbl = label(tabName, isMobile and 11 or 13, Enum.Font.GothamSemibold, Theme.TEXT3, Enum.TextXAlignment.Left, tabBtn)
-        -- Mobile: kalau sidebar sempit, sembunyikan teks (hanya icon)
-        if isMobile and sideW < 110 then
-            tabNameLbl.Text = ""
-        else
-            tabNameLbl.Size     = UDim2.new(1, -28, 1, 0)
-            tabNameLbl.Position = UDim2.new(0, 26, 0, 0)
-        end
-        tabNameLbl.ZIndex = 7
+        tabNameLbl.Size     = UDim2.new(1,-28,1,0)
+        tabNameLbl.Position = UDim2.new(0, isMobile and 26 or 30, 0, 0)
+        tabNameLbl.ZIndex   = 7
 
         local activeBar = frame({
             Size=UDim2.new(0,2,0,18), Position=UDim2.new(0,0,0.5,-9),
@@ -529,9 +537,9 @@ function VonixeLib:CreateWindow(config)
         }, tabBtn)
         corner(99, activeBar)
 
-        -- Tab content scroll — mobile lebih nyaman
+        -- Tab content scroll
         local tabContent = Instance.new("ScrollingFrame")
-        tabContent.Size                  = UDim2.new(1, 0, 1, 0)
+        tabContent.Size                  = UDim2.new(1,0,1,0)
         tabContent.BackgroundTransparency = 1
         tabContent.ScrollBarThickness    = isMobile and 0 or 2
         tabContent.ScrollBarImageColor3  = Theme.STROKE2
@@ -544,21 +552,11 @@ function VonixeLib:CreateWindow(config)
         padding(isMobile and 8 or 10, isMobile and 8 or 12, isMobile and 8 or 12, isMobile and 8 or 10, tabContent)
         listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, isMobile and 5 or 6, tabContent)
 
-        Tab._btn       = tabBtn
-        Tab._content   = tabContent
+        Tab._btn      = tabBtn
+        Tab._content  = tabContent
         Tab._activeBar = activeBar
-        Tab._iconDot   = iconDot
-        Tab._nameLbl   = tabNameLbl
-
-        local function setIconColor(iconContainer, col)
-            if not iconContainer or not iconContainer.Parent then return end
-            local inner = iconContainer:FindFirstChildWhichIsA("ImageLabel")
-                or iconContainer:FindFirstChildWhichIsA("TextLabel")
-            if inner then
-                if inner:IsA("ImageLabel") then tween(inner,0.15,{ImageColor3=col})
-                else tween(inner,0.15,{TextColor3=col}) end
-            end
-        end
+        Tab._iconDot  = iconDot
+        Tab._nameLbl  = tabNameLbl
 
         local function selectTab()
             for _, t in ipairs(Window._tabs) do
@@ -577,7 +575,7 @@ function VonixeLib:CreateWindow(config)
         end
 
         tabBtn.MouseButton1Click:Connect(selectTab)
-        -- Mobile: tap juga trigger select
+        -- FIX: tap di mobile
         tabBtn.InputBegan:Connect(function(i)
             if i.UserInputType == Enum.UserInputType.Touch then selectTab() end
         end)
@@ -591,7 +589,7 @@ function VonixeLib:CreateWindow(config)
         table.insert(Window._tabs, Tab)
         if #Window._tabs == 1 then selectTab() end
 
-        -- ── SECTION ───────────────────────────────
+        -- ── SECTION ──────────────────────────────
         function Tab:AddSection(sConfig)
             local sec = frame({
                 Size=UDim2.new(1,0,0,20), AutomaticSize=Enum.AutomaticSize.Y,
@@ -603,25 +601,18 @@ function VonixeLib:CreateWindow(config)
             return sec
         end
 
-        -- ── BUTTON ────────────────────────────────
+        -- ── BUTTON ───────────────────────────────
         function Tab:AddButton(bConfig)
-            local btnH = isMobile and 42 or 36
-            local btn  = Instance.new("TextButton")
-            btn.Size            = UDim2.new(1, 0, 0, btnH)
+            local btn = Instance.new("TextButton")
+            btn.Size            = UDim2.new(1,0,0,EH)
             btn.BackgroundColor3 = Theme.BG2
-            btn.BorderSizePixel = 0
-            btn.Text            = ""
-            btn.AutoButtonColor = false
+            btn.BorderSizePixel = 0; btn.Text = ""; btn.AutoButtonColor = false
             btn.Parent          = tabContent
-            corner(8, btn)
-            stroke(Theme.STROKE, 1, btn)
-
+            corner(8, btn); stroke(Theme.STROKE, 1, btn)
             local acc = frame({Size=UDim2.new(0,20,0,2), Position=UDim2.new(0,10,0,0), BackgroundColor3=Theme.ACCENT3, ZIndex=2}, btn)
-            corner(99, acc); gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
-            local btnLbl = label(bConfig.Title or "Button", isMobile and 12 or 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, btn)
+            corner(99,acc); gradient(Theme.ACCENT1,Theme.ACCENT2,0,acc)
+            local btnLbl = label(bConfig.Title or "Button", TS, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, btn)
             btnLbl.Size=UDim2.new(1,-20,1,0); btnLbl.Position=UDim2.new(0,10,0,0); btnLbl.ZIndex=2
-
             btn.MouseEnter:Connect(function() tween(btn,0.1,{BackgroundColor3=Theme.BG3}) end)
             btn.MouseLeave:Connect(function() tween(btn,0.1,{BackgroundColor3=Theme.BG2}) end)
             btn.MouseButton1Click:Connect(function()
@@ -629,124 +620,106 @@ function VonixeLib:CreateWindow(config)
                 task.delay(0.1,function() tween(btn,0.1,{BackgroundColor3=Theme.BG2}) end)
                 if bConfig.Callback then task.spawn(bConfig.Callback) end
             end)
-
-            local BtnObj = {}
-            function BtnObj:SetTitle(t) btnLbl.Text = t end
-            return BtnObj
+            local BtnObj={}; function BtnObj:SetTitle(t) btnLbl.Text=t end; return BtnObj
         end
 
-        -- ── TOGGLE ────────────────────────────────
+        -- ── TOGGLE ───────────────────────────────
         function Tab:AddToggle(tConfig)
             local value  = tConfig.Value or false
-            local rowH   = isMobile and 44 or 36
-            -- Track lebih besar di mobile supaya mudah disentuh
-            local trackW = isMobile and 46 or 38
-            local trackH = isMobile and 24 or 20
-            local thumbS = isMobile and 18 or 14
+            local trkW   = isMobile and 44 or 38
+            local trkH   = isMobile and 22 or 20
+            local thmS   = isMobile and 16 or 14
 
-            local row = frame({Size=UDim2.new(1,0,0,rowH), BackgroundColor3=Theme.BG2}, tabContent)
-            corner(8, row); stroke(Theme.STROKE, 1, row)
-
+            local row = frame({Size=UDim2.new(1,0,0,EH), BackgroundColor3=Theme.BG2}, tabContent)
+            corner(8,row); stroke(Theme.STROKE,1,row)
             local acc = frame({Size=UDim2.new(0,20,0,2), Position=UDim2.new(0,10,0,0), BackgroundColor3=Theme.ACCENT3, ZIndex=2}, row)
-            corner(99, acc); gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
-            local nameLbl = label(tConfig.Title or "Toggle", isMobile and 12 or 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
-            nameLbl.Size=UDim2.new(1,-60,1,0); nameLbl.Position=UDim2.new(0,10,0,0); nameLbl.ZIndex=2
+            corner(99,acc); gradient(Theme.ACCENT1,Theme.ACCENT2,0,acc)
+            local nameLbl = label(tConfig.Title or "Toggle", TS, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
+            nameLbl.Size=UDim2.new(1,-(trkW+18),1,0); nameLbl.Position=UDim2.new(0,10,0,0); nameLbl.ZIndex=2
 
             local track = frame({
-                Size=UDim2.new(0,trackW,0,trackH),
-                Position=UDim2.new(1,-(trackW+8),0.5,-trackH/2),
+                Size=UDim2.new(0,trkW,0,trkH), Position=UDim2.new(1,-(trkW+8),0.5,-trkH/2),
                 BackgroundColor3=value and Theme.TOGGLE_ON or Theme.TOGGLE_OFF, ZIndex=2,
             }, row)
-            corner(99, track); stroke(Theme.STROKE, 1, track)
-
+            corner(99,track); stroke(Theme.STROKE,1,track)
             local thumb = frame({
-                Size=UDim2.new(0,thumbS,0,thumbS),
-                Position=value and UDim2.new(1,-(thumbS+3),0.5,-thumbS/2) or UDim2.new(0,3,0.5,-thumbS/2),
+                Size=UDim2.new(0,thmS,0,thmS),
+                Position=value and UDim2.new(1,-(thmS+3),0.5,-thmS/2) or UDim2.new(0,3,0.5,-thmS/2),
                 BackgroundColor3=Theme.TEXT, ZIndex=3,
             }, track)
-            corner(99, thumb)
+            corner(99,thumb)
 
             local function set(v, fireCallback)
-                value = v
+                value=v
                 tween(track,0.15,{BackgroundColor3=v and Theme.TOGGLE_ON or Theme.TOGGLE_OFF})
-                tween(thumb,0.15,{Position=v and UDim2.new(1,-(thumbS+3),0.5,-thumbS/2) or UDim2.new(0,3,0.5,-thumbS/2)})
-                if fireCallback and tConfig.Callback then task.spawn(tConfig.Callback, v) end
+                tween(thumb,0.15,{Position=v and UDim2.new(1,-(thmS+3),0.5,-thmS/2) or UDim2.new(0,3,0.5,-thmS/2)})
+                if fireCallback and tConfig.Callback then task.spawn(tConfig.Callback,v) end
             end
             set(value, false)
 
-            local clickArea = Instance.new("TextButton")
-            clickArea.Size=UDim2.new(1,0,1,0); clickArea.BackgroundTransparency=1
-            clickArea.Text=""; clickArea.ZIndex=4; clickArea.Parent=row
-            clickArea.MouseButton1Click:Connect(function() set(not value, true) end)
+            local ca = Instance.new("TextButton")
+            ca.Size=UDim2.new(1,0,1,0); ca.BackgroundTransparency=1
+            ca.Text=""; ca.ZIndex=4; ca.Parent=row
+            ca.MouseButton1Click:Connect(function() set(not value, true) end)
             row.MouseEnter:Connect(function() tween(row,0.1,{BackgroundColor3=Theme.BG3}) end)
             row.MouseLeave:Connect(function() tween(row,0.1,{BackgroundColor3=Theme.BG2}) end)
 
-            local TogObj = {}; TogObj.Value = value
+            local TogObj={}; TogObj.Value=value
             function TogObj:SetValue(v) set(v,true); TogObj.Value=v end
             function TogObj:SetValueSilent(v) set(v,false); TogObj.Value=v end
             function TogObj:SetTitle(t) nameLbl.Text=t end
             return TogObj
         end
 
-        -- ── SLIDER ────────────────────────────────
+        -- ── SLIDER ───────────────────────────────
         function Tab:AddSlider(sConfig)
             local min   = sConfig.Min or 0
             local max   = sConfig.Max or 100
             local value = math.clamp(sConfig.Value or min, min, max)
             local step  = sConfig.Step or 1
-            local rowH  = isMobile and 60 or 52
+            local rowH  = isMobile and 54 or 52
+            local trkH2 = isMobile and 9 or 6
+            local thmS2 = isMobile and 18 or 12
 
             local row = frame({Size=UDim2.new(1,0,0,rowH), BackgroundColor3=Theme.BG2}, tabContent)
-            corner(8, row); stroke(Theme.STROKE, 1, row)
-
+            corner(8,row); stroke(Theme.STROKE,1,row)
             local acc = frame({Size=UDim2.new(0,20,0,2), Position=UDim2.new(0,10,0,0), BackgroundColor3=Theme.ACCENT3, ZIndex=2}, row)
-            corner(99, acc); gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
-            local nameLbl = label(sConfig.Title or "Slider", isMobile and 12 or 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
+            corner(99,acc); gradient(Theme.ACCENT1,Theme.ACCENT2,0,acc)
+            local nameLbl = label(sConfig.Title or "Slider", TS, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
             nameLbl.Size=UDim2.new(1,-60,0,20); nameLbl.Position=UDim2.new(0,10,0,10); nameLbl.ZIndex=2
-
             local valLbl = label(tostring(value), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
             valLbl.Size=UDim2.new(0,50,0,20); valLbl.Position=UDim2.new(1,-58,0,10); valLbl.ZIndex=2
 
-            -- Track lebih tinggi di mobile supaya mudah disentuh
-            local trackH2 = isMobile and 10 or 6
             local trackBg = frame({
-                Size=UDim2.new(1,-20,0,trackH2),
-                Position=UDim2.new(0,10,0,rowH-trackH2-10),
+                Size=UDim2.new(1,-20,0,trkH2), Position=UDim2.new(0,10,0,rowH-trkH2-8),
                 BackgroundColor3=Theme.BG4, ZIndex=2,
             }, row)
-            corner(99, trackBg); stroke(Theme.STROKE, 1, trackBg)
-
+            corner(99,trackBg); stroke(Theme.STROKE,1,trackBg)
             local fill = frame({Size=UDim2.new((value-min)/(max-min),0,1,0), BackgroundColor3=Theme.ACCENT1, ZIndex=3}, trackBg)
-            corner(99, fill); gradient(Theme.ACCENT1, Theme.ACCENT2, 0, fill)
-
-            local thumbS2 = isMobile and 18 or 12
+            corner(99,fill); gradient(Theme.ACCENT1,Theme.ACCENT2,0,fill)
             local thumb = frame({
-                Size=UDim2.new(0,thumbS2,0,thumbS2),
-                Position=UDim2.new((value-min)/(max-min),-thumbS2/2,0.5,-thumbS2/2),
+                Size=UDim2.new(0,thmS2,0,thmS2),
+                Position=UDim2.new((value-min)/(max-min),-thmS2/2,0.5,-thmS2/2),
                 BackgroundColor3=Theme.TEXT, ZIndex=4,
             }, trackBg)
-            corner(99, thumb)
+            corner(99,thumb)
 
             local function setValue(v, fireCallback)
                 v = math.clamp(math.floor(v/step+0.5)*step, min, max)
                 value = v
                 local ratio = (v-min)/(max-min)
                 tween(fill,0.05,{Size=UDim2.new(ratio,0,1,0)})
-                tween(thumb,0.05,{Position=UDim2.new(ratio,-thumbS2/2,0.5,-thumbS2/2)})
+                tween(thumb,0.05,{Position=UDim2.new(ratio,-thmS2/2,0.5,-thmS2/2)})
                 valLbl.Text = tostring(v)
-                if fireCallback and sConfig.Callback then task.spawn(sConfig.Callback, v) end
+                if fireCallback and sConfig.Callback then task.spawn(sConfig.Callback,v) end
             end
 
-            -- Drag: mouse + TOUCH
+            -- FIX: drag slider support Mouse + Touch
             local draggingSlider = false
             trackBg.InputBegan:Connect(function(i)
                 if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
                     draggingSlider = true
-                    local abs = trackBg.AbsolutePosition
-                    local siz = trackBg.AbsoluteSize
-                    local ratio = math.clamp((i.Position.X-abs.X)/siz.X, 0, 1)
+                    local ratio = math.clamp((i.Position.X-trackBg.AbsolutePosition.X)/trackBg.AbsoluteSize.X,0,1)
                     setValue(min+ratio*(max-min), true)
                 end
             end)
@@ -757,243 +730,217 @@ function VonixeLib:CreateWindow(config)
             end)
             UserInputService.InputChanged:Connect(function(i)
                 if draggingSlider and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-                    local abs = trackBg.AbsolutePosition
-                    local siz = trackBg.AbsoluteSize
-                    local ratio = math.clamp((i.Position.X-abs.X)/siz.X, 0, 1)
+                    local ratio = math.clamp((i.Position.X-trackBg.AbsolutePosition.X)/trackBg.AbsoluteSize.X,0,1)
                     setValue(min+ratio*(max-min), true)
                 end
             end)
 
             setValue(value, false)
-
-            local SlObj = {}; SlObj.Value = value
+            local SlObj={}; SlObj.Value=value
             function SlObj:SetValue(v) setValue(v,false); SlObj.Value=value end
             function SlObj:SetTitle(t) nameLbl.Text=t end
             return SlObj
         end
 
-        -- ── DROPDOWN ──────────────────────────────
+        -- ── DROPDOWN ─────────────────────────────
         function Tab:AddDropdown(dConfig)
             local options  = dConfig.Options or dConfig.Values or {}
             local selected = dConfig.Value or (options[1] or "")
             local opened   = false
+            local optH     = isMobile and 34 or 30
 
             local wrapper = frame({
-                Size=UDim2.new(1,0,0,isMobile and 42 or 36), BackgroundTransparency=1,
+                Size=UDim2.new(1,0,0,EH), BackgroundTransparency=1,
                 AutomaticSize=Enum.AutomaticSize.Y, ZIndex=10,
             }, tabContent)
-
-            local rowH3 = isMobile and 42 or 36
-            local row = frame({Size=UDim2.new(1,0,0,rowH3), BackgroundColor3=Theme.BG2, ZIndex=10}, wrapper)
-            corner(8, row); stroke(Theme.STROKE, 1, row)
-
+            local row = frame({Size=UDim2.new(1,0,0,EH), BackgroundColor3=Theme.BG2, ZIndex=10}, wrapper)
+            corner(8,row); stroke(Theme.STROKE,1,row)
             local acc = frame({Size=UDim2.new(0,20,0,2), Position=UDim2.new(0,10,0,0), BackgroundColor3=Theme.ACCENT3, ZIndex=11}, row)
-            corner(99, acc); gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
-            local nameLbl = label(dConfig.Title or "Dropdown", isMobile and 11 or 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
+            corner(99,acc); gradient(Theme.ACCENT1,Theme.ACCENT2,0,acc)
+            local nameLbl = label(dConfig.Title or "Dropdown", TS, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
             nameLbl.Size=UDim2.new(0.5,-10,1,0); nameLbl.Position=UDim2.new(0,10,0,0); nameLbl.ZIndex=11
-
-            local valLbl = label(selected, isMobile and 11 or 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
+            local valLbl = label(tostring(selected), isMobile and 11 or 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
             valLbl.Size=UDim2.new(0.5,-30,1,0); valLbl.Position=UDim2.new(0.5,0,0,0); valLbl.ZIndex=11
 
             local arrowFrame = Instance.new("Frame")
             arrowFrame.Size=UDim2.new(0,20,0,20); arrowFrame.Position=UDim2.new(1,-26,0.5,-10)
             arrowFrame.BackgroundTransparency=1; arrowFrame.ZIndex=11; arrowFrame.Parent=row
-            local arrow = mkIcon("chevron-down", 14, Theme.TEXT3, arrowFrame, 12)
+            local arrow = mkIcon("chevron-down",14,Theme.TEXT3,arrowFrame,12)
             arrow.AnchorPoint=Vector2.new(0.5,0.5); arrow.Position=UDim2.new(0.5,0,0.5,0)
 
-            local optH = isMobile and 36 or 30
             local menu = frame({
-                Size=UDim2.new(1,0,0,0), Position=UDim2.new(0,0,0,rowH3+2),
+                Size=UDim2.new(1,0,0,0), Position=UDim2.new(0,0,0,EH+2),
                 BackgroundColor3=Theme.BG3, ClipsDescendants=true, Visible=false, ZIndex=20,
             }, wrapper)
-            corner(8, menu); stroke(Theme.STROKE2, 1, menu)
-            listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, menu)
+            corner(8,menu); stroke(Theme.STROKE2,1,menu)
+            listLayout(Enum.FillDirection.Vertical,Enum.HorizontalAlignment.Left,Enum.VerticalAlignment.Top,0,menu)
 
-            local optBtns = {}
-            local function makeOptBtn(opt)
-                local ob = Instance.new("TextButton")
+            local optBtns={}
+            local function mkOpt(opt)
+                local ob=Instance.new("TextButton")
                 ob.Size=UDim2.new(1,0,0,optH); ob.BackgroundColor3=Theme.BG3
                 ob.BackgroundTransparency=1; ob.BorderSizePixel=0
                 ob.Text=""; ob.AutoButtonColor=false; ob.ZIndex=21; ob.Parent=menu
-                local ol = label(tostring(opt), isMobile and 11 or 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, ob)
+                local ol=label(tostring(opt),isMobile and 11 or 12,Enum.Font.Gotham,Theme.TEXT2,Enum.TextXAlignment.Left,ob)
                 ol.Size=UDim2.new(1,-16,1,0); ol.Position=UDim2.new(0,10,0,0); ol.ZIndex=22
                 ob.MouseEnter:Connect(function() tween(ob,0.08,{BackgroundTransparency=0.85}) end)
                 ob.MouseLeave:Connect(function() tween(ob,0.08,{BackgroundTransparency=1}) end)
                 ob.MouseButton1Click:Connect(function()
                     selected=opt; valLbl.Text=tostring(opt)
-                    if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
-                    opened=false
-                    tween(arrow,0.15,{Rotation=0})
+                    if dConfig.Callback then task.spawn(dConfig.Callback,opt) end
+                    opened=false; tween(arrow,0.15,{Rotation=0})
                     tween(menu,0.15,{Size=UDim2.new(1,0,0,0)})
                     task.delay(0.15,function() menu.Visible=false end)
                 end)
-                table.insert(optBtns, ob)
+                table.insert(optBtns,ob)
             end
-            for _, opt in ipairs(options) do makeOptBtn(opt) end
-
+            for _,o in ipairs(options) do mkOpt(o) end
             local menuH = #options * optH
-            local clickArea = Instance.new("TextButton")
-            clickArea.Size=UDim2.new(1,0,1,0); clickArea.BackgroundTransparency=1
-            clickArea.Text=""; clickArea.ZIndex=12; clickArea.Parent=row
-            clickArea.MouseButton1Click:Connect(function()
-                opened = not opened
+
+            local ca = Instance.new("TextButton")
+            ca.Size=UDim2.new(1,0,1,0); ca.BackgroundTransparency=1
+            ca.Text=""; ca.ZIndex=12; ca.Parent=row
+            ca.MouseButton1Click:Connect(function()
+                opened=not opened
                 if opened then
                     menu.Visible=true; menu.Size=UDim2.new(1,0,0,0)
-                    tween(arrow,0.2,{Rotation=180})
-                    tween(menu,0.2,{Size=UDim2.new(1,0,0,menuH)})
+                    tween(arrow,0.2,{Rotation=180}); tween(menu,0.2,{Size=UDim2.new(1,0,0,menuH)})
                 else
-                    tween(arrow,0.15,{Rotation=0})
-                    tween(menu,0.15,{Size=UDim2.new(1,0,0,0)})
+                    tween(arrow,0.15,{Rotation=0}); tween(menu,0.15,{Size=UDim2.new(1,0,0,0)})
                     task.delay(0.15,function() menu.Visible=false end)
                 end
             end)
             row.MouseEnter:Connect(function() tween(row,0.1,{BackgroundColor3=Theme.BG3}) end)
             row.MouseLeave:Connect(function() tween(row,0.1,{BackgroundColor3=Theme.BG2}) end)
 
-            local DdObj = {}; DdObj.Value = selected
+            local DdObj={}; DdObj.Value=selected
             function DdObj:SetValue(v) selected=v; valLbl.Text=tostring(v); DdObj.Value=v end
             function DdObj:SetTitle(t) nameLbl.Text=t end
             function DdObj:Refresh(newOptions)
-                for _, b in ipairs(optBtns) do b:Destroy() end
+                for _,b in ipairs(optBtns) do b:Destroy() end
                 optBtns={}; options=newOptions; menuH=#options*optH
-                for _, opt in ipairs(newOptions) do makeOptBtn(opt) end
+                for _,o in ipairs(newOptions) do mkOpt(o) end
             end
             return DdObj
         end
 
-        -- ── INPUT ─────────────────────────────────
+        -- ── INPUT ────────────────────────────────
         function Tab:AddInput(iConfig)
-            local row = frame({Size=UDim2.new(1,0,0,isMobile and 62 or 54), BackgroundColor3=Theme.BG2}, tabContent)
-            corner(8, row); stroke(Theme.STROKE, 1, row)
-
+            local rowH = isMobile and 58 or 54
+            local row  = frame({Size=UDim2.new(1,0,0,rowH), BackgroundColor3=Theme.BG2}, tabContent)
+            corner(8,row); stroke(Theme.STROKE,1,row)
             local acc = frame({Size=UDim2.new(0,20,0,2), Position=UDim2.new(0,10,0,0), BackgroundColor3=Theme.ACCENT3, ZIndex=2}, row)
-            corner(99, acc); gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
+            corner(99,acc); gradient(Theme.ACCENT1,Theme.ACCENT2,0,acc)
             local nameLbl = label(iConfig.Title or "Input", 11, Enum.Font.GothamBold, Theme.TEXT3, Enum.TextXAlignment.Left, row)
             nameLbl.Size=UDim2.new(1,-20,0,16); nameLbl.Position=UDim2.new(0,10,0,8); nameLbl.ZIndex=2
 
             local inputBox = Instance.new("TextBox")
             inputBox.Size=UDim2.new(1,-20,0,isMobile and 26 or 22)
-            inputBox.Position=UDim2.new(0,10,0,isMobile and 28 or 26)
+            inputBox.Position=UDim2.new(0,10,0,isMobile and 26 or 26)
             inputBox.BackgroundColor3=Theme.INPUT_BG; inputBox.BorderSizePixel=0
             inputBox.Text=iConfig.Value or ""; inputBox.PlaceholderText=iConfig.Placeholder or ""
             inputBox.PlaceholderColor3=Theme.TEXT3; inputBox.TextColor3=Theme.TEXT
-            inputBox.TextSize=isMobile and 12 or 13; inputBox.Font=Enum.Font.Gotham
+            inputBox.TextSize=TS; inputBox.Font=Enum.Font.Gotham
             inputBox.TextXAlignment=Enum.TextXAlignment.Left
             inputBox.ClearTextOnFocus=false; inputBox.ZIndex=2; inputBox.Parent=row
-            corner(6, inputBox); stroke(Theme.STROKE2, 1, inputBox); padding(0,8,8,0,inputBox)
-
+            corner(6,inputBox); stroke(Theme.STROKE2,1,inputBox); padding(0,8,8,0,inputBox)
             inputBox.Focused:Connect(function() tween(inputBox,0.1,{BackgroundColor3=Color3.fromRGB(24,16,10)}) end)
-            inputBox.FocusLost:Connect(function()
-                tween(inputBox,0.1,{BackgroundColor3=Theme.INPUT_BG})
-                if iConfig.Callback then task.spawn(iConfig.Callback, inputBox.Text) end
-            end)
+            inputBox.FocusLost:Connect(function() tween(inputBox,0.1,{BackgroundColor3=Theme.INPUT_BG}) end)
 
-            local InObj = {}; InObj.Value = inputBox.Text
+            local InObj={}; InObj.Value=inputBox.Text
             inputBox.Changed:Connect(function(p) if p=="Text" then InObj.Value=inputBox.Text end end)
+            inputBox.FocusLost:Connect(function()
+                InObj.Value=inputBox.Text
+                if iConfig.Callback then task.spawn(iConfig.Callback,inputBox.Text) end
+            end)
             function InObj:SetValue(v) inputBox.Text=v; InObj.Value=v end
             function InObj:SetTitle(t) nameLbl.Text=t end
             return InObj
         end
 
-        -- ── MISSION BAR ───────────────────────────
+        -- ── MISSION BAR ──────────────────────────
         function Tab:AddMissionBar()
-            local card = frame({Size=UDim2.new(1,0,0,isMobile and 72 or 66), BackgroundColor3=Theme.BG2}, tabContent)
-            corner(10, card); stroke(Theme.STROKE, 1, card)
-
+            local cH = isMobile and 72 or 66
+            local card = frame({Size=UDim2.new(1,0,0,cH), BackgroundColor3=Theme.BG2}, tabContent)
+            corner(10,card); stroke(Theme.STROKE,1,card)
             local acc = frame({Size=UDim2.new(1,0,0,2), BackgroundColor3=Theme.ACCENT3}, card)
-            gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
+            gradient(Theme.ACCENT1,Theme.ACCENT2,0,acc)
             local dot2 = frame({Size=UDim2.new(0,8,0,8), Position=UDim2.new(0,10,0,12), BackgroundColor3=Theme.TEXT3}, card)
-            corner(99, dot2)
-
-            local indexLbl = label("", 10, Enum.Font.GothamBold, Theme.TEXT3, Enum.TextXAlignment.Left, card)
+            corner(99,dot2)
+            local indexLbl = label("",10,Enum.Font.GothamBold,Theme.TEXT3,Enum.TextXAlignment.Left,card)
             indexLbl.Size=UDim2.new(0,50,0,14); indexLbl.Position=UDim2.new(0,24,0,8)
-
             local stoneBadge = frame({
                 Size=UDim2.new(0,0,0,18), Position=UDim2.new(1,-8,0,5), AnchorPoint=Vector2.new(1,0),
                 BackgroundColor3=Color3.fromRGB(30,20,8), AutomaticSize=Enum.AutomaticSize.X, ClipsDescendants=false,
             }, card)
             corner(6,stoneBadge); stroke(Theme.STROKE2,1,stoneBadge); padding(0,7,7,0,stoneBadge)
-            local stoneLbl = label("", 10, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Left, stoneBadge)
+            local stoneLbl=label("",10,Enum.Font.GothamBold,Theme.ACCENT2,Enum.TextXAlignment.Left,stoneBadge)
             stoneLbl.AutomaticSize=Enum.AutomaticSize.X; stoneLbl.Size=UDim2.new(0,0,1,0)
             stoneBadge.Visible=false
+            local mainLbl2=label("Mission: OFF",isMobile and 13 or 15,Enum.Font.GothamBlack,Theme.TEXT3,Enum.TextXAlignment.Left,card)
+            mainLbl2.Size=UDim2.new(1,-16,0,20); mainLbl2.Position=UDim2.new(0,10,0,24)
+            local track=frame({Size=UDim2.new(1,-20,0,5), Position=UDim2.new(0,10,0,cH-14), BackgroundColor3=Color3.fromRGB(24,18,10)},card)
+            corner(99,track)
+            local fill2=frame({Size=UDim2.new(0,0,1,0), BackgroundColor3=Theme.ACCENT1},track)
+            corner(99,fill2); gradient(Theme.ACCENT1,Theme.ACCENT2,0,fill2)
+            local progLbl2=label("",10,Enum.Font.GothamBold,Theme.TEXT3,Enum.TextXAlignment.Right,card)
+            progLbl2.Size=UDim2.new(1,-20,0,14); progLbl2.Position=UDim2.new(0,10,0,cH-14)
 
-            local mainLbl = label("Mission: OFF", isMobile and 13 or 15, Enum.Font.GothamBlack, Theme.TEXT3, Enum.TextXAlignment.Left, card)
-            mainLbl.Size=UDim2.new(1,-16,0,20); mainLbl.Position=UDim2.new(0,10,0,24)
-
-            local track = frame({Size=UDim2.new(1,-20,0,5), Position=UDim2.new(0,10,0,isMobile and 58 or 50), BackgroundColor3=Color3.fromRGB(24,18,10)}, card)
-            corner(99, track)
-            local fill2 = frame({Size=UDim2.new(0,0,1,0), BackgroundColor3=Theme.ACCENT1}, track)
-            corner(99, fill2); gradient(Theme.ACCENT1, Theme.ACCENT2, 0, fill2)
-
-            local progLbl = label("", 10, Enum.Font.GothamBold, Theme.TEXT3, Enum.TextXAlignment.Right, card)
-            progLbl.Size=UDim2.new(1,-20,0,14); progLbl.Position=UDim2.new(0,10,0,isMobile and 58 or 50)
-
-            local pulseConn2
+            local pc3
             local function setPulse(col, active)
-                if pulseConn2 then pcall(function() pulseConn2:Disconnect() end) end
+                if pc3 then pcall(function() pc3:Disconnect() end) end
                 dot2.BackgroundColor3=col
                 if active then
-                    local t3=0; local bright=col:Lerp(Color3.new(1,1,1),0.4)
-                    pulseConn2=RunService.Heartbeat:Connect(function(dt)
-                        t3=t3+dt*3; dot2.BackgroundColor3=col:Lerp(bright,(math.sin(t3)+1)/2*0.5)
-                    end)
+                    local tt=0; local bright=col:Lerp(Color3.new(1,1,1),0.4)
+                    pc3=RunService.Heartbeat:Connect(function(dt) tt=tt+dt*3; dot2.BackgroundColor3=col:Lerp(bright,(math.sin(tt)+1)/2*0.5) end)
                 end
             end
-            setPulse(Theme.TEXT3, false)
+            setPulse(Theme.TEXT3,false)
 
-            local tierColors = {
-                COMMON=Theme.TEXT2, RARE=Color3.fromRGB(100,180,255),
-                EPIC=Color3.fromRGB(180,100,255), SECRET=Color3.fromRGB(255,200,50),
-                LEGEND=Color3.fromRGB(255,120,30),
-            }
-
-            local MB = {}
+            local tierColors={COMMON=Theme.TEXT2,RARE=Color3.fromRGB(100,180,255),EPIC=Color3.fromRGB(180,100,255),SECRET=Color3.fromRGB(255,200,50),LEGEND=Color3.fromRGB(255,120,30)}
+            local MB={}
             function MB:SetStatus(data)
                 if not data then
-                    mainLbl.Text=  "Mission: OFF"; mainLbl.TextColor3=Theme.TEXT3
-                    indexLbl.Text=""; progLbl.Text=""; stoneBadge.Visible=false
-                    tween(fill2,0.3,{Size=UDim2.new(0,0,1,0)})
-                    tween(acc,0.3,{BackgroundColor3=Theme.ACCENT3})
+                    mainLbl2.Text="Mission: OFF"; mainLbl2.TextColor3=Theme.TEXT3
+                    indexLbl.Text=""; progLbl2.Text=""; stoneBadge.Visible=false
+                    tween(fill2,0.3,{Size=UDim2.new(0,0,1,0)}); tween(acc,0.3,{BackgroundColor3=Theme.ACCENT3})
                     setPulse(Theme.TEXT3,false); return
                 end
                 local col=tierColors[(data.tier or ""):upper()] or Theme.TEXT2
-                mainLbl.Text=(data.tier or "?"):upper().." @ "..(data.zone or "?")
-                mainLbl.TextColor3=col; indexLbl.Text="["..(data.index or "?").."]"; indexLbl.TextColor3=col
+                mainLbl2.Text=(data.tier or "?"):upper().." @ "..(data.zone or "?")
+                mainLbl2.TextColor3=col; indexLbl.Text="["..(data.index or "?").."]"; indexLbl.TextColor3=col
                 local ratio=(data.total and data.total>0) and math.clamp((data.current or 0)/data.total,0,1) or 0
                 tween(fill2,0.4,{Size=UDim2.new(ratio,0,1,0),BackgroundColor3=col})
                 tween(acc,0.3,{BackgroundColor3=col})
-                progLbl.Text=(data.current or 0).." / "..(data.total or 0)
+                progLbl2.Text=(data.current or 0).." / "..(data.total or 0)
                 if data.stone and data.stone~="" then stoneLbl.Text="▶ "..data.stone; stoneBadge.Visible=true
                 else stoneBadge.Visible=false end
-                setPulse(data.active and col or Theme.TEXT3, data.active==true)
+                setPulse(data.active and col or Theme.TEXT3,data.active==true)
             end
             function MB:SetOff() MB:SetStatus(nil) end
             return MB
         end
 
-        -- ── LABEL ─────────────────────────────────
+        -- ── LABEL ────────────────────────────────
         function Tab:AddLabel(lConfig)
-            local row = frame({Size=UDim2.new(1,0,0,30), BackgroundTransparency=1}, tabContent)
-            local lbl = label(lConfig.Title or "", 12, Enum.Font.Gotham, Theme.TEXT3, Enum.TextXAlignment.Left, row)
-            lbl.Size=UDim2.new(1,0,1,0)
+            local row=frame({Size=UDim2.new(1,0,0,30), BackgroundTransparency=1}, tabContent)
+            local lbl2=label(lConfig.Title or "",12,Enum.Font.Gotham,Theme.TEXT3,Enum.TextXAlignment.Left,row)
+            lbl2.Size=UDim2.new(1,0,1,0)
             local LbObj={}
-            function LbObj:SetTitle(t) lbl.Text=t end
-            function LbObj:SetColor(c) lbl.TextColor3=c end
+            function LbObj:SetTitle(t) lbl2.Text=t end
+            function LbObj:SetColor(c) lbl2.TextColor3=c end
             return LbObj
         end
 
-        -- Aliases
-        Tab.Button   = Tab.AddButton
-        Tab.Toggle   = Tab.AddToggle
-        Tab.Slider   = Tab.AddSlider
-        Tab.Dropdown = Tab.AddDropdown
-        Tab.Input    = Tab.AddInput
-        Tab.Label    = Tab.AddLabel
-        Tab.Section  = Tab.AddSection
-        Tab.Space    = function() end
+        -- Aliases (WindUI compat)
+        Tab.Button    = Tab.AddButton
+        Tab.Toggle    = Tab.AddToggle
+        Tab.Slider    = Tab.AddSlider
+        Tab.Dropdown  = Tab.AddDropdown
+        Tab.Input     = Tab.AddInput
+        Tab.Label     = Tab.AddLabel
+        Tab.Section   = Tab.AddSection
+        Tab.Space     = function() end
         Tab.MissionBar = Tab.AddMissionBar
 
         return Tab
@@ -1002,15 +949,14 @@ function VonixeLib:CreateWindow(config)
     -- ================================================
     -- NOTIFY SYSTEM
     -- ================================================
-    local NW = isMobile and math.floor(vp.X * 0.88) or 300
+    local NW = isMobile and math.floor(vp.X*0.84) or 300
     local notifHolder = Instance.new("Frame")
     notifHolder.Size             = UDim2.new(0, NW, 1, -20)
     notifHolder.Position         = isMobile
         and UDim2.new(0.5, -NW/2, 0, 10)   -- mobile: tengah atas
         or  UDim2.new(1, -(NW+12), 0, 10)  -- desktop: kanan atas
     notifHolder.BackgroundTransparency = 1
-    notifHolder.ZIndex           = 200
-    notifHolder.Parent           = sg
+    notifHolder.ZIndex = 200; notifHolder.Parent = sg
     local notifLayout = Instance.new("UIListLayout")
     notifLayout.FillDirection       = Enum.FillDirection.Vertical
     notifLayout.VerticalAlignment   = Enum.VerticalAlignment.Bottom
@@ -1019,67 +965,166 @@ function VonixeLib:CreateWindow(config)
     notifLayout.SortOrder           = Enum.SortOrder.LayoutOrder
     notifLayout.Parent              = notifHolder
 
+    local function dismissNotif(nf)
+        tween(nf, 0.2, {Size=UDim2.new(1,0,0,0)}, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+        task.delay(0.25, function() if nf and nf.Parent then nf:Destroy() end end)
+    end
+
     function Window:Notify(nConfig)
-        local nTitle   = nConfig.Title or "Notif"
-        local content  = nConfig.Content or ""
-        local dur      = nConfig.Duration or 3
-        local nType    = nConfig.Type or "Info"
+        local ntitle  = nConfig.Title or "Notif"
+        local content = nConfig.Content or ""
+        local dur     = nConfig.Duration or 3
+        local nType   = nConfig.Type or "Info"
         local typeColor = {Info=Theme.ACCENT2, Success=Theme.GREEN, Warning=Theme.YELLOW, Error=Theme.RED}
         local col = typeColor[nType] or Theme.ACCENT2
-        local NH  = content ~= "" and (isMobile and 80 or 72) or (isMobile and 58 or 52)
+        local NH  = content~="" and (isMobile and 78 or 72) or (isMobile and 56 or 52)
 
         local nf = Instance.new("Frame")
-        nf.Size             = UDim2.new(1, 0, 0, 0)
-        nf.BackgroundColor3 = Color3.fromRGB(20, 16, 12)
-        nf.ClipsDescendants = false
-        nf.ZIndex           = 201
-        nf.LayoutOrder      = -tick()
-        nf.Parent           = notifHolder
-        corner(10, nf); stroke(col, 1, nf)
+        nf.Size=UDim2.new(1,0,0,0); nf.BackgroundColor3=Color3.fromRGB(20,16,12)
+        nf.ClipsDescendants=false; nf.ZIndex=201; nf.LayoutOrder=-tick(); nf.Parent=notifHolder
+        corner(10,nf); stroke(col,1,nf)
 
-        local bg2 = frame({Size=UDim2.new(1,0,1,0), BackgroundColor3=col, BackgroundTransparency=0.92, ZIndex=201}, nf)
-        corner(10, bg2)
-        frame({Size=UDim2.new(0,3,0.7,0), Position=UDim2.new(0,0,0.15,0), BackgroundColor3=col, ZIndex=203}, nf)
+        local bg2=frame({Size=UDim2.new(1,0,1,0),BackgroundColor3=col,BackgroundTransparency=0.92,ZIndex=201},nf)
+        corner(10,bg2)
+        frame({Size=UDim2.new(0,3,0.7,0),Position=UDim2.new(0,0,0.15,0),BackgroundColor3=col,ZIndex=203},nf)
 
-        local iconTexts = {Info="ℹ",Success="✓",Warning="⚠",Error="✕"}
-        local ico = Instance.new("TextLabel")
-        ico.BackgroundTransparency=1; ico.Size=UDim2.new(0,18,0,18)
-        ico.Position=UDim2.new(0,12,0,13); ico.Text=iconTexts[nType] or "•"
-        ico.TextColor3=col; ico.TextSize=16; ico.Font=Enum.Font.GothamBold; ico.ZIndex=203; ico.Parent=nf
+        local iconTexts={Info="ℹ",Success="✓",Warning="⚠",Error="✕"}
+        local ico=Instance.new("TextLabel"); ico.BackgroundTransparency=1
+        ico.Size=UDim2.new(0,18,0,18); ico.Position=UDim2.new(0,12,0,13)
+        ico.Text=iconTexts[nType] or "•"; ico.TextColor3=col
+        ico.TextSize=16; ico.Font=Enum.Font.GothamBold; ico.ZIndex=203; ico.Parent=nf
 
-        local tl = label(nTitle, isMobile and 13 or 14, Enum.Font.GothamBold, Theme.TEXT, Enum.TextXAlignment.Left, nf)
+        local tl=label(ntitle,isMobile and 13 or 14,Enum.Font.GothamBold,Theme.TEXT,Enum.TextXAlignment.Left,nf)
         tl.Size=UDim2.new(1,-70,0,18); tl.Position=UDim2.new(0,34,0,10); tl.ZIndex=203
 
-        if content ~= "" then
-            local cl = label(content, isMobile and 11 or 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, nf)
+        if content~="" then
+            local cl=label(content,isMobile and 11 or 12,Enum.Font.Gotham,Theme.TEXT2,Enum.TextXAlignment.Left,nf)
             cl.Size=UDim2.new(1,-70,0,16); cl.Position=UDim2.new(0,34,0,30)
             cl.ZIndex=203; cl.TextTruncate=Enum.TextTruncate.AtEnd
             cl.TextColor3=col:Lerp(Theme.TEXT2,0.5)
         end
 
-        local durTrack = frame({Size=UDim2.new(1,0,0,3), Position=UDim2.new(0,0,1,-3), BackgroundColor3=Color3.fromRGB(30,22,12), ZIndex=203}, nf)
-        local durFill  = frame({Size=UDim2.new(1,0,1,0), BackgroundColor3=col, ZIndex=204}, durTrack)
-        corner(0, durFill); gradient(col, col:Lerp(Color3.new(1,1,1),0.15), 0, durFill)
+        local dt=frame({Size=UDim2.new(1,0,0,3),Position=UDim2.new(0,0,1,-3),BackgroundColor3=Color3.fromRGB(30,22,12),ZIndex=203},nf)
+        local df=frame({Size=UDim2.new(1,0,1,0),BackgroundColor3=col,ZIndex=204},dt)
+        gradient(col,col:Lerp(Color3.new(1,1,1),0.15),0,df)
 
-        tween(nf, 0.3, {Size=UDim2.new(1,0,0,NH)}, Enum.EasingStyle.Quint)
-        local closed = false
+        tween(nf,0.3,{Size=UDim2.new(1,0,0,NH)},Enum.EasingStyle.Quint)
+        local closed=false
         local function close()
-            if closed then return end; closed=true
-            tween(nf,0.2,{Size=UDim2.new(1,0,0,0)},Enum.EasingStyle.Quint,Enum.EasingDirection.In)
-            task.delay(0.25,function() if nf and nf.Parent then nf:Destroy() end end)
+            if closed then return end; closed=true; dismissNotif(nf)
         end
         task.spawn(function()
-            task.wait(0.31)
-            tween(durFill,dur,{Size=UDim2.new(0,0,1,0)},Enum.EasingStyle.Linear)
+            task.wait(0.31); tween(df,dur,{Size=UDim2.new(0,0,1,0)},Enum.EasingStyle.Linear)
             task.wait(dur); close()
         end)
     end
 
-    -- Window-level aliases
+    -- ================================================
+    -- MONITOR TAB
+    -- ================================================
+    function Window:AddMonitor(mConfig)
+        local tab = self:AddTab({ Title = mConfig.Title or "Monitor", Icon = mConfig.Icon or "activity" })
+
+        local statusBanner = frame({Size=UDim2.new(1,0,0,isMobile and 48 or 52), BackgroundColor3=Theme.BG3}, tab._content)
+        corner(10,statusBanner); stroke(Theme.STROKE2,1,statusBanner)
+
+        local statusBar = frame({Size=UDim2.new(0,3,0,32), Position=UDim2.new(0,10,0.5,-16), BackgroundColor3=Theme.GREEN}, statusBanner)
+        corner(99,statusBar)
+
+        local pulseConn
+        local function startPulse(col)
+            if pulseConn then pcall(function() pulseConn:Disconnect() end) end
+            statusBar.BackgroundColor3=col
+            local bright=col:Lerp(Color3.new(1,1,1),0.3); local t=0
+            pulseConn=RunService.Heartbeat:Connect(function(dt)
+                t=t+dt*2; local a=(math.sin(t)+1)/2
+                statusBar.BackgroundColor3=col:Lerp(bright,a*0.4)
+            end)
+        end
+        startPulse(Theme.TEXT3)
+
+        local statusDot=frame({Size=UDim2.new(0,8,0,8), Position=UDim2.new(0,20,0.5,-4), BackgroundColor3=Theme.TEXT3}, statusBanner)
+        corner(99,statusDot)
+        local statusLbl=label("IDLE",isMobile and 13 or 14,Enum.Font.GothamBold,Theme.TEXT2,Enum.TextXAlignment.Left,statusBanner)
+        statusLbl.Size=UDim2.new(0.6,0,1,0); statusLbl.Position=UDim2.new(0,36,0,0)
+        local statusTime=label("--:--",13,Enum.Font.GothamBold,Theme.TEXT3,Enum.TextXAlignment.Right,statusBanner)
+        statusTime.Size=UDim2.new(0.4,-14,1,0); statusTime.Position=UDim2.new(0.6,0,0,0)
+
+        local function addCard(parent, cardTitle, value, accent)
+            local card=frame({Size=UDim2.new(0.5,-3,0,isMobile and 52 or 58), BackgroundColor3=Theme.BG2}, parent)
+            corner(10,card); stroke(Theme.STROKE,1,card)
+            local acc=frame({Size=UDim2.new(0,22,0,2), Position=UDim2.new(0,10,0,0), BackgroundColor3=accent or Theme.ACCENT3}, card)
+            corner(99,acc); gradient(Theme.ACCENT1,accent or Theme.ACCENT2,0,acc)
+            local tl=label(cardTitle,10,Enum.Font.Gotham,Theme.TEXT3,Enum.TextXAlignment.Left,card)
+            tl.Size=UDim2.new(1,-12,0,16); tl.Position=UDim2.new(0,10,0,10)
+            local vl=label(value,isMobile and 18 or 20,Enum.Font.GothamBlack,Theme.TEXT,Enum.TextXAlignment.Left,card)
+            vl.Size=UDim2.new(1,-12,0,24); vl.Position=UDim2.new(0,10,0,isMobile and 26 or 30)
+            return card,vl
+        end
+
+        local function makeGrid(cardDefs)
+            local grid=frame({Size=UDim2.new(1,0,0,0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1}, tab._content)
+            local layout=Instance.new("UIGridLayout")
+            layout.CellSize=UDim2.new(0.5,-3,0,isMobile and 52 or 58)
+            layout.CellPadding=UDim2.new(0,6,0,6)
+            layout.FillDirection=Enum.FillDirection.Horizontal
+            layout.HorizontalAlignment=Enum.HorizontalAlignment.Left
+            layout.SortOrder=Enum.SortOrder.LayoutOrder; layout.Parent=grid
+            layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                grid.Size=UDim2.new(1,0,0,layout.AbsoluteContentSize.Y)
+            end)
+            local valueLabels={}
+            for _,def in ipairs(cardDefs) do
+                local _,vl=addCard(grid,def[1],def[2],def[3]); table.insert(valueLabels,vl)
+            end
+            return valueLabels
+        end
+
+        local Monitor={}; Monitor._cards={}; Monitor._bars={}; Monitor._conn=nil
+
+        tab:AddSection({Title="Statistics"})
+        local statDefs=mConfig.Stats or {
+            {"Total Cast","0"},{"Total Ikan","0"},{"Cast/Menit","0/m"},
+            {"Ikan/Menit","0/m"},{"Total Sell","0x"},{"Respawn","0x"},
+        }
+        Monitor._statLabels=makeGrid(statDefs)
+
+        function Monitor:Update(data)
+            if data.status then
+                local colors={FISHING=Theme.GREEN,IDLE=Theme.TEXT3,RESPAWNING=Theme.YELLOW,["EQUIP ROD"]=Color3.fromRGB(100,180,255),MISSION=Theme.ACCENT2}
+                local col=colors[data.status] or Theme.TEXT3
+                statusLbl.Text=data.status; statusLbl.TextColor3=col; statusDot.BackgroundColor3=col; startPulse(col)
+            end
+            if data.time then statusTime.Text=data.time end
+            if data.stats then
+                for i,val in ipairs(data.stats) do
+                    if Monitor._statLabels[i] then
+                        Monitor._statLabels[i].Text=tostring(val)
+                        tween(Monitor._statLabels[i],0.1,{TextColor3=Theme.ACCENT2})
+                        task.delay(0.15,function() tween(Monitor._statLabels[i],0.2,{TextColor3=Theme.TEXT}) end)
+                    end
+                end
+            end
+        end
+        function Monitor:StartAutoUpdate(interval, callback)
+            if Monitor._conn then Monitor._conn:Disconnect() end
+            local t=0
+            Monitor._conn=RunService.Heartbeat:Connect(function(dt)
+                t=t+dt; if t>=(interval or 0.5) then t=0; local data=callback(); if data then Monitor:Update(data) end end
+            end)
+        end
+        function Monitor:Stop()
+            if Monitor._conn then Monitor._conn:Disconnect(); Monitor._conn=nil end
+            if pulseConn then pulseConn:Disconnect(); pulseConn=nil end
+        end
+        return Monitor
+    end
+
+    -- Window-level aliases (WindUI compat)
     Window.Section = function(self, cfg)
-        local fakeSection = {}
-        fakeSection.Tab = function(_, tabCfg) return Window:AddTab(tabCfg) end
-        return fakeSection
+        local fs={}
+        fs.Tab = function(_, tc) return Window:AddTab(tc) end
+        return fs
     end
 
     return Window
@@ -1096,15 +1141,18 @@ function VonixeLib:CreateKeySystem(config)
     local onGetKey = config.OnGetKey
     local verified = false
 
+    local vp2 = camera.ViewportSize
+    local W = isMobile and math.floor(vp2.X*0.88) or 440
+    local H = isMobile and math.floor(vp2.Y*0.52) or 320
+
     local sg = Instance.new("ScreenGui")
     sg.Name="VonixeKeySystem"; sg.ResetOnSpawn=false
     sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; sg.IgnoreGuiInset=true; sg.DisplayOrder=9999
-    pcall(function() if syn and syn.protect_gui then syn.protect_gui(sg) end; sg.Parent=game:GetService("CoreGui") end)
+    pcall(function()
+        local syn=syn or {}; if syn.protect_gui then syn.protect_gui(sg) end
+        sg.Parent=game:GetService("CoreGui")
+    end)
     if not sg.Parent or not sg.Parent.Name then sg.Parent=Player.PlayerGui end
-
-    local vp2 = camera.ViewportSize
-    local W    = isMobile and math.floor(vp2.X*0.9) or 440
-    local H    = isMobile and math.floor(vp2.Y*0.55) or 320
 
     local function tw(obj,t,props) TweenService:Create(obj,TweenInfo.new(t,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),props):Play() end
     local function mkC(r,p) local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,r);c.Parent=p end
@@ -1116,135 +1164,120 @@ function VonixeLib:CreateKeySystem(config)
         l.TextXAlignment=xa or Enum.TextXAlignment.Center;l.Parent=p;return l
     end
 
-    local overlay=mkF({Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.new(0,0,0),BackgroundTransparency=0.6,ZIndex=1},sg)
-
+    local overlay=mkF({Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.fromRGB(0,0,0),BackgroundTransparency=0.6,ZIndex=1},sg)
     local card=mkF({Size=UDim2.new(0,W,0,H),Position=UDim2.new(0.5,-W/2,0.5,-H/2),
         BackgroundColor3=Color3.fromRGB(10,10,14),ZIndex=2,ClipsDescendants=false},sg)
     mkC(16,card)
-
-    local bfr=mkF({Size=UDim2.new(1,4,1,4),Position=UDim2.new(0,-2,0,-2),
-        BackgroundColor3=Color3.fromRGB(200,60,0),ZIndex=1},card)
+    local bfr=mkF({Size=UDim2.new(1,4,1,4),Position=UDim2.new(0,-2,0,-2),BackgroundColor3=Color3.fromRGB(200,60,0),ZIndex=1},card)
     mkC(18,bfr); mkG(Color3.fromRGB(220,60,0),Color3.fromRGB(255,180,0),135,bfr)
-
     local inner=mkF({Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.fromRGB(10,10,14),ZIndex=2},card)
     mkC(15,inner)
+    local glow=mkF({Size=UDim2.new(1,0,0,160),BackgroundColor3=Color3.fromRGB(200,50,0),BackgroundTransparency=0.88,ZIndex=3},inner)
+    mkG(Color3.fromRGB(255,80,0),Color3.fromRGB(10,10,14),90,glow)
 
-    local glow2=mkF({Size=UDim2.new(1,0,0,160),BackgroundColor3=Color3.fromRGB(200,50,0),BackgroundTransparency=0.88,ZIndex=3},inner)
-    mkG(Color3.fromRGB(255,80,0),Color3.fromRGB(10,10,14),90,glow2)
-
-    -- Close button
     local closeBtn=Instance.new("TextButton")
-    closeBtn.Size=UDim2.new(0,isMobile and 36 or 28,0,isMobile and 36 or 28)
-    closeBtn.Position=UDim2.new(1,-44,0,10)
-    closeBtn.BackgroundColor3=Color3.fromRGB(50,20,20); closeBtn.Text="X"
-    closeBtn.TextColor3=Color3.fromRGB(220,200,190); closeBtn.TextSize=isMobile and 14 or 12
+    closeBtn.Size=UDim2.new(0,isMobile and 34 or 28,0,isMobile and 34 or 28)
+    closeBtn.Position=UDim2.new(1,-40,0,10); closeBtn.BackgroundColor3=Color3.fromRGB(50,20,20)
+    closeBtn.Text="X"; closeBtn.TextColor3=Color3.fromRGB(220,200,190); closeBtn.TextSize=12
     closeBtn.Font=Enum.Font.GothamBold; closeBtn.AutoButtonColor=false
     closeBtn.BorderSizePixel=0; closeBtn.ZIndex=10; closeBtn.Parent=inner
-    local cc2=Instance.new("UICorner");cc2.CornerRadius=UDim.new(0,99);cc2.Parent=closeBtn
+    mkC(99,closeBtn)
     closeBtn.MouseEnter:Connect(function() tw(closeBtn,0.1,{BackgroundColor3=Color3.fromRGB(180,40,40)}) end)
     closeBtn.MouseLeave:Connect(function() tw(closeBtn,0.1,{BackgroundColor3=Color3.fromRGB(50,20,20)}) end)
 
-    local logoFrame=mkF({Size=UDim2.new(0,56,0,56),Position=UDim2.new(0.5,-28,0,16),
+    local logoFrame=mkF({Size=UDim2.new(0,64,0,64),Position=UDim2.new(0.5,-32,0,20),
         BackgroundColor3=Color3.fromRGB(18,12,8),ZIndex=4},inner)
     mkC(99,logoFrame)
-    local ls2=Instance.new("UIStroke");ls2.Color=Color3.fromRGB(220,80,0);ls2.Thickness=2;ls2.Parent=logoFrame
-    local li2=Instance.new("ImageLabel");li2.Size=UDim2.new(1,0,1,0);li2.BackgroundTransparency=1
-    li2.Image=logoId;li2.ScaleType=Enum.ScaleType.Fit;li2.ZIndex=5;li2.Parent=logoFrame
+    local logoStroke=Instance.new("UIStroke");logoStroke.Color=Color3.fromRGB(220,80,0);logoStroke.Thickness=2;logoStroke.Parent=logoFrame
+    local logoImg=Instance.new("ImageLabel");logoImg.Size=UDim2.new(1,0,1,0);logoImg.BackgroundTransparency=1
+    logoImg.Image=logoId;logoImg.ScaleType=Enum.ScaleType.Fit;logoImg.ZIndex=5;logoImg.Parent=logoFrame
 
-    local t4=0
-    local pc2=RunService.Heartbeat:Connect(function(dt)
-        t4=t4+dt*2; local a=(math.sin(t4)+1)/2
-        ls2.Color=Color3.fromRGB(220,60,0):Lerp(Color3.fromRGB(255,200,50),a*0.6)
+    local t2=0
+    local pulseConn=RunService.Heartbeat:Connect(function(dt)
+        t2=t2+dt*2; local a=(math.sin(t2)+1)/2
+        logoStroke.Color=Color3.fromRGB(220,60,0):Lerp(Color3.fromRGB(255,200,50),a*0.6)
     end)
 
     closeBtn.MouseButton1Click:Connect(function()
-        pc2:Disconnect()
-        tw(card,0.25,{Size=UDim2.new(0,W,0,0)})
-        tw(overlay,0.25,{BackgroundTransparency=1})
+        pulseConn:Disconnect()
+        tw(card,0.25,{Size=UDim2.new(0,W,0,0)}); tw(overlay,0.25,{BackgroundTransparency=1})
         task.wait(0.3); sg:Destroy()
     end)
 
-    local titleLbl2=mkL(title,isMobile and 18 or 20,Enum.Font.GothamBlack,Color3.new(1,1,1),Enum.TextXAlignment.Center,inner)
-    titleLbl2.Size=UDim2.new(1,0,0,24); titleLbl2.Position=UDim2.new(0,0,0,80); titleLbl2.ZIndex=4
+    local titleLbl=mkL(title,isMobile and 18 or 20,Enum.Font.GothamBlack,Color3.fromRGB(255,255,255),Enum.TextXAlignment.Center,inner)
+    titleLbl.Size=UDim2.new(1,0,0,24); titleLbl.Position=UDim2.new(0,0,0,92); titleLbl.ZIndex=4
+    local descLbl=mkL(desc,isMobile and 10 or 11,Enum.Font.Gotham,Color3.fromRGB(140,120,100),Enum.TextXAlignment.Center,inner)
+    descLbl.Size=UDim2.new(1,-40,0,14); descLbl.Position=UDim2.new(0,20,0,118); descLbl.ZIndex=4
+    local div=mkF({Size=UDim2.new(0,180,0,1),Position=UDim2.new(0.5,-90,0,140),BackgroundColor3=Color3.fromRGB(200,60,0),ZIndex=4},inner)
+    mkG(Color3.fromRGB(200,60,0),Color3.fromRGB(255,180,0),0,div)
 
-    local descLbl2=mkL(desc,isMobile and 10 or 11,Enum.Font.Gotham,Color3.fromRGB(140,120,100),Enum.TextXAlignment.Center,inner)
-    descLbl2.Size=UDim2.new(1,-40,0,14); descLbl2.Position=UDim2.new(0,20,0,108); descLbl2.ZIndex=4
-
-    local div2=mkF({Size=UDim2.new(0,180,0,1),Position=UDim2.new(0.5,-90,0,128),BackgroundColor3=Color3.fromRGB(200,60,0),ZIndex=4},inner)
-    mkG(Color3.fromRGB(200,60,0),Color3.fromRGB(255,180,0),0,div2)
-
-    local inputBg2=mkF({Size=UDim2.new(1,-40,0,isMobile and 48 or 42),Position=UDim2.new(0,20,0,138),
+    local inputBg=mkF({Size=UDim2.new(1,-48,0,isMobile and 46 or 42),Position=UDim2.new(0,24,0,152),
         BackgroundColor3=Color3.fromRGB(16,12,10),ZIndex=4},inner)
-    mkC(10,inputBg2)
-    local is2=Instance.new("UIStroke");is2.Color=Color3.fromRGB(60,40,20);is2.Thickness=1;is2.Parent=inputBg2
-
-    local inputBox2=Instance.new("TextBox")
-    inputBox2.Size=UDim2.new(1,-20,1,0); inputBox2.Position=UDim2.new(0,10,0,0)
-    inputBox2.BackgroundTransparency=1; inputBox2.Text=""
-    inputBox2.PlaceholderText="Paste key kamu di sini..."
-    inputBox2.PlaceholderColor3=Color3.fromRGB(80,65,50); inputBox2.TextColor3=Color3.new(1,1,1)
-    inputBox2.TextSize=isMobile and 12 or 13; inputBox2.Font=Enum.Font.Gotham
-    inputBox2.TextXAlignment=Enum.TextXAlignment.Left; inputBox2.ClearTextOnFocus=false
-    inputBox2.ZIndex=5; inputBox2.Parent=inputBg2
-    inputBox2.Focused:Connect(function() tw(is2,0.15,{Color=Color3.fromRGB(200,100,0)}) end)
-    inputBox2.FocusLost:Connect(function() tw(is2,0.15,{Color=Color3.fromRGB(60,40,20)}) end)
+    mkC(10,inputBg)
+    local inputStroke=Instance.new("UIStroke");inputStroke.Color=Color3.fromRGB(60,40,20);inputStroke.Thickness=1;inputStroke.Parent=inputBg
+    local inputBox=Instance.new("TextBox")
+    inputBox.Size=UDim2.new(1,-20,1,0); inputBox.Position=UDim2.new(0,10,0,0)
+    inputBox.BackgroundTransparency=1; inputBox.Text=""; inputBox.PlaceholderText="Paste key kamu di sini..."
+    inputBox.PlaceholderColor3=Color3.fromRGB(80,65,50); inputBox.TextColor3=Color3.fromRGB(255,255,255)
+    inputBox.TextSize=isMobile and 12 or 13; inputBox.Font=Enum.Font.Gotham
+    inputBox.TextXAlignment=Enum.TextXAlignment.Left; inputBox.ClearTextOnFocus=false
+    inputBox.ZIndex=5; inputBox.Parent=inputBg
+    inputBox.Focused:Connect(function() tw(inputStroke,0.15,{Color=Color3.fromRGB(200,100,0)}) end)
+    inputBox.FocusLost:Connect(function() tw(inputStroke,0.15,{Color=Color3.fromRGB(60,40,20)}) end)
 
     local statusLbl2=mkL("",11,Enum.Font.GothamBold,Color3.fromRGB(255,220,50),Enum.TextXAlignment.Center,inner)
-    statusLbl2.Size=UDim2.new(1,-40,0,14); statusLbl2.Position=UDim2.new(0,20,0,194); statusLbl2.ZIndex=4
+    statusLbl2.Size=UDim2.new(1,-40,0,14); statusLbl2.Position=UDim2.new(0,20,0,206); statusLbl2.ZIndex=4
 
-    local function makeBtn2(txt,x,bw,bg,hover)
+    local function makeBtn(txt,x,w,bg,hover)
         local btn=Instance.new("TextButton")
-        btn.Size=UDim2.new(0,bw,0,isMobile and 40 or 34); btn.Position=UDim2.new(0,x,0,216)
+        btn.Size=UDim2.new(0,w,0,isMobile and 38 or 34); btn.Position=UDim2.new(0,x,0,228)
         btn.BackgroundColor3=bg; btn.Text=""; btn.AutoButtonColor=false
-        btn.BorderSizePixel=0; btn.ZIndex=4; btn.Parent=inner
-        mkC(8,btn)
-        local lbl=mkL(txt,isMobile and 12 or 13,Enum.Font.GothamBold,Color3.new(1,1,1),Enum.TextXAlignment.Center,btn)
-        lbl.Size=UDim2.new(1,0,1,0); lbl.ZIndex=5
+        btn.BorderSizePixel=0; btn.ZIndex=4; btn.Parent=inner; mkC(8,btn)
+        local lbl3=mkL(txt,isMobile and 12 or 13,Enum.Font.GothamBold,Color3.fromRGB(255,255,255),Enum.TextXAlignment.Center,btn)
+        lbl3.Size=UDim2.new(1,0,1,0); lbl3.ZIndex=5
         btn.MouseEnter:Connect(function() tw(btn,0.1,{BackgroundColor3=hover}) end)
         btn.MouseLeave:Connect(function() tw(btn,0.1,{BackgroundColor3=bg}) end)
-        return btn,lbl
+        return btn,lbl3
     end
 
-    local bW2=(W-48-8)/2
-    local verifyBtn,verifyLbl=makeBtn2("Verifikasi Key",24,bW2,Color3.fromRGB(180,60,0),Color3.fromRGB(220,80,0))
-    local getkeyBtn,_=makeBtn2("Dapatkan Key",24+bW2+8,bW2,Color3.fromRGB(30,22,14),Color3.fromRGB(50,35,18))
-    local gks2=Instance.new("UIStroke");gks2.Color=Color3.fromRGB(80,50,20);gks2.Thickness=1;gks2.Parent=getkeyBtn
+    local bW=(W-48-8)/2
+    local verifyBtn,verifyLbl=makeBtn("Verifikasi Key",24,bW,Color3.fromRGB(180,60,0),Color3.fromRGB(220,80,0))
+    local getkeyBtn,_=makeBtn("Dapatkan Key",24+bW+8,bW,Color3.fromRGB(30,22,14),Color3.fromRGB(50,35,18))
+    local gks=Instance.new("UIStroke");gks.Color=Color3.fromRGB(80,50,20);gks.Thickness=1;gks.Parent=getkeyBtn
+    local vAcc=mkF({Size=UDim2.new(1,0,0,2),BackgroundColor3=Color3.fromRGB(220,80,0),ZIndex=5},verifyBtn)
+    mkG(Color3.fromRGB(200,60,0),Color3.fromRGB(255,200,0),0,vAcc)
 
     verifyBtn.MouseButton1Click:Connect(function()
-        local key=inputBox2.Text
+        local key=inputBox.Text
         if key=="" then
             statusLbl2.Text="Key tidak boleh kosong!"; statusLbl2.TextColor3=Color3.fromRGB(255,80,80)
-            tw(inputBg2,0.1,{BackgroundColor3=Color3.fromRGB(30,10,10)})
-            task.delay(0.2,function() tw(inputBg2,0.15,{BackgroundColor3=Color3.fromRGB(16,12,10)}) end)
-            return
+            tw(inputBg,0.1,{BackgroundColor3=Color3.fromRGB(30,10,10)})
+            task.delay(0.2,function() tw(inputBg,0.15,{BackgroundColor3=Color3.fromRGB(16,12,10)}) end); return
         end
-        statusLbl2.Text="Memverifikasi..."; statusLbl2.TextColor3=Color3.fromRGB(255,220,50)
-        verifyLbl.Text="..."
+        statusLbl2.Text="Memverifikasi..."; statusLbl2.TextColor3=Color3.fromRGB(255,220,50); verifyLbl.Text="..."
         task.spawn(function()
-            local ok2=false
-            if onVerify then local s,r=pcall(onVerify,key); ok2=s and r end
-            if ok2 then
+            local ok3=false
+            if onVerify then local s,r=pcall(onVerify,key); ok3=s and r end
+            if ok3 then
                 statusLbl2.Text="Key valid!"; statusLbl2.TextColor3=Color3.fromRGB(80,220,120)
                 verifyLbl.Text="✓"; tw(verifyBtn,0.2,{BackgroundColor3=Color3.fromRGB(30,120,60)})
                 tw(card,0.4,{BackgroundTransparency=1}); tw(overlay,0.4,{BackgroundTransparency=1})
-                task.wait(0.8); pc2:Disconnect(); sg:Destroy(); verified=true
+                task.wait(0.8); pulseConn:Disconnect(); sg:Destroy(); verified=true
             else
                 statusLbl2.Text="Key tidak valid atau expired!"; statusLbl2.TextColor3=Color3.fromRGB(255,80,80)
                 verifyLbl.Text="Verifikasi Key"
-                tw(inputBg2,0.1,{BackgroundColor3=Color3.fromRGB(30,10,10)})
-                task.delay(0.3,function() tw(inputBg2,0.2,{BackgroundColor3=Color3.fromRGB(16,12,10)}) end)
+                tw(inputBg,0.1,{BackgroundColor3=Color3.fromRGB(30,10,10)})
+                task.delay(0.3,function() tw(inputBg,0.2,{BackgroundColor3=Color3.fromRGB(16,12,10)}) end)
             end
         end)
     end)
     getkeyBtn.MouseButton1Click:Connect(function()
         if onGetKey then pcall(onGetKey) end
-        statusLbl2.Text="Link sudah dibuka!"; statusLbl2.TextColor3=Color3.fromRGB(80,220,120)
+        statusLbl2.Text="Link sudah tercopy ke clipboard!"; statusLbl2.TextColor3=Color3.fromRGB(80,220,120)
         task.delay(3,function() if statusLbl2 and statusLbl2.Parent then statusLbl2.Text="" end end)
     end)
 
-    card.Size=UDim2.new(0,W,0,0)
-    tw(card,0.4,{Size=UDim2.new(0,W,0,H)})
-
+    card.Size=UDim2.new(0,W,0,0); tw(card,0.4,{Size=UDim2.new(0,W,0,H)})
     while not verified do task.wait(0.1) end
 end
 

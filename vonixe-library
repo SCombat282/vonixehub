@@ -25,14 +25,35 @@ local Player           = Players.LocalPlayer
 -- ICON SYSTEM (sama persis kayak WindUI, load dari GitHub)
 -- ================================================
 local Icons = nil
-pcall(function()
-    local HttpService = game:GetService("HttpService")
-    local src = game.HttpGetAsync
-        and game:HttpGetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
-        or HttpService:GetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
-    local lib = loadstring(src)()
-    lib.SetIconsType("lucide")
-    Icons = lib
+task.spawn(function()
+    local src = nil
+
+    -- Coba executor HttpGet dulu (syn, krnl, dll)
+    local ok1, res1 = pcall(function()
+        return game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
+    end)
+    if ok1 and res1 then
+        src = res1
+    end
+
+    -- Fallback ke HttpService (Studio / executor lain)
+    if not src then
+        local ok2, res2 = pcall(function()
+            return game:GetService("HttpService"):GetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
+        end)
+        if ok2 and res2 then src = res2 end
+    end
+
+    if src then
+        local ok3, lib = pcall(loadstring, src)
+        if ok3 and lib then
+            local ok4, libInst = pcall(lib)
+            if ok4 and libInst then
+                pcall(function() libInst.SetIconsType("lucide") end)
+                Icons = libInst
+            end
+        end
+    end
 end)
 
 local function getIcon(name)
@@ -316,9 +337,15 @@ function VonixeLib:CreateWindow(config)
     local function getScale()
     	local vp = camera.ViewportSize
     	local ratio = math.min(vp.X / W, vp.Y / H)
-    	ratio = math.clamp(ratio, 0.5, 1.1)
+    	if isMobile then
+    		-- Mobile: scale lebih kecil supaya UI fit di layar portrait
+    		ratio = math.clamp(ratio, 0.42, 0.75)
+    	else
+    		-- PC: scale normal
+    		ratio = math.clamp(ratio, 0.6, 1.1)
+    	end
     	return ratio
-	end
+    end
 
     local uiScale = Instance.new("UIScale")
     uiScale.Scale  = getScale()
@@ -921,32 +948,35 @@ function VonixeLib:CreateWindow(config)
                 end
             end
 
-            -- Drag logic
+            -- Drag logic (fix: support Touch + proper InputEnded on trackBg)
             local draggingSlider = false
+
             trackBg.InputBegan:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 then
+                if i.UserInputType == Enum.UserInputType.MouseButton1
+                or i.UserInputType == Enum.UserInputType.Touch then
                     draggingSlider = true
+                    -- Langsung set nilai saat klik
+                    local abs = trackBg.AbsolutePosition
+                    local siz = trackBg.AbsoluteSize
+                    local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
+                    setValue(min + ratio * (max - min), true)
                 end
             end)
-            UserInputService.InputEnded:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 then
-                    draggingSlider = false
-                end
-            end)
+
             UserInputService.InputChanged:Connect(function(i)
-                if draggingSlider and i.UserInputType == Enum.UserInputType.MouseMovement then
+                if draggingSlider and (i.UserInputType == Enum.UserInputType.MouseMovement
+                or i.UserInputType == Enum.UserInputType.Touch) then
                     local abs = trackBg.AbsolutePosition
                     local siz = trackBg.AbsoluteSize
                     local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
                     setValue(min + ratio * (max - min), true)
                 end
             end)
-            trackBg.InputBegan:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 then
-                    local abs = trackBg.AbsolutePosition
-                    local siz = trackBg.AbsoluteSize
-                    local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
-                    setValue(min + ratio * (max - min), true)
+
+            UserInputService.InputEnded:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseButton1
+                or i.UserInputType == Enum.UserInputType.Touch then
+                    draggingSlider = false
                 end
             end)
 
@@ -1776,6 +1806,7 @@ function VonixeLib:CreateKeySystem(config)
     local RunService   = game:GetService("RunService")
     local Player       = Players.LocalPlayer
     local verified     = false
+    local closed       = false
 
     local sg = Instance.new("ScreenGui")
     sg.Name="VonixeKeySystem"; sg.ResetOnSpawn=false
@@ -1904,6 +1935,7 @@ function VonixeLib:CreateKeySystem(config)
         tw(card,0.25,{Size=UDim2.new(0,W,0,0)})
         tw(overlay,0.25,{BackgroundTransparency=1})
         task.wait(0.3); sg:Destroy()
+        closed = true -- Hentikan while loop agar script tidak freeze
     end)
 
     -- Title
@@ -2004,7 +2036,8 @@ function VonixeLib:CreateKeySystem(config)
     card.Size=UDim2.new(0,W,0,0)
     tw(card,0.4,{Size=UDim2.new(0,W,0,H)})
 
-    while not verified do task.wait(0.1) end
+    -- Tunggu sampai verified ATAU user tutup window (closed)
+    while not verified and not closed do task.wait(0.1) end
 end
 
 return VonixeLib

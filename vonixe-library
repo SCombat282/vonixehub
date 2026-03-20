@@ -348,54 +348,27 @@ function VonixeLib:CreateWindow(config)
 
     Window._sg = sg
 
-    -- Main frame
+    -- Main frame — WindUI approach: fixed pixel size, center via UDim2 scale
+    -- Tidak pakai UIScale agar tampilan konsisten di semua device
     local main = frame({
-        Size            = UDim2.new(0, W, 0, H),
-        Position        = UDim2.new(0.5, -W/2, 0.5, -H/2),
+        Size             = UDim2.new(0, W, 0, H),
+        Position         = UDim2.new(0.5, -W/2, 0.5, -H/2),
         BackgroundColor3 = Theme.BG,
         ClipsDescendants = false,
-        ZIndex          = 1,
+        ZIndex           = 1,
     }, sg)
     corner(14, main)
     Window._main = main
 
-    -- ================================================
-    -- RESPONSIVE / AUTO SCALE
-    -- ================================================
-    local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-    local camera   = workspace.CurrentCamera
+    local camera = workspace.CurrentCamera
 
-    local function getScale()
-    	local vp = camera.ViewportSize
-    	-- Formula universal: window tidak melebihi 75% lebar DAN 60% tinggi layar
-    	-- Ini membuat window terlihat 'floating' di semua device (bukan fullscreen)
-    	local natural  = math.min(vp.X / W, vp.Y / H)
-    	local maxWidth = vp.X * 0.75 / W   -- max 75% lebar layar
-    	local maxHeight= vp.Y * 0.60 / H   -- max 60% tinggi layar
-    	local ratio    = math.min(natural, maxWidth, maxHeight)
-    	return math.clamp(ratio, 0.55, 1.1)
-    end
 
-    local function centerWindow(s)
-        local vp = camera.ViewportSize
-        local sw, sh = W * s, H * s
-        local px = math.clamp((vp.X - sw) / 2, 0, math.max(0, vp.X - sw))
-        local py = math.clamp((vp.Y - sh) / 2, 0, math.max(0, vp.Y - sh))
-        main.Position = UDim2.new(0, px, 0, py)
-    end
-
-    local uiScale = Instance.new("UIScale")
-    uiScale.Scale  = getScale()
-    uiScale.Parent = main
-
-    -- Auto re-scale & re-center saat viewport berubah (rotate/resize)
+    -- WindUI style: re-center saat viewport berubah (rotate/resize layar)
+    -- Tidak ada UIScale - window tetap sama di PC dan mobile
     camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-    	local s = getScale()
-    	TweenService:Create(uiScale, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {Scale = s}):Play()
-    	centerWindow(s)
+        main.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
     end)
 
-    centerWindow(getScale())
 
     -- Gradient border
     local bfr = frame({

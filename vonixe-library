@@ -366,12 +366,18 @@ function VonixeLib:CreateWindow(config)
     local camera   = workspace.CurrentCamera
 
     local function getScale()
-    	local vp   = camera.ViewportSize
+    	local vp = camera.ViewportSize
+    	-- Mobile: layar < 1000x650 (landscape HP umum di Roblox)
     	local isMobileScreen = vp.X < 1000 and vp.Y < 650
     	local ratio
     	if isMobileScreen then
-    		ratio = math.clamp(math.min(vp.X * 0.88 / W, vp.Y * 0.88 / H), 0.52, 0.85)
+    		-- Mobile: batasi dari lebar DAN tinggi supaya window tidak 'ke bawah'
+    		-- Target: max 85% lebar layar, max 70% tinggi layar
+    		local wScale = vp.X * 0.85 / W
+    		local hScale = vp.Y * 0.70 / H
+    		ratio = math.clamp(math.min(wScale, hScale), 0.48, 0.72)
     	else
+    		-- PC / tablet besar: scale natural dari viewport
     		ratio = math.clamp(math.min(vp.X / W, vp.Y / H), 0.65, 1.1)
     	end
     	return ratio

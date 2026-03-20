@@ -315,9 +315,8 @@ function VonixeLib:CreateWindow(config)
 
     local function getScale()
     	local vp = camera.ViewportSize
-    	local larger = math.max(vp.X, vp.Y)
-    	local ratio = larger / 780
-    	ratio = math.clamp(ratio, 0.65, 0.88)
+    	local ratio = math.min(vp.X / W, vp.Y / H)
+    	ratio = math.clamp(ratio, 0.5, 1.1)
     	return ratio
 	end
 

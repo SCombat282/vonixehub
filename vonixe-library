@@ -1826,6 +1826,24 @@ function VonixeLib:CreateKeySystem(config)
     }, sg)
     mkCorner(16, card)
 
+    -- X close button
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size=UDim2.new(0,28,0,28); closeBtn.Position=UDim2.new(1,-14,0,-14)
+    closeBtn.BackgroundColor3=Color3.fromRGB(50,20,20); closeBtn.Text="✕"
+    closeBtn.TextColor3=Color3.fromRGB(220,180,180); closeBtn.TextSize=14
+    closeBtn.Font=Enum.Font.GothamBold; closeBtn.AutoButtonColor=false
+    closeBtn.BorderSizePixel=0; closeBtn.ZIndex=20; closeBtn.Parent=card
+    mkCorner(99, closeBtn)
+    local closeStroke = Instance.new("UIStroke"); closeStroke.Color=Color3.fromRGB(120,40,40); closeStroke.Thickness=1; closeStroke.Parent=closeBtn
+    closeBtn.MouseEnter:Connect(function() tw(closeBtn, 0.1, {BackgroundColor3=Color3.fromRGB(180,40,40)}) end)
+    closeBtn.MouseLeave:Connect(function() tw(closeBtn, 0.1, {BackgroundColor3=Color3.fromRGB(50,20,20)}) end)
+    closeBtn.MouseButton1Click:Connect(function()
+        pulseConn:Disconnect()
+        tw(card, 0.25, {Size=UDim2.new(0,W,0,0)})
+        tw(overlay, 0.25, {BackgroundTransparency=1})
+        task.wait(0.3); sg:Destroy()
+    end)
+
     -- Gradient border
     local bfr = mkFrame({Size=UDim2.new(1,4,1,4), Position=UDim2.new(0,-2,0,-2), BackgroundColor3=Color3.fromRGB(200,60,0), ZIndex=1}, card)
     mkCorner(18, bfr)
@@ -1846,9 +1864,18 @@ function VonixeLib:CreateKeySystem(config)
     mkCorner(99, logoFrame)
     local logoStroke = Instance.new("UIStroke"); logoStroke.Color=Color3.fromRGB(220,80,0); logoStroke.Thickness=2; logoStroke.Parent=logoFrame
     local logoImg = Instance.new("ImageLabel")
-    logoImg.Size=UDim2.new(0.82,0,0.82,0); logoImg.Position=UDim2.new(0.09,0,0.09,0)
+    logoImg.Size=UDim2.new(1,0,1,0); logoImg.Position=UDim2.new(0,0,0,0)
     logoImg.BackgroundTransparency=1; logoImg.Image=logoId
     logoImg.ScaleType=Enum.ScaleType.Fit; logoImg.ZIndex=5; logoImg.Parent=logoFrame
+    -- Paksa reload image kalau gagal
+    task.spawn(function()
+        task.wait(0.5)
+        if logoImg.IsLoaded == false then
+            logoImg.Image = ""
+            task.wait(0.1)
+            logoImg.Image = logoId
+        end
+    end)
 
     -- Pulse logo border
     local t2 = 0
@@ -1965,6 +1992,13 @@ function VonixeLib:CreateKeySystem(config)
 
     getkeyBtn.MouseButton1Click:Connect(function()
         if onGetKey then pcall(onGetKey) end
+        statusLbl.Text = "Link sudah tercopy ke clipboard!"
+        statusLbl.TextColor3 = Color3.fromRGB(80,220,120)
+        task.delay(3, function()
+            if statusLbl and statusLbl.Parent then
+                statusLbl.Text = ""
+            end
+        end)
     end)
 
     -- Animate in

@@ -256,29 +256,60 @@ local function label(txt, size, font, col, xa, p)
 end
 
 local function makeDragConn(dragFrame, moveFrame)
-    local dragging, dragStart, startPos = false, nil, nil
-    dragFrame.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1
-        or i.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = i.Position
-            startPos = moveFrame.Position
-        end
-    end)
-    dragFrame.InputChanged:Connect(function(i)
-        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
-        or i.UserInputType == Enum.UserInputType.Touch) then
-            local d = i.Position - dragStart
-            moveFrame.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + d.X,
-                startPos.Y.Scale, startPos.Y.Offset + d.Y
+    local dragging   = false
+    local dragInput  = nil   -- input objek aktif
+    local dragStart  = nil
+    local startPos   = nil
+
+    local function update(input)
+        if not dragging then return end
+        local delta = input.Position - dragStart
+        -- Smooth tween snap ala WindUI (0.02s)
+        TweenService:Create(moveFrame, TweenInfo.new(0.02, Enum.EasingStyle.Linear), {
+            Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
             )
+        }):Play()
+    end
+
+    -- InputBegan: mulai drag
+    dragFrame.InputBegan:Connect(function(i)
+        if (i.UserInputType == Enum.UserInputType.MouseButton1
+        or  i.UserInputType == Enum.UserInputType.Touch)
+        and not dragging then
+            dragging   = true
+            dragInput  = i
+            dragStart  = i.Position
+            startPos   = moveFrame.Position
+
+            -- Selesai saat input selesai (lebih reliable dari InputEnded frame)
+            i.Changed:Connect(function()
+                if i.UserInputState == Enum.UserInputState.End then
+                    dragging  = false
+                    dragInput = nil
+                end
+            end)
         end
     end)
-    dragFrame.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1
-        or i.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
+
+    -- InputChanged pada frame (jaga-jaga mouse belum keluar)
+    dragFrame.InputChanged:Connect(function(i)
+        if dragging and dragInput == i then
+            if i.UserInputType == Enum.UserInputType.MouseMovement
+            or i.UserInputType == Enum.UserInputType.Touch then
+                update(i)
+            end
+        end
+    end)
+
+    -- Backup: UserInputService.InputChanged (handle saat mouse keluar frame)
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and dragInput ~= nil then
+            if i.UserInputType == Enum.UserInputType.MouseMovement
+            or i.UserInputType == Enum.UserInputType.Touch then
+                update(i)
+            end
         end
     end)
 end
@@ -335,44 +366,36 @@ function VonixeLib:CreateWindow(config)
     local camera   = workspace.CurrentCamera
 
     local function getScale()
-    	local vp = camera.ViewportSize
-    	local ratio = math.min(vp.X / W, vp.Y / H)
-    	-- Deteksi mobile dari viewport size (lebih reliable dari TouchEnabled)
+    	local vp   = camera.ViewportSize
     	local isMobileScreen = vp.X < 1000 and vp.Y < 650
+    	local ratio
     	if isMobileScreen then
-    		-- Mobile: sesuaikan supaya UI ~85% lebar layar, tidak gepeng
-    		local maxScale = math.min(vp.X * 0.9 / W, vp.Y * 0.88 / H)
-    		ratio = math.clamp(maxScale, 0.55, 0.88)
+    		ratio = math.clamp(math.min(vp.X * 0.88 / W, vp.Y * 0.88 / H), 0.52, 0.85)
     	else
-    		-- PC: scale normal
-    		ratio = math.clamp(ratio, 0.6, 1.1)
+    		ratio = math.clamp(math.min(vp.X / W, vp.Y / H), 0.65, 1.1)
     	end
     	return ratio
+    end
+
+    local function centerWindow(s)
+        local vp = camera.ViewportSize
+        local sw, sh = W * s, H * s
+        local px = math.clamp((vp.X - sw) / 2, 0, math.max(0, vp.X - sw))
+        local py = math.clamp((vp.Y - sh) / 2, 0, math.max(0, vp.Y - sh))
+        main.Position = UDim2.new(0, px, 0, py)
     end
 
     local uiScale = Instance.new("UIScale")
     uiScale.Scale  = getScale()
     uiScale.Parent = main
 
-    -- Re-center dan rescale on viewport change
     camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
     	local s = getScale()
-    	tween(uiScale, 0.2, {Scale = s})
-    	local vp = camera.ViewportSize
-    	local scaledW = W * s
-    	local scaledH = H * s
-    	main.Position = UDim2.new(
-            0, (vp.X - scaledW) / 2,
-            0, (vp.Y - scaledH) / 2
-        )
-	end)
+    	TweenService:Create(uiScale, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {Scale = s}):Play()
+    	centerWindow(s)
+    end)
 
-    -- Mobile: fullscreen-ish
-    -- Mobile: fullscreen-ish
-	-- centering universal
-	local vp0 = camera.ViewportSize
-    local s0 = getScale()
-    main.Position = UDim2.new(0, (vp0.X - W*s0)/2, 0, (vp0.Y - H*s0)/2)
+    centerWindow(getScale())
 
     -- Gradient border
     local bfr = frame({

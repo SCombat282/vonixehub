@@ -190,47 +190,60 @@ end
 -- ================================================
 -- DRAG HELPER — SUPPORT MOUSE + TOUCH
 -- ================================================
+-- GANTI fungsi makeDragConn yang lama dengan ini
 local function makeDragConn(dragFrame, moveFrame)
-    local dragging = false
+    local dragging  = false
     local dragStart = nil
     local startPos  = nil
 
-    local function onInputBegan(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            dragging  = true
-            dragStart = input.Position
-            startPos  = moveFrame.Position
-        end
+    local function isInsideFrame(pos)
+        local abs  = dragFrame.AbsolutePosition
+        local size = dragFrame.AbsoluteSize
+        return pos.X >= abs.X and pos.X <= abs.X + size.X
+           and pos.Y >= abs.Y and pos.Y <= abs.Y + size.Y
     end
 
-    local function onInputChanged(input)
-        if dragging and (
-            input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch
-        ) then
-            local d = input.Position - dragStart
+    -- ── TOUCH (mobile) ──────────────────────────
+    UserInputService.TouchStarted:Connect(function(touch, processed)
+        if not isInsideFrame(touch.Position) then return end
+        dragging  = true
+        dragStart = touch.Position
+        startPos  = moveFrame.Position
+    end)
+    UserInputService.TouchMoved:Connect(function(touch)
+        if not dragging then return end
+        local d = touch.Position - dragStart
+        moveFrame.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + d.X,
+            startPos.Y.Scale, startPos.Y.Offset + d.Y
+        )
+    end)
+    UserInputService.TouchEnded:Connect(function()
+        dragging = false
+    end)
+
+    -- ── MOUSE (desktop) ─────────────────────────
+    dragFrame.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging  = true
+            dragStart = i.Position
+            startPos  = moveFrame.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local d = i.Position - dragStart
             moveFrame.Position = UDim2.new(
                 startPos.X.Scale, startPos.X.Offset + d.X,
                 startPos.Y.Scale, startPos.Y.Offset + d.Y
             )
         end
-    end
-
-    local function onInputEnded(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
-    end
-
-    dragFrame.InputBegan:Connect(onInputBegan)
-    -- Changed + Ended perlu di UserInputService supaya tidak terputus
-    -- waktu jari/kursor keluar dari dragFrame
-    local c1 = UserInputService.InputChanged:Connect(onInputChanged)
-    local c2 = UserInputService.InputEnded:Connect(onInputEnded)
-
-    return c1, c2  -- kembalikan koneksi kalau perlu disconnect
+    end)
 end
 
 -- ================================================

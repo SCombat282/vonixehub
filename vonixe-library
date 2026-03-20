@@ -302,6 +302,24 @@ function VonixeLib:CreateWindow(config)
     Window._selected   = nil
     Window._callbacks  = {}
 
+    -- ================================================
+    -- RESPONSIVE — deteksi mobile SEBELUM buat frame
+    -- supaya W/H bisa di-override untuk mobile
+    -- ================================================
+    local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+    local camera   = workspace.CurrentCamera
+
+    -- FIX: Di mobile pakai ukuran absolut yang proporsional
+    -- (landscape-ish 4:3), bukan UIScale dari ukuran desktop.
+    -- Versi lama: W=560 H=420 di-scale → proporsi aneh di portrait HP
+    -- Versi baru: W dari lebar layar, H = W * 0.75 (4:3 ratio)
+    if isMobile then
+        local vp = camera.ViewportSize
+        W     = math.floor(vp.X * 0.92)
+        H     = math.floor(W * 0.75)          -- 4:3, mirip desktop 560×420
+        sideW = math.min(110, math.floor(W * 0.24))
+    end
+
     -- ScreenGui
     local sg = Instance.new("ScreenGui")
     sg.Name          = "VonixeLib_" .. title
@@ -324,7 +342,7 @@ function VonixeLib:CreateWindow(config)
     -- Main frame
     local main = frame({
         Size            = UDim2.new(0, W, 0, H),
-        Position        = UDim2.new(0.5, -W/2, 0.5, -H/2),
+        Position        = UDim2.new(0, (camera.ViewportSize.X - W)/2, 0, (camera.ViewportSize.Y - H)/2),
         BackgroundColor3 = Theme.BG,
         ClipsDescendants = false,
         ZIndex          = 1,
@@ -332,48 +350,38 @@ function VonixeLib:CreateWindow(config)
     corner(14, main)
     Window._main = main
 
-    -- ================================================
-    -- RESPONSIVE / AUTO SCALE
-    -- ================================================
-    local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-    local camera   = workspace.CurrentCamera
-
     local function getScale()
         local vp = camera.ViewportSize
-        local baseW = 560
-        local ratio = math.min(vp.X / baseW, vp.Y / 420)
+        local ratio = math.min(vp.X / 560, vp.Y / 420)
         if isMobile then
-            ratio = math.clamp(ratio, 0.55, 0.95)
+            return 1  -- mobile pakai ukuran absolut, tidak perlu scale
         else
-            ratio = math.clamp(ratio, 0.7, 1.2)
+            return math.clamp(ratio, 0.7, 1.2)
         end
-        return ratio
     end
 
     local uiScale = Instance.new("UIScale")
     uiScale.Scale  = getScale()
     uiScale.Parent = main
 
-    -- FIX: Re-center saat viewport berubah (rotate HP, resize PC)
-    -- Versi lama hanya tween scale tapi tidak re-center posisi,
-    -- jadi window geser ke pojok setelah rotate HP.
+    -- Re-center saat viewport berubah (rotate HP, resize PC)
     local function recenter()
-        local s  = getScale()
         local vp = camera.ViewportSize
-        tween(uiScale, 0.2, {Scale = s})
-        main.Position = UDim2.new(
-            0, (vp.X - W * s) / 2,
-            0, (vp.Y - H * s) / 2
-        )
+        if isMobile then
+            -- Mobile: resize proporsional saat rotate
+            local newW = math.floor(vp.X * 0.92)
+            local newH = math.floor(newW * 0.75)
+            tween(main, 0.2, {
+                Size     = UDim2.new(0, newW, 0, newH),
+                Position = UDim2.new(0, (vp.X - newW)/2, 0, (vp.Y - newH)/2)
+            })
+        else
+            local s = getScale()
+            tween(uiScale, 0.2, {Scale = s})
+            main.Position = UDim2.new(0, (vp.X - W*s)/2, 0, (vp.Y - H*s)/2)
+        end
     end
     camera:GetPropertyChangedSignal("ViewportSize"):Connect(recenter)
-
-    -- Mobile: posisi awal tengah
-    if isMobile then
-        local vp = camera.ViewportSize
-        local s  = getScale()
-        main.Position = UDim2.new(0, (vp.X - W*s)/2, 0, (vp.Y - H*s)/2)
-    end
 
     -- Gradient border
     local bfr = frame({

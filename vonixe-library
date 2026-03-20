@@ -237,8 +237,8 @@ end
 local function makeDragConn(dragFrame, moveFrame)
     local dragging, dragStart, startPos = false, nil, nil
     dragFrame.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1
-        or i.UserInputType == Enum.UserInputType.Touch then
+        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
+        or i.UserInputType == Enum.UserInputType.Touch) then
             dragging = true
             dragStart = i.Position
             startPos = moveFrame.Position
@@ -316,7 +316,11 @@ function VonixeLib:CreateWindow(config)
         local vp = camera.ViewportSize
         local baseW = 560
         local ratio = math.min(vp.X / baseW, vp.Y / 420)
-        ratio = math.clamp(ratio, 0.7, 1.2)
+        if isMobile then
+            ratio = math.clamp(ratio, 0.55, 0.95)
+        else
+            ratio = math.clamp(ratio, 0.7, 1.2)
+        end
         return ratio
     end
 

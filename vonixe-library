@@ -315,9 +315,9 @@ function VonixeLib:CreateWindow(config)
 
     local function getScale()
     	local vp = camera.ViewportSize
-    	local baseW = 560
-    	local ratio = math.max(vp.X, vp.Y) / baseW
-    	ratio = math.clamp(ratio, 0.7, 1.1)
+    	local larger = math.max(vp.X, vp.Y)
+    	local ratio = larger / 780
+    	ratio = math.clamp(ratio, 0.65, 0.88)
     	return ratio
 	end
 
@@ -340,16 +340,10 @@ function VonixeLib:CreateWindow(config)
 
     -- Mobile: fullscreen-ish
     -- Mobile: fullscreen-ish
-	if isMobile then
-    	local vp = camera.ViewportSize
-    	local s = getScale()
-    	local scaledW = W * s
-    	local scaledH = H * s
-    	main.Position = UDim2.new(
-        	0, math.clamp((vp.X - scaledW) / 2, 0, vp.X - scaledW),
-        	0, math.clamp((vp.Y - scaledH) / 2, 0, vp.Y - scaledH)
-    	)
-	end
+	-- centering universal
+	local vp = camera.ViewportSize
+	local s = getScale()
+	main.Position = UDim2.new(0, (vp.X - W*s)/2, 0, (vp.Y - H*s)/2)
 
     -- Gradient border
     local bfr = frame({

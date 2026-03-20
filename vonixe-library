@@ -321,15 +321,17 @@ function VonixeLib:CreateWindow(config)
     local title    = config.Title or "VonixeLib"
     local subtitle = config.Subtitle or ""
 
-    -- Deteksi mobile: threshold lebar supaya semua HP landscape ter-cover
-    local vp0      = workspace.CurrentCamera.ViewportSize
-    local isMobile = vp0.X < 1100 and vp0.Y < 700
+    -- Deteksi mobile via TouchEnabled (paling reliable):
+    -- TRUE di semua HP/tablet Android/iOS, FALSE di PC (tidak peduli ukuran layar)
+    local UIS      = game:GetService("UserInputService")
+    local isMobile = UIS.TouchEnabled
 
-    -- Mobile: window LEBIH KECIL secara pixel (bukan di-scale/stretch)
-    -- PC 1920x1080 -> W=560, H=420 | Mobile 900x497 -> W=340, H=252
-    local W     = config.Width        or (isMobile and 340 or 560)
-    local H     = config.Height       or (isMobile and 252 or 420)
-    local sideW = config.SidebarWidth or (isMobile and 95  or 160)
+    -- Mobile: window lebih kecil secara pixel. Rasio sama (4:3) supaya proporsional.
+    -- PC  1920×1080 → W=560, H=420 (29%/39% layar)
+    -- Mobile 1280×720 → W=400, H=300 (31%/42% layar) ← mirip PC!
+    local W     = config.Width        or (isMobile and 400 or 560)
+    local H     = config.Height       or (isMobile and 300 or 420)
+    local sideW = config.SidebarWidth or (isMobile and 110 or 160)
 
     local Window = {}
     Window._tabs       = {}

@@ -354,10 +354,11 @@ function VonixeLib:CreateWindow(config)
 
     Window._sg = sg
 
-    -- Main frame — WindUI approach: fixed pixel size, center via UDim2 scale
+    -- Main frame — Absolute Center with AnchorPoint
     local main = frame({
+        AnchorPoint      = Vector2.new(0.5, 0.5),
         Size             = UDim2.new(0, W, 0, H),
-        Position         = UDim2.new(0.5, -W/2, 0.5, -H/2),
+        Position         = UDim2.new(0.5, 0, 0.5, 0),
         BackgroundColor3 = Theme.BG,
         ClipsDescendants = false,
         ZIndex           = 1,
@@ -371,21 +372,19 @@ function VonixeLib:CreateWindow(config)
     local uiScale = Instance.new("UIScale", main)
     local function updateScale()
         local vp = camera.ViewportSize
-        if isMobile then
-            local scaleX = (vp.X - 40) / W
-            local scaleY = (vp.Y - 40) / H
-            uiScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.4, 1)
-        else
-            uiScale.Scale = 1
-        end
+        -- Tentukan scale berdasarkan dimensi layar vs dimensi UI
+        -- Kurangi margin agar tidak mepet layar (WindUI style)
+        local scaleX = (vp.X - 60) / W
+        local scaleY = (vp.Y - 60) / H
+        local finalScale = math.min(scaleX, scaleY)
+        
+        -- Jangan biarkan terlalu gede kalau di layar super gede
+        uiScale.Scale = math.clamp(finalScale, 0.4, 0.95)
     end
     updateScale()
 
-    -- WindUI style: re-center saat viewport berubah (rotate/resize layar)
-    camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-        main.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
-        updateScale()
-    end)
+    -- Auto re-center & re-scale saat layar berubah
+    camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
 
 
     -- Gradient border
@@ -1860,25 +1859,27 @@ function VonixeLib:CreateKeySystem(config)
 
     local isMobile = game:GetService("UserInputService").TouchEnabled
 
-    -- Card
+    -- Card: Absolute Center with AnchorPoint
     local W,H = 440,320
     local card = mkFrame({
+        AnchorPoint=Vector2.new(0.5, 0.5),
         Size=UDim2.new(0,W,0,H),
-        Position=UDim2.new(0.5,-W/2,0.5,-H/2),
+        Position=UDim2.new(0.5,0,0.5,0),
         BackgroundColor3=Color3.fromRGB(10,10,14),
         ZIndex=2, ClipsDescendants=false, Active=true,
     },sg)
     mkCorner(16,card)
     
     local uiScale = Instance.new("UIScale", card)
-    if isMobile then
-        local function upd()
-            local vp = workspace.CurrentCamera.ViewportSize
-            uiScale.Scale = math.clamp(math.min((vp.X - 30) / W, (vp.Y - 30) / H), 0.4, 1)
-        end
-        upd()
-        workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(upd)
+    local function upd()
+        local vp = workspace.CurrentCamera.ViewportSize
+        -- Maintain aspect ratio and center on mobile
+        local scaleX = (vp.X - 40) / W
+        local scaleY = (vp.Y - 40) / H
+        uiScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.4, 1)
     end
+    upd()
+    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(upd)
 
     -- Gradient border
     local bfr = mkFrame({Size=UDim2.new(1,4,1,4),Position=UDim2.new(0,-2,0,-2),BackgroundColor3=Color3.fromRGB(200,60,0),ZIndex=1},card)

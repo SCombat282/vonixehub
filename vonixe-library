@@ -1089,9 +1089,19 @@ function VonixeLib:CreateWindow(config)
         -- DROPDOWN
         -- ================================================
         function Tab:AddDropdown(dConfig)
+            local isMulti  = dConfig.Multi or false
             local options  = dConfig.Options or dConfig.Values or {}
-            local selected = dConfig.Value or (options[1] or "")
-            local opened   = false
+            
+            -- Parsing default value (Table kalo Multi, String kalo ndak)
+            local selected = dConfig.Value
+            if isMulti then
+                if type(selected) ~= "table" then selected = {} end
+            else
+                if type(selected) == "table" then selected = selected[1] or "" end
+                if not selected or selected == "" then selected = options[1] or "" end
+            end
+            
+            local opened = false
 
             local wrapper = frame({
                 Size             = UDim2.new(1, 0, 0, 36),
@@ -1122,7 +1132,8 @@ function VonixeLib:CreateWindow(config)
             nameLbl.Position = UDim2.new(0, 10, 0, 0)
             nameLbl.ZIndex   = 11
 
-            local valLbl = label(selected, 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
+            local defValText = isMulti and (#selected > 0 and table.concat(selected, ", ") or "None") or tostring(selected)
+            local valLbl = label(defValText, 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
             valLbl.Size     = UDim2.new(0.5, -30, 1, 0)
             valLbl.Position = UDim2.new(0.5, 0, 0, 0)
             valLbl.ZIndex   = 11
@@ -1163,22 +1174,52 @@ function VonixeLib:CreateWindow(config)
                 optBtn.ZIndex          = 21
                 optBtn.Parent          = menu
 
+                -- Indicator dot buat MultiSelect (Opsional aja)
+                local dot = nil
+                if isMulti then
+                    dot = frame({Size = UDim2.new(0, 6, 0, 6), Position = UDim2.new(0, 10, 0.5, -3), ZIndex = 22}, optBtn)
+                    corner(99, dot)
+                    -- Check if already selected
+                    local iniFound = false
+                    for _,v in pairs(selected) do if v==opt then iniFound=true; break end end
+                    dot.BackgroundColor3 = iniFound and Theme.ACCENT1 or Theme.TEXT3
+                end
+
+                local startPos = isMulti and UDim2.new(0, 24, 0, 0) or UDim2.new(0, 10, 0, 0)
                 local optLbl = label(tostring(opt), 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, optBtn)
-                optLbl.Size     = UDim2.new(1, -16, 1, 0)
-                optLbl.Position = UDim2.new(0, 10, 0, 0)
+                optLbl.Size     = UDim2.new(1, -26, 1, 0)
+                optLbl.Position = startPos
                 optLbl.ZIndex   = 22
 
                 optBtn.MouseEnter:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 0.85}) end)
                 optBtn.MouseLeave:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 1}) end)
+                
                 optBtn.MouseButton1Click:Connect(function()
-                    selected = opt
-                    valLbl.Text = tostring(opt)
-                    if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
-                    -- close
-                    opened = false
-                    tween(arrow, 0.15, {Rotation = 0})
-                    tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
-                    task.delay(0.15, function() menu.Visible = false end)
+                    if isMulti then
+                        local foundIdx = nil
+                        for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
+                        if foundIdx then
+                            table.remove(selected, foundIdx)
+                            if dot then tween(dot, 0.1, {BackgroundColor3 = Theme.TEXT3}) end
+                        else
+                            table.insert(selected, opt)
+                            if dot then tween(dot, 0.1, {BackgroundColor3 = Theme.ACCENT1}) end
+                        end
+                        
+                        local str = table.concat(selected, ", ")
+                        if str == "" then str = "None" end
+                        valLbl.Text = str
+                        if dConfig.Callback then task.spawn(dConfig.Callback, selected) end
+                    else
+                        selected = opt
+                        valLbl.Text = tostring(opt)
+                        if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
+                        
+                        opened = false
+                        tween(arrow, 0.15, {Rotation = 0})
+                        tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                        task.delay(0.15, function() menu.Visible = false end)
+                    end
                 end)
                 table.insert(optBtns, optBtn)
             end

@@ -179,6 +179,78 @@ local Theme = {
 }
 
 -- ================================================
+-- [GLOBAL NOTIFY SYSTEM]: Initialize Early
+-- ================================================
+local notifSG = game:GetService("CoreGui"):FindFirstChild("VonixeNotif") or Player.PlayerGui:FindFirstChild("VonixeNotif")
+if not notifSG then
+    notifSG = Instance.new("ScreenGui")
+    notifSG.Name = "VonixeNotif"; notifSG.ResetOnSpawn = false; notifSG.DisplayOrder = 999999
+    pcall(function() if syn and syn.protect_gui then syn.protect_gui(notifSG) end; notifSG.Parent = game:GetService("CoreGui") end)
+    if not notifSG.Parent then notifSG.Parent = Player.PlayerGui end
+end
+
+local notifHolder = notifSG:FindFirstChild("Holder") or Instance.new("Frame", notifSG)
+if notifHolder.Name ~= "Holder" then
+    notifHolder.Name = "Holder"; notifHolder.AnchorPoint = Vector2.new(1, 1)
+    notifHolder.Size = UDim2.new(0, 260, 1, -20); notifHolder.Position = UDim2.new(1, -20, 1, -20)
+    notifHolder.BackgroundTransparency = 1; notifHolder.ZIndex = 999
+    local ns = Instance.new("UIScale", notifHolder)
+    ns.Scale = (UserInputService.TouchEnabled) and 0.70 or 0.85
+    local nl = Instance.new("UIListLayout", notifHolder)
+    nl.FillDirection, nl.VerticalAlignment, nl.HorizontalAlignment = 1, 2, 2
+    nl.Padding = UDim.new(0, 8); nl.SortOrder = Enum.SortOrder.LayoutOrder
+end
+
+function VonixeLib:Notify(nConfig)
+    local title   = nConfig.Title or "Notif"
+    local content = nConfig.Content or ""
+    local dur     = nConfig.Duration or 3
+    local nType   = nConfig.Type or "Info"
+    local typeColor = {Info=Theme.ACCENT2, Success=Theme.GREEN, Warning=Theme.YELLOW, Error=Theme.RED}
+    local col = typeColor[nType] or Theme.ACCENT2
+    local NH = (content ~= "" and content ~= " ") and 72 or 52
+
+    local nf = Instance.new("Frame", notifHolder)
+    nf.Size = UDim2.new(1, 0, 0, 0); nf.BackgroundColor3 = Color3.fromRGB(20, 16, 12); nf.ClipsDescendants = true
+    nf.LayoutOrder = -os.time()
+    
+    local function mkCorner(r,p) local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,r);c.Parent=p end
+    local function mkStroke(c,t,p) local s=Instance.new("UIStroke");s.Color=c;s.Thickness=t;s.Parent=p end
+    mkCorner(10, nf); mkStroke(col, 1, nf)
+    
+    local bg = Instance.new("Frame", nf)
+    bg.Size = UDim2.new(1, 0, 1, 0); bg.BackgroundColor3 = col; bg.BackgroundTransparency = 0.92; bg.ZIndex = 201; bg.BorderSizePixel = 0
+    mkCorner(10, bg)
+    
+    local lbar = Instance.new("Frame", nf)
+    lbar.Size = UDim2.new(0, 4, 1, 0); lbar.BackgroundColor3 = col; lbar.ZIndex = 202; lbar.BorderSizePixel = 0
+    mkCorner(2, lbar)
+
+    local t = Instance.new("TextLabel", nf)
+    t.Text = title; t.TextSize = 14; t.Font = Enum.Font.GothamBold; t.TextColor3 = Color3.new(1,1,1); t.BackgroundTransparency = 1
+    t.Position = UDim2.new(0, 14, 0, (NH > 52 and 18 or 26)); t.ZIndex = 203; t.AnchorPoint = Vector2.new(0, 0.5); t.TextXAlignment = 0
+
+    if content ~= "" and content ~= " " then
+        local c = Instance.new("TextLabel", nf)
+        c.Text = content; c.TextSize = 12; c.Font = Enum.Font.Gotham; c.TextColor3 = Color3.fromRGB(220, 200, 190); c.BackgroundTransparency = 1
+        c.Position = UDim2.new(0, 14, 0, 42); c.TextWrapped = true; c.ZIndex = 203; c.AnchorPoint = Vector2.new(0, 0); c.TextXAlignment = 0
+    end
+
+    local bar = Instance.new("Frame", nf)
+    bar.Size = UDim2.new(1, 0, 0, 2); bar.Position = UDim2.new(0, 0, 1, -2); bar.BackgroundColor3 = col; bar.ZIndex = 205; bar.BorderSizePixel = 0
+    
+    local twInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    TweenService:Create(nf, twInfo, {Size = UDim2.new(1, 0, 0, NH)}):Play()
+    task.delay(0.1, function() 
+        TweenService:Create(bar, TweenInfo.new(dur, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 2)}):Play()
+    end)
+    task.delay(dur + 0.35, function()
+        TweenService:Create(nf, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+        task.wait(0.3); nf:Destroy()
+    end)
+end
+
+-- ================================================
 -- UTILITY
 -- ================================================
 local function corner(r, p)

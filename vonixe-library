@@ -372,14 +372,14 @@ function VonixeLib:CreateWindow(config)
     local uiScale = Instance.new("UIScale", main)
     local function updateScale()
         local vp = camera.ViewportSize
-        -- Tentukan scale berdasarkan dimensi layar vs dimensi UI
-        -- Kurangi margin agar tidak mepet layar (WindUI style)
-        local scaleX = (vp.X - 60) / W
-        local scaleY = (vp.Y - 60) / H
+        -- Margin lebih besar biar gak menuhin layar (80px)
+        local scaleX = (vp.X - 80) / W
+        local scaleY = (vp.Y - 80) / H
         local finalScale = math.min(scaleX, scaleY)
         
-        -- Jangan biarkan terlalu gede kalau di layar super gede
-        uiScale.Scale = math.clamp(finalScale, 0.4, 0.95)
+        -- Clamp lebih ketat di mobile biar tetep "Kotak" mini
+        local maxS = isMobile and 0.75 or 0.95
+        uiScale.Scale = math.clamp(finalScale, 0.35, maxS)
     end
     updateScale()
 
@@ -1873,10 +1873,11 @@ function VonixeLib:CreateKeySystem(config)
     local uiScale = Instance.new("UIScale", card)
     local function upd()
         local vp = workspace.CurrentCamera.ViewportSize
-        -- Maintain aspect ratio and center on mobile
-        local scaleX = (vp.X - 40) / W
-        local scaleY = (vp.Y - 40) / H
-        uiScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.4, 1)
+        -- Scale lebih mungil biar gak selayar (100px margin)
+        local scaleX = (vp.X - 100) / W
+        local scaleY = (vp.Y - 100) / H
+        local fs = math.min(scaleX, scaleY)
+        uiScale.Scale = math.clamp(fs, 0.4, isMobile and 0.7 or 1)
     end
     upd()
     workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(upd)

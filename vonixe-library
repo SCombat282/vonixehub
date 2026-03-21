@@ -500,8 +500,8 @@ function VonixeLib:CreateWindow(config)
 
     -- Floating restore button - atas layar, draggable
     local restoreBtn = Instance.new("ImageButton")
-    restoreBtn.Size            = UDim2.new(0, 52, 0, 52)
-    restoreBtn.Position        = UDim2.new(0.5, -26, 0, 12)
+    restoreBtn.Size            = UDim2.new(0, 40, 0, 40)
+    restoreBtn.Position        = UDim2.new(0.5, -20, 0, 12)
     restoreBtn.BackgroundColor3 = Color3.fromRGB(18, 12, 6)
     restoreBtn.BorderSizePixel = 0
     restoreBtn.Image           = "rbxassetid://107213987130538"
@@ -521,12 +521,12 @@ function VonixeLib:CreateWindow(config)
     restoreBtn.MouseEnter:Connect(function()
         tween(restoreBtn, 0.15, {BackgroundColor3 = Color3.fromRGB(35, 22, 8)})
         tween(glowStroke, 0.15, {Color = Theme.ACCENT2})
-        tween(restoreBtn, 0.15, {Size = UDim2.new(0, 58, 0, 58)})
+        tween(restoreBtn, 0.15, {Size = UDim2.new(0, 44, 0, 44)})
     end)
     restoreBtn.MouseLeave:Connect(function()
         tween(restoreBtn, 0.15, {BackgroundColor3 = Color3.fromRGB(18, 12, 6)})
         tween(glowStroke, 0.15, {Color = Theme.ACCENT1})
-        tween(restoreBtn, 0.15, {Size = UDim2.new(0, 52, 0, 52)})
+        tween(restoreBtn, 0.15, {Size = UDim2.new(0, 40, 0, 40)})
     end)
 
     -- Draggable restore button
@@ -1423,12 +1423,13 @@ function VonixeLib:CreateWindow(config)
     -- ================================================
     -- NOTIFY SYSTEM (stacked, with duration bar + close btn)
     -- ================================================
-    local NW = isMobile and 220 or 300
-    local NOTIF_GAP = 8
+    local NW = isMobile and 220 or 280
+    local NOTIF_GAP = 6
     -- Container untuk stack notif
     local notifHolder = Instance.new("Frame")
+    notifHolder.AnchorPoint      = Vector2.new(1, 1)
     notifHolder.Size             = UDim2.new(0, NW, 1, -20)
-    notifHolder.Position         = UDim2.new(1, -(NW + 20), 0, 10)
+    notifHolder.Position         = UDim2.new(1, -15, 1, -15)
     notifHolder.BackgroundTransparency = 1
     notifHolder.ZIndex           = 200
     notifHolder.Parent           = sg
@@ -1437,7 +1438,8 @@ function VonixeLib:CreateWindow(config)
     if isMobile then
         local function updN()
             local v = workspace.CurrentCamera.ViewportSize
-            notifScale.Scale = math.clamp(v.Y/600, 0.6, 1) -- Scaling notif biar gak kegedean
+            -- Scaling notif mungil di pojok
+            notifScale.Scale = 0.75
         end
         updN()
         workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updN)

@@ -1161,6 +1161,38 @@ function VonixeLib:CreateWindow(config)
             stroke(Theme.STROKE2, 1, menu)
 
             local menuList = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, menu)
+            
+            local searchBox = nil
+            if #options > 4 or isMulti then
+                local searchRow = frame({Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1, ZIndex = 21}, menu)
+                local searchBg = frame({Size = UDim2.new(1, -12, 1, -6), Position = UDim2.new(0, 6, 0, 3), BackgroundColor3 = Theme.BG4, ZIndex = 21}, searchRow)
+                corner(6, searchBg)
+                stroke(Theme.STROKE2, 1, searchBg)
+                local searchIcon = mkIcon("search", 13, Theme.TEXT3, searchBg, 22)
+                searchIcon.Position = UDim2.new(0, 6, 0.5, -6)
+                searchBox = Instance.new("TextBox")
+                searchBox.Size = UDim2.new(1, -26, 1, 0)
+                searchBox.Position = UDim2.new(0, 24, 0, 0)
+                searchBox.BackgroundTransparency = 1
+                searchBox.Font = Enum.Font.Gotham
+                searchBox.TextSize = 12
+                searchBox.TextColor3 = Theme.TEXT2
+                searchBox.PlaceholderText = "Search..."
+                searchBox.PlaceholderColor3 = Theme.TEXT3
+                searchBox.TextXAlignment = Enum.TextXAlignment.Left
+                searchBox.Text = ""
+                searchBox.ZIndex = 22
+                searchBox.Parent = searchBg
+            end
+            
+            local scroll = Instance.new("ScrollingFrame")
+            scroll.BackgroundTransparency = 1
+            scroll.BorderSizePixel = 0
+            scroll.ScrollBarThickness = 1
+            scroll.ScrollBarImageColor3 = Theme.TEXT3
+            scroll.ZIndex = 21
+            scroll.Parent = menu
+            local optsLayout = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, scroll)
 
             local optBtns = {}
             for _, opt in ipairs(options) do
@@ -1172,24 +1204,33 @@ function VonixeLib:CreateWindow(config)
                 optBtn.Text            = ""
                 optBtn.AutoButtonColor = false
                 optBtn.ZIndex          = 21
-                optBtn.Parent          = menu
+                optBtn.Parent          = scroll
 
-                -- Indicator dot buat MultiSelect (Opsional aja)
-                local dot = nil
-                if isMulti then
-                    dot = frame({Size = UDim2.new(0, 6, 0, 6), Position = UDim2.new(0, 10, 0.5, -3), ZIndex = 22}, optBtn)
-                    corner(99, dot)
-                    -- Check if already selected
-                    local iniFound = false
-                    for _,v in pairs(selected) do if v==opt then iniFound=true; break end end
-                    dot.BackgroundColor3 = iniFound and Theme.ACCENT1 or Theme.TEXT3
-                end
-
-                local startPos = isMulti and UDim2.new(0, 24, 0, 0) or UDim2.new(0, 10, 0, 0)
                 local optLbl = label(tostring(opt), 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, optBtn)
-                optLbl.Size     = UDim2.new(1, -26, 1, 0)
-                optLbl.Position = startPos
+                optLbl.Size     = UDim2.new(1, -50, 1, 0)
+                optLbl.Position = UDim2.new(0, 10, 0, 0)
                 optLbl.ZIndex   = 22
+                
+                local updateVisual
+                if isMulti then
+                    local trackBg = frame({Size=UDim2.new(0,26,0,14), Position=UDim2.new(1,-36,0.5,-7), BackgroundColor3=Theme.BG4, ZIndex=22}, optBtn)
+                    corner(99, trackBg); stroke(Theme.STROKE2, 1, trackBg)
+                    local thumb = frame({Size=UDim2.new(0,10,0,10), Position=UDim2.new(0,2,0.5,-5), BackgroundColor3=Theme.TEXT3, ZIndex=23}, trackBg)
+                    corner(99, thumb)
+                    
+                    updateVisual = function(anim)
+                        local isSel = false
+                        for _,v in pairs(selected) do if v==opt then isSel=true; break end end
+                        if isSel then
+                            if anim then tween(trackBg, 0.2, {BackgroundColor3=Theme.ACCENT1}); tween(thumb, 0.3, {Position=UDim2.new(1,-12,0.5,-5), BackgroundColor3=Theme.TEXT}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                            else trackBg.BackgroundColor3=Theme.ACCENT1; thumb.Position=UDim2.new(1,-12,0.5,-5); thumb.BackgroundColor3=Theme.TEXT end
+                        else
+                            if anim then tween(trackBg, 0.2, {BackgroundColor3=Theme.BG4}); tween(thumb, 0.3, {Position=UDim2.new(0,2,0.5,-5), BackgroundColor3=Theme.TEXT3}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                            else trackBg.BackgroundColor3=Theme.BG4; thumb.Position=UDim2.new(0,2,0.5,-5); thumb.BackgroundColor3=Theme.TEXT3 end
+                        end
+                    end
+                    updateVisual(false)
+                end
 
                 optBtn.MouseEnter:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 0.85}) end)
                 optBtn.MouseLeave:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 1}) end)
@@ -1198,16 +1239,11 @@ function VonixeLib:CreateWindow(config)
                     if isMulti then
                         local foundIdx = nil
                         for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
-                        if foundIdx then
-                            table.remove(selected, foundIdx)
-                            if dot then tween(dot, 0.1, {BackgroundColor3 = Theme.TEXT3}) end
-                        else
-                            table.insert(selected, opt)
-                            if dot then tween(dot, 0.1, {BackgroundColor3 = Theme.ACCENT1}) end
-                        end
+                        if foundIdx then table.remove(selected, foundIdx) else table.insert(selected, opt) end
+                        updateVisual(true)
                         
                         local str = table.concat(selected, ", ")
-                        if str == "" then str = "None" end
+                        if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
                         valLbl.Text = str
                         if dConfig.Callback then task.spawn(dConfig.Callback, selected) end
                     else
@@ -1221,11 +1257,38 @@ function VonixeLib:CreateWindow(config)
                         task.delay(0.15, function() menu.Visible = false end)
                     end
                 end)
-                table.insert(optBtns, optBtn)
+                table.insert(optBtns, {btn=optBtn, txt=tostring(opt):lower()})
             end
 
-            -- Menu height
-            local menuH = #options * 30
+            local function updateMenuSize()
+                local th = 0
+                for _,o in pairs(optBtns) do if o.btn.Visible then th = th + 30 end end
+                scroll.CanvasSize = UDim2.new(0, 0, 0, th)
+                local maxH = math.min(th, 150)
+                scroll.Size = UDim2.new(1, 0, 0, maxH)
+                return maxH + (searchBox and 32 or 0)
+            end
+
+            if searchBox then
+                searchBox.Changed:Connect(function(prop)
+                    if prop == "Text" then
+                        local q = searchBox.Text:lower()
+                        for _,o in pairs(optBtns) do
+                            if q=="" or o.txt:find(q, 1, true) then o.btn.Visible=true else o.btn.Visible=false end
+                        end
+                        if opened then
+                            local newH = updateMenuSize()
+                            tween(menu, 0.1, {Size = UDim2.new(1, 0, 0, newH)})
+                        end
+                    end
+                end)
+            end
+            
+            if isMulti then
+                local str = table.concat(selected, ", ")
+                if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
+                valLbl.Text = str
+            end
 
             local clickArea = Instance.new("TextButton")
             clickArea.Size            = UDim2.new(1, 0, 1, 0)
@@ -1237,9 +1300,10 @@ function VonixeLib:CreateWindow(config)
                 opened = not opened
                 if opened then
                     menu.Visible = true
+                    local targetH = updateMenuSize()
                     menu.Size    = UDim2.new(1, 0, 0, 0)
                     tween(arrow, 0.2, {Rotation = 180})
-                    tween(menu, 0.2, {Size = UDim2.new(1, 0, 0, menuH)})
+                    tween(menu, 0.2, {Size = UDim2.new(1, 0, 0, targetH)})
                 else
                     tween(arrow, 0.15, {Rotation = 0})
                     tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})

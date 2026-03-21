@@ -2131,8 +2131,13 @@ function VonixeLib:CreateKeySystem(config)
     card.Size=UDim2.new(0,W,0,0)
     tw(card,0.4,{Size=UDim2.new(0,W,0,H)})
 
-    -- Tunggu sampai verified ATAU user tutup window (closed)
-    while not verified and not closed do task.wait(0.1) end
-end
+    -- [LOGIC FIX]: Tunggu sampai verified. Jika closed tanpa verified, ERROR untuk stop execution.
+    while not verified do 
+        if closed then 
+            error("[VonixeLib] Key System closed by user. Script execution stopped.", 0)
+        end
+        task.wait(0.1) 
+    end
+    return true -- Berhasil verified
 
 return VonixeLib

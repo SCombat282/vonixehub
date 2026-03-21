@@ -328,7 +328,14 @@ function VonixeLib:CreateWindow(config)
 
     local W     = config.Width        or 560
     local H     = config.Height       or 420
-    local sideW = config.SidebarWidth or 160
+    
+    -- FORCE KONSISTENSI "KOTAK" (WindUI Style)
+    -- Jika di mobile inputnya terlalu tinggi/lonjong, kita paksa balik ke rasio box
+    if isMobile and H > W then
+        H = W * (420/560) -- Kembalikan ke rasio 4:3
+    end
+    
+    local sideW = config.SidebarWidth or (isMobile and 140 or 140)
 
     local Window = {}
     Window._tabs       = {}
@@ -1416,15 +1423,25 @@ function VonixeLib:CreateWindow(config)
     -- ================================================
     -- NOTIFY SYSTEM (stacked, with duration bar + close btn)
     -- ================================================
-    local NW = 300
+    local NW = isMobile and 220 or 300
     local NOTIF_GAP = 8
     -- Container untuk stack notif
     local notifHolder = Instance.new("Frame")
     notifHolder.Size             = UDim2.new(0, NW, 1, -20)
-    notifHolder.Position         = UDim2.new(1, -(NW + 12), 0, 10)
+    notifHolder.Position         = UDim2.new(1, -(NW + 20), 0, 10)
     notifHolder.BackgroundTransparency = 1
     notifHolder.ZIndex           = 200
     notifHolder.Parent           = sg
+    
+    local notifScale = Instance.new("UIScale", notifHolder)
+    if isMobile then
+        local function updN()
+            local v = workspace.CurrentCamera.ViewportSize
+            notifScale.Scale = math.clamp(v.Y/600, 0.6, 1) -- Scaling notif biar gak kegedean
+        end
+        updN()
+        workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updN)
+    end
     local notifLayout = Instance.new("UIListLayout")
     notifLayout.FillDirection       = Enum.FillDirection.Vertical
     notifLayout.VerticalAlignment   = Enum.VerticalAlignment.Bottom
@@ -1873,11 +1890,11 @@ function VonixeLib:CreateKeySystem(config)
     local uiScale = Instance.new("UIScale", card)
     local function upd()
         local vp = workspace.CurrentCamera.ViewportSize
-        -- Scale lebih mungil biar gak selayar (100px margin)
-        local scaleX = (vp.X - 100) / W
-        local scaleY = (vp.Y - 100) / H
+        -- Key system harus lebih mungil (50% dari layar di mobile)
+        local scaleX = (vp.X * 0.85) / W
+        local scaleY = (vp.Y * 0.85) / H
         local fs = math.min(scaleX, scaleY)
-        uiScale.Scale = math.clamp(fs, 0.4, isMobile and 0.7 or 1)
+        uiScale.Scale = math.clamp(fs, 0.4, isMobile and 0.65 or 1)
     end
     upd()
     workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(upd)

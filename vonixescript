@@ -1250,7 +1250,7 @@ local function openMissionUI()
     frame.BackgroundColor3=Color3.fromRGB(12,12,18); frame.BorderSizePixel=0; frame.ClipsDescendants=true; frame.Parent=sg; mkCorner(12,frame)
     frame.Active=true -- Mencegah klik nembus game
     local uis=game:GetService("UserInputService"); local sc=Instance.new("UIScale",frame)
-    local function updSc() local vp=workspace.CurrentCamera.ViewportSize; local ms=uis.TouchEnabled and 0.55 or 0.85; sc.Scale=math.clamp(math.min((vp.X-20)/W, (vp.Y-60)/H), 0.3, ms) end
+    local function updSc() local vp=workspace.CurrentCamera.ViewportSize; local isMob=uis.TouchEnabled or vp.Y<800; local ms=isMob and 0.40 or 0.65; sc.Scale=math.clamp(math.min((vp.X-40)/W, (vp.Y-80)/H), 0.25, ms) end
     updSc(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updSc)
     local bf=Instance.new("Frame"); bf.Size=UDim2.new(1,4,1,4); bf.Position=UDim2.new(0,-2,0,-2)
     bf.BackgroundColor3=Color3.fromRGB(200,0,0); bf.BorderSizePixel=0; bf.ZIndex=0; bf.Parent=frame; mkCorner(14,bf)
@@ -1350,7 +1350,9 @@ local function openStatsWindow()
     local frame=Instance.new("Frame"); frame.Size=UDim2.new(0,W,0,H); frame.AnchorPoint=Vector2.new(0.5,0.5); frame.Position=UDim2.new(0.5,0,0.5,0)
     frame.BackgroundColor3=Color3.fromRGB(12,12,18); frame.BorderSizePixel=0; frame.ClipsDescendants=true; frame.Parent=sg; mkCorner(12,frame)
     frame.Active=true -- Mencegah klik nembus game
-    local uis=game:GetService("UserInputService"); local sc=Instance.new("UIScale",frame); sc.Scale=uis.TouchEnabled and 0.70 or 0.90
+    local uis=game:GetService("UserInputService"); local sc=Instance.new("UIScale",frame)
+    local function updSc() local vp=workspace.CurrentCamera.ViewportSize; local isMob=uis.TouchEnabled or vp.Y<800; local ms=isMob and 0.40 or 0.65; sc.Scale=math.clamp(math.min((vp.X-40)/W, (vp.Y-80)/H), 0.25, ms) end
+    updSc(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updSc)
     local bfr=Instance.new("Frame"); bfr.Size=UDim2.new(1,4,1,4); bfr.Position=UDim2.new(0,-2,0,-2)
     bfr.BackgroundColor3=Color3.fromRGB(200,0,0); bfr.BorderSizePixel=0; bfr.ZIndex=0; bfr.Parent=frame; mkCorner(14,bfr)
     local bgr=Instance.new("UIGradient"); bgr.Color=ColorSequence.new(Color3.fromRGB(200,0,0),Color3.fromRGB(255,220,0)); bgr.Rotation=135; bgr.Parent=bfr

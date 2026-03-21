@@ -1844,6 +1844,26 @@ function VonixeLib:CreateKeySystem(config)
     local onVerify = config.OnVerify
     local onGetKey = config.OnGetKey
 
+    -- [LOGIC FIX]: WindUI Logic (Auto-Verify)
+    local saveFolder = config.Folder or "VonixeHub"
+    local saveName   = title:gsub("%s+", "_") .. ".key"
+    local savePath   = saveFolder .. "/" .. saveName
+
+    local savedKey = ""
+    pcall(function() 
+        if isfile and isfile(savePath) then 
+            savedKey = readfile(savePath) 
+        end 
+    end)
+    
+    if savedKey ~= "" and onVerify then
+        local ok, result = pcall(onVerify, savedKey)
+        if ok and result then
+            if config.Callback then task.spawn(config.Callback, true) end
+            return true -- SKIP UI!
+        end
+    end
+
     local Players      = game:GetService("Players")
     local TweenService = game:GetService("TweenService")
     local RunService   = game:GetService("RunService")
@@ -2016,8 +2036,17 @@ function VonixeLib:CreateKeySystem(config)
     mkCorner(10,inputBg)
     local inputStroke=Instance.new("UIStroke");inputStroke.Color=Color3.fromRGB(60,40,20);inputStroke.Thickness=1;inputStroke.Parent=inputBg
 
+    -- [LOGIC FIX]: WindUI Style Save/Load
+    local saveFolder = config.Folder or "VonixeHub"
+    local saveName   = (config.Title or "KeySystem"):gsub("%s+", "_") .. ".key"
+    local savePath   = saveFolder .. "/" .. saveName
+
     local savedKey = ""
-    pcall(function() if readfile then savedKey = readfile("VonixeKey_Hub.txt") end end)
+    pcall(function() 
+        if isfile and isfile(savePath) then 
+            savedKey = readfile(savePath) 
+        end 
+    end)
 
     local inputBox=Instance.new("TextBox")
     inputBox.Size=UDim2.new(1,-20,1,0);inputBox.Position=UDim2.new(0,10,0,0)
@@ -2073,7 +2102,11 @@ function VonixeLib:CreateKeySystem(config)
             local ok=false
             if onVerify then local s,r=pcall(onVerify,key); ok=s and r end
             if ok then
-                pcall(function() if writefile then writefile("VonixeKey_Hub.txt", key) end end)
+                -- [LOGIC FIX]: Save to Structured Path
+                pcall(function() 
+                    if makefolder then makefolder(saveFolder) end
+                    if writefile then writefile(savePath, key) end 
+                end)
                 statusLbl.Text="Key valid!"; statusLbl.TextColor3=Color3.fromRGB(80,220,120)
                 verifyLbl.Text="✓"; tw(verifyBtn,0.2,{BackgroundColor3=Color3.fromRGB(30,120,60)})
                 tw(card,0.4,{BackgroundTransparency=1}); tw(overlay,0.4,{BackgroundTransparency=1})

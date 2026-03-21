@@ -498,10 +498,10 @@ function VonixeLib:CreateWindow(config)
     local minBtn   = makeIconBtn(-70, "minus",  Color3.fromRGB(35, 28, 10),  Color3.fromRGB(100, 70, 10))
     closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
 
-    -- Floating restore button - atas layar, draggable
+    -- Floating restore button - mungil (32x32) biar gak ganggu game
     local restoreBtn = Instance.new("ImageButton")
-    restoreBtn.Size            = UDim2.new(0, 40, 0, 40)
-    restoreBtn.Position        = UDim2.new(0.5, -20, 0, 12)
+    restoreBtn.Size            = UDim2.new(0, 32, 0, 32)
+    restoreBtn.Position        = UDim2.new(0.5, -16, 0, 10)
     restoreBtn.BackgroundColor3 = Color3.fromRGB(18, 12, 6)
     restoreBtn.BorderSizePixel = 0
     restoreBtn.Image           = "rbxassetid://107213987130538"
@@ -521,12 +521,12 @@ function VonixeLib:CreateWindow(config)
     restoreBtn.MouseEnter:Connect(function()
         tween(restoreBtn, 0.15, {BackgroundColor3 = Color3.fromRGB(35, 22, 8)})
         tween(glowStroke, 0.15, {Color = Theme.ACCENT2})
-        tween(restoreBtn, 0.15, {Size = UDim2.new(0, 44, 0, 44)})
+        tween(restoreBtn, 0.15, {Size = UDim2.new(0, 36, 0, 36)})
     end)
     restoreBtn.MouseLeave:Connect(function()
         tween(restoreBtn, 0.15, {BackgroundColor3 = Color3.fromRGB(18, 12, 6)})
         tween(glowStroke, 0.15, {Color = Theme.ACCENT1})
-        tween(restoreBtn, 0.15, {Size = UDim2.new(0, 40, 0, 40)})
+        tween(restoreBtn, 0.15, {Size = UDim2.new(0, 32, 0, 32)})
     end)
 
     -- Draggable restore button

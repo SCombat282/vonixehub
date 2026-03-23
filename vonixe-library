@@ -942,8 +942,10 @@ function VonixeLib:CreateWindow(config)
             }, track)
             corner(99, thumb)
 
+            local TogObj = {} -- Pindah ke atas biar 'set' bisa nengok
             local function set(v, fireCallback)
                 value = v
+                TogObj.Value = v -- UPDATE MEMORI!
                 tween(track, 0.15, {BackgroundColor3 = v and Theme.TOGGLE_ON or Theme.TOGGLE_OFF})
                 tween(thumb, 0.15, {Position = v and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)})
                 if fireCallback and tConfig.Callback then
@@ -963,11 +965,9 @@ function VonixeLib:CreateWindow(config)
             row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
             row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
 
-            local TogObj = {}
             TogObj.Value = value
             function TogObj:SetValue(v)
                 set(v, true)
-                TogObj.Value = v
             end
             function TogObj:SetValueSilent(v)
                 -- Update UI tanpa fire callback
@@ -1040,9 +1040,11 @@ function VonixeLib:CreateWindow(config)
             }, trackBg)
             corner(99, thumb)
 
+            local SlObj = {} -- Pindah ke atas
             local function setValue(v, fireCallback)
                 v = math.clamp(math.floor(v / step + 0.5) * step, min, max)
                 value = v
+                SlObj.Value = v -- UPDATE MEMORI!
                 local ratio = (v - min) / (max - min)
                 tween(fill, 0.05, {Size = UDim2.new(ratio, 0, 1, 0)})
                 tween(thumb, 0.05, {Position = UDim2.new(ratio, -6, 0.5, -6)})
@@ -1086,9 +1088,8 @@ function VonixeLib:CreateWindow(config)
 
             setValue(value, false)
 
-            local SlObj = {}
             SlObj.Value = value
-            function SlObj:SetValue(v) setValue(v, false); SlObj.Value = value end
+            function SlObj:SetValue(v) setValue(v, false) end
             function SlObj:SetTitle(t) nameLbl.Text = t end
             return SlObj
         end
@@ -1243,28 +1244,30 @@ function VonixeLib:CreateWindow(config)
                 optBtn.MouseEnter:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 0.85}) end)
                 optBtn.MouseLeave:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 1}) end)
                 
-                optBtn.MouseButton1Click:Connect(function()
-                    if isMulti then
-                        local foundIdx = nil
-                        for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
-                        if foundIdx then table.remove(selected, foundIdx) else table.insert(selected, opt) end
-                        updateVisual(true)
-                        
-                        local str = table.concat(selected, ", ")
-                        if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
-                        valLbl.Text = str
-                        if dConfig.Callback then task.spawn(dConfig.Callback, selected) end
-                    else
-                        selected = opt
-                        valLbl.Text = tostring(opt)
-                        if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
-                        
-                        opened = false
-                        tween(arrow, 0.15, {Rotation = 0})
-                        tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
-                        task.delay(0.15, function() menu.Visible = false end)
-                    end
-                end)
+                    optBtn.MouseButton1Click:Connect(function()
+                        if isMulti then
+                            local foundIdx = nil
+                            for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
+                            if foundIdx then table.remove(selected, foundIdx) else table.insert(selected, opt) end
+                            updateVisual(true)
+                            
+                            local str = table.concat(selected, ", ")
+                            if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
+                            valLbl.Text = str
+                            DdObj.Value = selected -- UPDATE MEMORI!
+                            if dConfig.Callback then task.spawn(dConfig.Callback, selected) end
+                        else
+                            selected = opt
+                            valLbl.Text = tostring(opt)
+                            DdObj.Value = opt -- UPDATE MEMORI!
+                            if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
+                            
+                            opened = false
+                            tween(arrow, 0.15, {Rotation = 0})
+                            tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                            task.delay(0.15, function() menu.Visible = false end)
+                        end
+                    end)
                 table.insert(optBtns, {btn=optBtn, txt=tostring(opt):lower()})
             end
 
@@ -1322,12 +1325,17 @@ function VonixeLib:CreateWindow(config)
             row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
             row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
 
-            local DdObj = {}
             DdObj.Value = selected
             function DdObj:SetValue(v)
                 selected = v
-                valLbl.Text = tostring(v)
-                DdObj.Value = v
+                DdObj.Value = v -- UPDATE MEMORI!
+                if isMulti then
+                    local str = table.concat(v, ", ")
+                    if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
+                    valLbl.Text = str
+                else
+                    valLbl.Text = tostring(v)
+                end
             end
             function DdObj:SetTitle(t) nameLbl.Text = t end
             function DdObj:Refresh(newOptions)

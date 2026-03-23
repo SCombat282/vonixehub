@@ -1331,37 +1331,57 @@ function VonixeLib:CreateWindow(config)
             end
             function DdObj:SetTitle(t) nameLbl.Text = t end
             function DdObj:Refresh(newOptions)
-                for _, b in ipairs(optBtns) do b:Destroy() end
-                optBtns = {}
+                for _, b in ipairs(optBtns) do pcall(function() b.btn:Destroy() end) end
+                table.clear(optBtns)
                 options = newOptions
-                menuH = #options * 30
                 for _, opt in ipairs(options) do
-                    local ob = Instance.new("TextButton")
-                    ob.Size            = UDim2.new(1, 0, 0, 30)
-                    ob.BackgroundColor3 = Theme.BG3
-                    ob.BackgroundTransparency = 1
-                    ob.BorderSizePixel = 0
-                    ob.Text            = ""
-                    ob.AutoButtonColor = false
-                    ob.ZIndex          = 21
-                    ob.Parent          = menu
-                    local ol = label(tostring(opt), 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, ob)
-                    ol.Size     = UDim2.new(1, -16, 1, 0)
-                    ol.Position = UDim2.new(0, 10, 0, 0)
-                    ol.ZIndex   = 22
-                    ob.MouseEnter:Connect(function() tween(ob, 0.08, {BackgroundTransparency = 0.85}) end)
-                    ob.MouseLeave:Connect(function() tween(ob, 0.08, {BackgroundTransparency = 1}) end)
-                    ob.MouseButton1Click:Connect(function()
-                        selected = opt; valLbl.Text = tostring(opt)
-                        if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
-                        opened = false
-                        tween(arrow, 0.15, {Rotation = 0})
-                        tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
-                        task.delay(0.15, function() menu.Visible = false end)
+                    local optBtn = Instance.new("TextButton")
+                    optBtn.Size            = UDim2.new(1, 0, 0, 30)
+                    optBtn.BackgroundColor3 = Theme.BG3
+                    optBtn.BackgroundTransparency = 1
+                    optBtn.BorderSizePixel = 0
+                    optBtn.Text            = ""
+                    optBtn.AutoButtonColor = false
+                    optBtn.ZIndex          = 21
+                    optBtn.Parent          = scroll
+
+                    local optLbl = label(tostring(opt), 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, optBtn)
+                    optLbl.Size     = UDim2.new(1, -50, 1, 0)
+                    optLbl.Position = UDim2.new(0, 10, 0, 0)
+                    optLbl.ZIndex   = 22
+                    
+                    optBtn.MouseEnter:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 0.85}) end)
+                    optBtn.MouseLeave:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 1}) end)
+                    
+                    optBtn.MouseButton1Click:Connect(function()
+                        if isMulti then
+                            local foundIdx = nil
+                            for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
+                            if foundIdx then table.remove(selected, foundIdx) else table.insert(selected, opt) end
+                            
+                            local str = table.concat(selected, ", ")
+                            if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
+                            valLbl.Text = str
+                            if dConfig.Callback then task.spawn(dConfig.Callback, selected) end
+                        else
+                            selected = opt
+                            valLbl.Text = tostring(opt)
+                            if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
+                            
+                            opened = false
+                            tween(arrow, 0.15, {Rotation = 0})
+                            tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                            task.delay(0.15, function() menu.Visible = false end)
+                        end
                     end)
-                    table.insert(optBtns, ob)
+                    table.insert(optBtns, {btn=optBtn, txt=tostring(opt):lower()})
+                end
+                if opened then
+                    local targetH = updateMenuSize()
+                    tween(menu, 0.2, {Size = UDim2.new(1, 0, 0, targetH)})
                 end
             end
+            DdObj.SetOptions = DdObj.Refresh
             return DdObj
         end
 

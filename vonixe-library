@@ -1111,6 +1111,7 @@ function VonixeLib:CreateWindow(config)
             end
             
             local opened = false
+            local DdObj = {} -- BALIKIN NAMA AKTENYA BANG!
 
             local wrapper = frame({
                 Size             = UDim2.new(1, 0, 0, 36),
@@ -1370,10 +1371,12 @@ function VonixeLib:CreateWindow(config)
                             local str = table.concat(selected, ", ")
                             if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
                             valLbl.Text = str
+                            DdObj.Value = selected -- UPDATE MEMORI! (SOLDERED ✅)
                             if dConfig.Callback then task.spawn(dConfig.Callback, selected) end
                         else
                             selected = opt
                             valLbl.Text = tostring(opt)
+                            DdObj.Value = opt -- UPDATE MEMORI! (SOLDERED ✅)
                             if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
                             
                             opened = false

@@ -1099,11 +1099,16 @@ function VonixeLib:CreateWindow(config)
         -- DROPDOWN
         -- ================================================
         function Tab:AddDropdown(dConfig)
+            local isMulti  = dConfig.Multi or false
             local options  = dConfig.Options or dConfig.Values or {}
             
             local selected = dConfig.Value or dConfig.Default
-            if type(selected) == "table" then selected = selected[1] or "" end
-            if not selected or selected == "" then selected = options[1] or "" end
+            if isMulti then
+                if type(selected) ~= "table" then selected = {selected} end
+            else
+                if type(selected) == "table" then selected = selected[1] or "" end
+                if not selected or selected == "" then selected = options[1] or "" end
+            end
             
             local opened = false
             local DdObj  = {} 
@@ -1137,7 +1142,18 @@ function VonixeLib:CreateWindow(config)
             nameLbl.Position = UDim2.new(0, 10, 0, 0)
             nameLbl.ZIndex   = 11
 
-            local valLbl = label(tostring(selected), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
+            local function formatValText(val)
+                if isMulti then
+                    local str = table.concat(val, ", ")
+                    if str == "" then return "None" end
+                    if #str > 14 then return str:sub(1,12).."..." end
+                    return str
+                else
+                    return tostring(val)
+                end
+            end
+
+            local valLbl = label(formatValText(selected), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
             valLbl.Size     = UDim2.new(0.5, -30, 1, 0)
             valLbl.Position = UDim2.new(0.5, 0, 0, 0)
             valLbl.ZIndex   = 11
@@ -1166,7 +1182,7 @@ function VonixeLib:CreateWindow(config)
             local menuList = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, menu)
             
             local searchBox = nil
-            if #options > 4 then
+            if #options > 4 or isMulti then
                 local searchRow = frame({Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1, ZIndex = 21}, menu)
                 local searchBg = frame({Size = UDim2.new(1, -12, 1, -6), Position = UDim2.new(0, 6, 0, 3), BackgroundColor3 = Theme.BG4, ZIndex = 21}, searchRow)
                 corner(6, searchBg)
@@ -1234,7 +1250,12 @@ function VonixeLib:CreateWindow(config)
                 optLbl.ZIndex   = 22
                 
                 local function getIsSel()
-                    return selected == opt
+                    if isMulti then
+                        for _, v in pairs(selected) do if v == opt then return true end end
+                        return false
+                    else
+                        return selected == opt
+                    end
                 end
 
                 local function refreshVisual(anim)
@@ -1242,18 +1263,22 @@ function VonixeLib:CreateWindow(config)
                     if isS then
                         if anim then 
                             tween(dot, 0.2, {BackgroundTransparency = 0})
+                            tween(optLbl, 0.2, {TextColor3 = Theme.ACCENT2})
                             tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG4, BackgroundTransparency = 0.6})
                         else 
                             dot.BackgroundTransparency = 0
+                            optLbl.TextColor3 = Theme.ACCENT2
                             optBtn.BackgroundColor3 = Theme.BG4
                             optBtn.BackgroundTransparency = 0.6 
                         end
                     else
                         if anim then 
                             tween(dot, 0.2, {BackgroundTransparency = 1})
+                            tween(optLbl, 0.2, {TextColor3 = Theme.TEXT2})
                             tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG3, BackgroundTransparency = 1})
                         else 
                             dot.BackgroundTransparency = 1
+                            optLbl.TextColor3 = Theme.TEXT2
                             optBtn.BackgroundColor3 = Theme.BG3
                             optBtn.BackgroundTransparency = 1 
                         end
@@ -1267,15 +1292,25 @@ function VonixeLib:CreateWindow(config)
                 end)
 
                 optBtn.MouseButton1Click:Connect(function()
-                    selected = opt
-                    valLbl.Text = tostring(opt)
-                    DdObj.Value = opt
-                    for _, vFunc in pairs(optViews) do vFunc(true) end
-                    if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
-                    opened = false
-                    tween(arrow, 0.15, {Rotation = 0})
-                    tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
-                    task.delay(0.15, function() menu.Visible = false end)
+                    if isMulti then
+                        local foundIdx = nil
+                        for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
+                        if foundIdx then table.remove(selected, foundIdx) else table.insert(selected, opt) end
+                        refreshVisual(true)
+                        valLbl.Text = formatValText(selected)
+                        DdObj.Value = selected
+                        if dConfig.Callback then task.spawn(dConfig.Callback, selected) end
+                    else
+                        selected = opt
+                        valLbl.Text = formatValText(opt)
+                        DdObj.Value = opt
+                        for _, vFunc in pairs(optViews) do vFunc(true) end
+                        if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
+                        opened = false
+                        tween(arrow, 0.15, {Rotation = 0})
+                        tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                        task.delay(0.15, function() menu.Visible = false end)
+                    end
                 end)
 
                 optViews[opt] = refreshVisual
@@ -1327,7 +1362,7 @@ function VonixeLib:CreateWindow(config)
             function DdObj:SetValue(v)
                 selected = v
                 DdObj.Value = v
-                valLbl.Text = tostring(v)
+                valLbl.Text = formatValText(v)
                 for _, vFunc in pairs(optViews) do vFunc(false) end
             end
             function DdObj:SetTitle(t) nameLbl.Text = t end

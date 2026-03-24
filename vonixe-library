@@ -1223,21 +1223,31 @@ function VonixeLib:CreateWindow(config)
                 optLbl.ZIndex   = 22
                 
                 local updateVisual
+                local optStroke = stroke(Theme.ACCENT1, 1, optBtn, 1) -- Stroke tersembunyi
+                optStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
                 if isMulti then
-                    local trackBg = frame({Size=UDim2.new(0,26,0,14), Position=UDim2.new(1,-36,0.5,-7), BackgroundColor3=Theme.BG4, ZIndex=22}, optBtn)
-                    corner(99, trackBg); stroke(Theme.STROKE2, 1, trackBg)
-                    local thumb = frame({Size=UDim2.new(0,10,0,10), Position=UDim2.new(0,2,0.5,-5), BackgroundColor3=Theme.TEXT3, ZIndex=23}, trackBg)
-                    corner(99, thumb)
-                    
                     updateVisual = function(anim)
                         local isSel = false
                         for _,v in pairs(selected) do if v==opt then isSel=true; break end end
                         if isSel then
-                            if anim then tween(trackBg, 0.2, {BackgroundColor3=Theme.ACCENT1}); tween(thumb, 0.3, {Position=UDim2.new(1,-12,0.5,-5), BackgroundColor3=Theme.TEXT}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-                            else trackBg.BackgroundColor3=Theme.ACCENT1; thumb.Position=UDim2.new(1,-12,0.5,-5); thumb.BackgroundColor3=Theme.TEXT end
+                            if anim then 
+                                tween(optStroke, 0.2, {Transparency = 0})
+                                tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG4, BackgroundTransparency = 0.6})
+                            else 
+                                optStroke.Transparency = 0
+                                optBtn.BackgroundColor3 = Theme.BG4
+                                optBtn.BackgroundTransparency = 0.6
+                            end
                         else
-                            if anim then tween(trackBg, 0.2, {BackgroundColor3=Theme.BG4}); tween(thumb, 0.3, {Position=UDim2.new(0,2,0.5,-5), BackgroundColor3=Theme.TEXT3}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-                            else trackBg.BackgroundColor3=Theme.BG4; thumb.Position=UDim2.new(0,2,0.5,-5); thumb.BackgroundColor3=Theme.TEXT3 end
+                            if anim then 
+                                tween(optStroke, 0.2, {Transparency = 1})
+                                tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG3, BackgroundTransparency = 1})
+                            else 
+                                optStroke.Transparency = 1
+                                optBtn.BackgroundColor3 = Theme.BG3
+                                optBtn.BackgroundTransparency = 1
+                            end
                         end
                     end
                     updateVisual(false)

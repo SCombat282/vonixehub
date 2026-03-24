@@ -1203,9 +1203,8 @@ function VonixeLib:CreateWindow(config)
             scroll.ScrollBarImageColor3 = Theme.TEXT3
             scroll.ZIndex = 21
             scroll.Parent = menu
-            local optsLayout = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, scroll)
+            local optsLayout = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.Ver            local optInstances = {} -- Store data for each option
 
-            local optBtns = {}
             for _, opt in ipairs(options) do
                 local optBtn = Instance.new("TextButton")
                 optBtn.Size            = UDim2.new(1, 0, 0, 30)
@@ -1222,64 +1221,82 @@ function VonixeLib:CreateWindow(config)
                 optLbl.Position = UDim2.new(0, 10, 0, 0)
                 optLbl.ZIndex   = 22
                 
-                local updateVisual
-                local optStroke = stroke(Theme.ACCENT1, 1, optBtn, 1) -- Stroke tersembunyi
+                local optStroke = stroke(Theme.ACCENT1, 1, optBtn, 1)
                 optStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-                if isMulti then
-                    updateVisual = function(anim)
-                        local isSel = false
-                        for _,v in pairs(selected) do if v==opt then isSel=true; break end end
-                        if isSel then
-                            if anim then 
-                                tween(optStroke, 0.2, {Transparency = 0})
-                                tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG4, BackgroundTransparency = 0.6})
-                            else 
-                                optStroke.Transparency = 0
-                                optBtn.BackgroundColor3 = Theme.BG4
-                                optBtn.BackgroundTransparency = 0.6
-                            end
-                        else
-                            if anim then 
-                                tween(optStroke, 0.2, {Transparency = 1})
-                                tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG3, BackgroundTransparency = 1})
-                            else 
-                                optStroke.Transparency = 1
-                                optBtn.BackgroundColor3 = Theme.BG3
-                                optBtn.BackgroundTransparency = 1
-                            end
-                        end
+                local function getIsSelected()
+                    if isMulti then
+                        for _,v in pairs(selected) do if v==opt then return true end end
+                        return false
+                    else
+                        return selected == opt
                     end
-                    updateVisual(false)
                 end
 
-                optBtn.MouseEnter:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 0.85}) end)
-                optBtn.MouseLeave:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 1}) end)
-                
-                    optBtn.MouseButton1Click:Connect(function()
-                        if isMulti then
-                            local foundIdx = nil
-                            for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
-                            if foundIdx then table.remove(selected, foundIdx) else table.insert(selected, opt) end
-                            updateVisual(true)
-                            
-                            local str = table.concat(selected, ", ")
-                            if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
-                            valLbl.Text = str
-                            DdObj.Value = selected -- UPDATE MEMORI!
-                            if dConfig.Callback then task.spawn(dConfig.Callback, selected) end
-                        else
-                            selected = opt
-                            valLbl.Text = tostring(opt)
-                            DdObj.Value = opt -- UPDATE MEMORI!
-                            if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
-                            
-                            opened = false
-                            tween(arrow, 0.15, {Rotation = 0})
-                            tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
-                            task.delay(0.15, function() menu.Visible = false end)
+                local function updateVisual(anim)
+                    local isSel = getIsSelected()
+                    if isSel then
+                        if anim then 
+                            tween(optStroke, 0.2, {Transparency = 0})
+                            tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG4, BackgroundTransparency = 0.6})
+                        else 
+                            optStroke.Transparency = 0
+                            optBtn.BackgroundColor3 = Theme.BG4
+                            optBtn.BackgroundTransparency = 0.6
                         end
-                    end)
+                    else
+                        if anim then 
+                            tween(optStroke, 0.2, {Transparency = 1})
+                            tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG3, BackgroundTransparency = 1})
+                        else 
+                            optStroke.Transparency = 1
+                            optBtn.BackgroundColor3 = Theme.BG3
+                            optBtn.BackgroundTransparency = 1
+                        end
+                    end
+                end
+                
+                optInstances[opt] = updateVisual
+                updateVisual(false)
+
+                optBtn.MouseEnter:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 0.85}) end)
+                optBtn.MouseLeave:Connect(function() 
+                    local isSel = getIsSelected()
+                    if isSel then tween(optBtn, 0.08, {BackgroundTransparency = 0.6})
+                    else tween(optBtn, 0.08, {BackgroundTransparency = 1}) end
+                end)
+                
+                optBtn.MouseButton1Click:Connect(function()
+                    if isMulti then
+                        local foundIdx = nil
+                        for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
+                        if foundIdx then table.remove(selected, foundIdx) else table.insert(selected, opt) end
+                        updateVisual(true)
+                        
+                        local str = table.concat(selected, ", ")
+                        if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
+                        valLbl.Text = str
+                        DdObj.Value = selected
+                        if dConfig.Callback then task.spawn(dConfig.Callback, selected) end
+                    else
+                        selected = opt
+                        valLbl.Text = tostring(opt)
+                        DdObj.Value = opt
+                        
+                        -- Refresh ALL items in this dropdown
+                        for _, updateFunc in pairs(optInstances) do
+                            updateFunc(true)
+                        end
+                        
+                        if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
+                        opened = false
+                        tween(arrow, 0.15, {Rotation = 0})
+                        tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                        task.delay(0.15, function() menu.Visible = false end)
+                    end
+                end)
+            end
+           end)
                 table.insert(optBtns, {btn=optBtn, txt=tostring(opt):lower()})
             end
 

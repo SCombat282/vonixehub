@@ -1790,9 +1790,7 @@ function VonixeLib:CreateWindow(config)
         end)
     end
 
-    print("[VonixeLib] Window created:", title)
-    print("[VonixeLib] ScreenGui parent:", sg.Parent)
-    print("[VonixeLib] Main size:", main.Size)
+    print("[VonixeLib] Script Loaded ! Join Discord Vonixe Hub untuk mendapatkan update!)
     -- ================================================
     -- MONITOR TAB
     -- ================================================

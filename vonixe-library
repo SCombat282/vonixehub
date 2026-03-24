@@ -1531,7 +1531,7 @@ function VonixeLib:CreateWindow(config)
                 local prefix = isMission and "CATCHING " or ""
 
                 if data.zone and data.zone ~= "" and data.zone ~= "—" then
-                    mainLbl.Text = prefix .. (data.tier or "?"):upper() .. " AT " .. data.zone:upper()
+                    mainLbl.Text = prefix .. (data.tier or "?"):upper() .. " " .. data.zone:upper()
                 else
                     mainLbl.Text = (data.tier or "?"):upper()
                 end

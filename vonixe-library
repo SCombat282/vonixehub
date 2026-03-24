@@ -1102,7 +1102,7 @@ function VonixeLib:CreateWindow(config)
             local isMulti  = dConfig.Multi or false
             local options  = dConfig.Options or dConfig.Values or {}
             
-            local selected = dConfig.Value
+            local selected = dConfig.Value or dConfig.Default
             if isMulti then
                 if type(selected) ~= "table" then selected = {} end
             else
@@ -1201,7 +1201,6 @@ function VonixeLib:CreateWindow(config)
             scroll.ScrollBarImageColor3 = Theme.TEXT3
             scroll.ZIndex = 21
             scroll.Parent = menu
-            local optsLayout = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, scroll)
             local optsLayout   = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, scroll)
             local optViews     = {} 
             local optBtns      = {} 

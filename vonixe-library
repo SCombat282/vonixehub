@@ -218,7 +218,7 @@ function VonixeLib:Notify(nConfig)
 
     local nf = Instance.new("Frame", notifHolder)
     nf.Size = UDim2.new(1, 0, 0, 0); nf.BackgroundColor3 = Color3.fromRGB(20, 16, 12); nf.ClipsDescendants = true
-    nf.LayoutOrder = -os.time()
+    nf.LayoutOrder = -tick()
     
     local function mkCorner(r,p) local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,r);c.Parent=p end
     local function mkStroke(c,t,p) local s=Instance.new("UIStroke");s.Color=c;s.Thickness=t;s.Parent=p end
@@ -271,6 +271,7 @@ local function stroke(col, thick, p, trans)
     s.Color = col
     s.Thickness = thick or 1
     s.Transparency = trans or 0
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     s.Parent = p
     return s
 end
@@ -1790,7 +1791,7 @@ function VonixeLib:CreateWindow(config)
         end)
     end
 
-    print("[VonixeLib] Script Loaded ! Join Discord Vonixe Hub untuk mendapatkan update!")
+    print("[VonixeLib] Script Loaded! Join Discord Vonixe Hub untuk mendapatkan update!")
 
     -- ================================================
     -- MONITOR TAB

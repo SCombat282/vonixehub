@@ -1102,7 +1102,6 @@ function VonixeLib:CreateWindow(config)
             local isMulti  = dConfig.Multi or false
             local options  = dConfig.Options or dConfig.Values or {}
             
-            -- Parsing default value (Table kalo Multi, String kalo ndak)
             local selected = dConfig.Value
             if isMulti then
                 if type(selected) ~= "table" then selected = {} end
@@ -1112,7 +1111,7 @@ function VonixeLib:CreateWindow(config)
             end
             
             local opened = false
-            local DdObj = {} -- BALIKIN NAMA AKTENYA BANG!
+            local DdObj  = {} 
 
             local wrapper = frame({
                 Size             = UDim2.new(1, 0, 0, 36),
@@ -1159,7 +1158,6 @@ function VonixeLib:CreateWindow(config)
             arrow.AnchorPoint = Vector2.new(0.5, 0.5)
             arrow.Position    = UDim2.new(0.5, 0, 0.5, 0)
 
-            -- Menu
             local menu = frame({
                 Size             = UDim2.new(1, 0, 0, 0),
                 Position         = UDim2.new(0, 0, 0, 38),
@@ -1203,9 +1201,21 @@ function VonixeLib:CreateWindow(config)
             scroll.ScrollBarImageColor3 = Theme.TEXT3
             scroll.ZIndex = 21
             scroll.Parent = menu
-            local optsLayout = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.Ver            local optInstances = {} -- Store data for each option
+            local optsLayout = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, scroll)
+            local optsLayout   = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, scroll)
+            local optViews     = {} 
+            local optBtns      = {} 
 
-            for _, opt in ipairs(options) do
+            local function updateMenuSize()
+                local th = 0
+                for _,o in pairs(optBtns) do if o.btn.Visible then th = th + 30 end end
+                scroll.CanvasSize = UDim2.new(0, 0, 0, th)
+                local maxH = math.min(th, 150)
+                scroll.Size = UDim2.new(1, 0, 0, maxH)
+                return maxH + (searchBox and 32 or 0)
+            end
+
+            local function createOption(opt)
                 local optBtn = Instance.new("TextButton")
                 optBtn.Size            = UDim2.new(1, 0, 0, 30)
                 optBtn.BackgroundColor3 = Theme.BG3
@@ -1224,55 +1234,36 @@ function VonixeLib:CreateWindow(config)
                 local optStroke = stroke(Theme.ACCENT1, 1, optBtn, 1)
                 optStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-                local function getIsSelected()
+                local function getIsSel()
                     if isMulti then
                         for _,v in pairs(selected) do if v==opt then return true end end
                         return false
-                    else
-                        return selected == opt
-                    end
+                    else return selected == opt end
                 end
 
-                local function updateVisual(anim)
-                    local isSel = getIsSelected()
-                    if isSel then
-                        if anim then 
-                            tween(optStroke, 0.2, {Transparency = 0})
-                            tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG4, BackgroundTransparency = 0.6})
-                        else 
-                            optStroke.Transparency = 0
-                            optBtn.BackgroundColor3 = Theme.BG4
-                            optBtn.BackgroundTransparency = 0.6
-                        end
+                local function refreshVisual(anim)
+                    local isS = getIsSel()
+                    if isS then
+                        if anim then tween(optStroke, 0.2, {Transparency = 0}); tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG4, BackgroundTransparency = 0.6})
+                        else optStroke.Transparency = 0; optBtn.BackgroundColor3 = Theme.BG4; optBtn.BackgroundTransparency = 0.6 end
                     else
-                        if anim then 
-                            tween(optStroke, 0.2, {Transparency = 1})
-                            tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG3, BackgroundTransparency = 1})
-                        else 
-                            optStroke.Transparency = 1
-                            optBtn.BackgroundColor3 = Theme.BG3
-                            optBtn.BackgroundTransparency = 1
-                        end
+                        if anim then tween(optStroke, 0.2, {Transparency = 1}); tween(optBtn, 0.2, {BackgroundColor3 = Theme.BG3, BackgroundTransparency = 1})
+                        else optStroke.Transparency = 1; optBtn.BackgroundColor3 = Theme.BG3; optBtn.BackgroundTransparency = 1 end
                     end
                 end
-                
-                optInstances[opt] = updateVisual
-                updateVisual(false)
 
                 optBtn.MouseEnter:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 0.85}) end)
                 optBtn.MouseLeave:Connect(function() 
-                    local isSel = getIsSelected()
-                    if isSel then tween(optBtn, 0.08, {BackgroundTransparency = 0.6})
+                    if getIsSel() then tween(optBtn, 0.08, {BackgroundTransparency = 0.6})
                     else tween(optBtn, 0.08, {BackgroundTransparency = 1}) end
                 end)
-                
+
                 optBtn.MouseButton1Click:Connect(function()
                     if isMulti then
                         local foundIdx = nil
                         for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
                         if foundIdx then table.remove(selected, foundIdx) else table.insert(selected, opt) end
-                        updateVisual(true)
-                        
+                        refreshVisual(true)
                         local str = table.concat(selected, ", ")
                         if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
                         valLbl.Text = str
@@ -1282,12 +1273,7 @@ function VonixeLib:CreateWindow(config)
                         selected = opt
                         valLbl.Text = tostring(opt)
                         DdObj.Value = opt
-                        
-                        -- Refresh ALL items in this dropdown
-                        for _, updateFunc in pairs(optInstances) do
-                            updateFunc(true)
-                        end
-                        
+                        for _, vFunc in pairs(optViews) do vFunc(true) end
                         if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
                         opened = false
                         tween(arrow, 0.15, {Rotation = 0})
@@ -1295,26 +1281,20 @@ function VonixeLib:CreateWindow(config)
                         task.delay(0.15, function() menu.Visible = false end)
                     end
                 end)
-            end
-           end)
-                table.insert(optBtns, {btn=optBtn, txt=tostring(opt):lower()})
+
+                optViews[opt] = refreshVisual
+                table.insert(optBtns, {btn = optBtn, txt = tostring(opt):lower()})
+                refreshVisual(false)
             end
 
-            local function updateMenuSize()
-                local th = 0
-                for _,o in pairs(optBtns) do if o.btn.Visible then th = th + 30 end end
-                scroll.CanvasSize = UDim2.new(0, 0, 0, th)
-                local maxH = math.min(th, 150)
-                scroll.Size = UDim2.new(1, 0, 0, maxH)
-                return maxH + (searchBox and 32 or 0)
-            end
+            for _, o in ipairs(options) do createOption(o) end
 
             if searchBox then
                 searchBox.Changed:Connect(function(prop)
                     if prop == "Text" then
                         local q = searchBox.Text:lower()
                         for _,o in pairs(optBtns) do
-                            if q=="" or o.txt:find(q, 1, true) then o.btn.Visible=true else o.btn.Visible=false end
+                            o.btn.Visible = (q=="" or o.txt:find(q, 1, true))
                         end
                         if opened then
                             local newH = updateMenuSize()
@@ -1322,12 +1302,6 @@ function VonixeLib:CreateWindow(config)
                         end
                     end
                 end)
-            end
-            
-            if isMulti then
-                local str = table.concat(selected, ", ")
-                if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
-                valLbl.Text = str
             end
 
             local clickArea = Instance.new("TextButton")
@@ -1341,7 +1315,6 @@ function VonixeLib:CreateWindow(config)
                 if opened then
                     menu.Visible = true
                     local targetH = updateMenuSize()
-                    menu.Size    = UDim2.new(1, 0, 0, 0)
                     tween(arrow, 0.2, {Rotation = 180})
                     tween(menu, 0.2, {Size = UDim2.new(1, 0, 0, targetH)})
                 else
@@ -1357,64 +1330,15 @@ function VonixeLib:CreateWindow(config)
             DdObj.Value = selected
             function DdObj:SetValue(v)
                 selected = v
-                DdObj.Value = v -- UPDATE MEMORI!
-                if isMulti then
-                    local str = table.concat(v, ", ")
-                    if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
-                    valLbl.Text = str
-                else
-                    valLbl.Text = tostring(v)
-                end
+                DdObj.Value = v
+                valLbl.Text = isMulti and (#v > 0 and table.concat(v, ", ") or "None") or tostring(v)
+                for _, vFunc in pairs(optViews) do vFunc(false) end
             end
             function DdObj:SetTitle(t) nameLbl.Text = t end
             function DdObj:Refresh(newOptions)
-                for _, b in ipairs(optBtns) do pcall(function() b.btn:Destroy() end) end
-                table.clear(optBtns)
-                options = newOptions
-                for _, opt in ipairs(options) do
-                    local optBtn = Instance.new("TextButton")
-                    optBtn.Size            = UDim2.new(1, 0, 0, 30)
-                    optBtn.BackgroundColor3 = Theme.BG3
-                    optBtn.BackgroundTransparency = 1
-                    optBtn.BorderSizePixel = 0
-                    optBtn.Text            = ""
-                    optBtn.AutoButtonColor = false
-                    optBtn.ZIndex          = 21
-                    optBtn.Parent          = scroll
-
-                    local optLbl = label(tostring(opt), 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, optBtn)
-                    optLbl.Size     = UDim2.new(1, -50, 1, 0)
-                    optLbl.Position = UDim2.new(0, 10, 0, 0)
-                    optLbl.ZIndex   = 22
-                    
-                    optBtn.MouseEnter:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 0.85}) end)
-                    optBtn.MouseLeave:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 1}) end)
-                    
-                    optBtn.MouseButton1Click:Connect(function()
-                        if isMulti then
-                            local foundIdx = nil
-                            for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
-                            if foundIdx then table.remove(selected, foundIdx) else table.insert(selected, opt) end
-                            
-                            local str = table.concat(selected, ", ")
-                            if str == "" then str = "None" elseif #str > 14 then str = str:sub(1,12).."..." end
-                            valLbl.Text = str
-                            DdObj.Value = selected -- UPDATE MEMORI! (SOLDERED ✅)
-                            if dConfig.Callback then task.spawn(dConfig.Callback, selected) end
-                        else
-                            selected = opt
-                            valLbl.Text = tostring(opt)
-                            DdObj.Value = opt -- UPDATE MEMORI! (SOLDERED ✅)
-                            if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
-                            
-                            opened = false
-                            tween(arrow, 0.15, {Rotation = 0})
-                            tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
-                            task.delay(0.15, function() menu.Visible = false end)
-                        end
-                    end)
-                    table.insert(optBtns, {btn=optBtn, txt=tostring(opt):lower()})
-                end
+                for _, oData in pairs(optBtns) do pcall(function() oData.btn:Destroy() end) end
+                table.clear(optBtns); table.clear(optViews); options = newOptions
+                for _, o in ipairs(options) do createOption(o) end
                 if opened then
                     local targetH = updateMenuSize()
                     tween(menu, 0.2, {Size = UDim2.new(1, 0, 0, targetH)})

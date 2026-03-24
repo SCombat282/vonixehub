@@ -1790,7 +1790,7 @@ function VonixeLib:CreateWindow(config)
         end)
     end
 
-    print("[VonixeLib] Script Loaded ! Join Discord Vonixe Hub untuk mendapatkan update!)
+    print("[VonixeLib] Script Loaded ! Join Discord Vonixe Hub untuk mendapatkan update!")
 
     -- ================================================
     -- MONITOR TAB

@@ -11,6 +11,7 @@
 
 local VonixeLib = {}
 VonixeLib.__index = VonixeLib
+VonixeLib.Version = "1.0.2-CleanUI"
 
 -- ================================================
 -- SERVICES
@@ -391,7 +392,28 @@ local function makeDragConn(dragFrame, moveFrame)
             end
         end
     end)
-end
+    local function makeIconBtn(parent, xOffset, iconName, bgCol, hoverCol)
+        local btn = Instance.new("TextButton")
+        local iconBtnSize = 24
+        btn.Size            = UDim2.new(0, iconBtnSize, 0, iconBtnSize)
+        btn.Position        = UDim2.new(1, xOffset, 0.5, -iconBtnSize/2)
+        btn.BackgroundColor3 = bgCol
+        btn.Text            = ""
+        btn.AutoButtonColor = false
+        btn.BorderSizePixel = 0
+        btn.ZIndex          = 15
+        btn.Parent          = parent
+        corner(99, btn)
+        local ico = mkIcon(iconName, 12, Color3.fromRGB(220, 200, 190), btn, 16)
+        ico.AnchorPoint = Vector2.new(0.5, 0.5); ico.Position = UDim2.new(0.5, 0, 0.5, 0); ico.Size = UDim2.new(0, 12, 0, 12)
+        local function setIcoBtnColor(col)
+            local inner = ico:FindFirstChildWhichIsA("ImageLabel") or ico:FindFirstChildWhichIsA("TextLabel")
+            if inner then if inner:IsA("ImageLabel") then tween(inner, 0.1, {ImageColor3 = col}) else tween(inner, 0.1, {TextColor3 = col}) end end
+        end
+        btn.MouseEnter:Connect(function() tween(btn, 0.1, {BackgroundColor3 = hoverCol}); setIcoBtnColor(Color3.new(1,1,1)) end)
+        btn.MouseLeave:Connect(function() tween(btn, 0.1, {BackgroundColor3 = bgCol}); setIcoBtnColor(Color3.fromRGB(220, 200, 190)) end)
+        return btn
+    end
 
 -- ================================================
 -- STANDALONE PATH PLAYER (Mini Window)
@@ -408,7 +430,7 @@ function VonixeLib:CreatePathPlayer(pConfig)
         sg.Parent = getParent()
     end
 
-    local mainW, mainH = 340, 168
+    local mainW, mainH = 340, 134
     local main = frame({
         Size = UDim2.new(0, mainW, 0, mainH),
         Position = UDim2.new(0.5, -mainW/2, 0.5, -mainH/2),
@@ -426,12 +448,17 @@ function VonixeLib:CreatePathPlayer(pConfig)
     }, main)
     
     local titleLbl = label(title, 11, Enum.Font.GothamBold, Theme.TEXT2, Enum.TextXAlignment.Left, titleBar)
-    titleLbl.Position = UDim2.new(0, 12, 0, 0); titleLbl.Size = UDim2.new(1, -40, 1, 0)
+    titleLbl.Position = UDim2.new(0, 12, 0, 0); titleLbl.Size = UDim2.new(1, -70, 1, 0)
     
-    local closeBtn = Instance.new("TextButton", titleBar)
-    closeBtn.Size = UDim2.new(0, 26, 0, 26); closeBtn.Position = UDim2.new(1, -26, 0, 0)
-    closeBtn.BackgroundTransparency = 1; closeBtn.Text = "✕"; closeBtn.TextColor3 = Theme.RED; closeBtn.TextSize = 14; closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.MouseButton1Click:Connect(function() main:Destroy() end)
+    local closeBtn = makeIconBtn(titleBar, -30, "x", Color3.fromRGB(50, 20, 20), Color3.fromRGB(180, 40, 40))
+    local minBtn   = makeIconBtn(titleBar, -60, "minus", Color3.fromRGB(35, 28, 10), Color3.fromRGB(100, 70, 10))
+    closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
+    
+    local minimized = false
+    minBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        tween(main, 0.3, {Size = minimized and UDim2.new(0, mainW, 0, 26) or UDim2.new(0, mainW, 0, mainH)})
+    end)
     
     makeDragConn(titleBar, main)
 
@@ -475,19 +502,7 @@ function VonixeLib:CreatePathPlayer(pConfig)
         sBtn.MouseButton1Click:Connect(function() State.Speed = i; for v, b in pairs(speedBtns) do b.BackgroundColor3 = (v == i) and Theme.ACCENT1 or Theme.TOGGLE_OFF end end)
     end
 
-    local toggleFrame = frame({Size = UDim2.new(1, -30, 0, 32), Position = UDim2.new(0, 15, 0, 105), BackgroundTransparency = 1}, card)
-    local function mkBtn(txt, x, active, cb)
-        local btn = Instance.new("TextButton", toggleFrame)
-        btn.Size = UDim2.new(0.31, 0, 1, 0); btn.Position = UDim2.new(x, 0, 0, 0)
-        btn.BackgroundColor3 = active and Theme.ACCENT1 or Theme.TOGGLE_OFF
-        btn.Text = txt; btn.Font = Enum.Font.GothamBold; btn.TextSize = 12; btn.TextColor3 = Color3.new(1,1,1)
-        corner(6, btn)
-        btn.MouseButton1Click:Connect(function() active = not active; btn.BackgroundColor3 = active and Theme.ACCENT1 or Theme.TOGGLE_OFF; cb(active) end)
-        return btn
-    end
-    mkBtn("Path", 0, State.ShowPath, function(v) State.ShowPath = v end)
-    mkBtn("Respawn", 0.34, false, function(v) end)
-    mkBtn("Safety", 0.68, State.Safety, function(v) State.Safety = v end)
+    -- Speed / Play (No Toggles as requested)
 
     local playbackConn = nil
     local function findInPath(t)
@@ -1769,7 +1784,7 @@ function VonixeLib:CreateWindow(config)
             }
 
             local card = frame({
-                Size = UDim2.new(1, 0, 0, 145),
+                Size = UDim2.new(1, 0, 0, 105),
                 BackgroundColor3 = Theme.BG2,
             }, tabContent)
             corner(10, card)
@@ -1825,23 +1840,7 @@ function VonixeLib:CreateWindow(config)
             end
 
             -- Toggles (Path, Safety)
-            local toggleFrame = frame({Size = UDim2.new(1, -30, 0, 32), Position = UDim2.new(0, 15, 0, 105), BackgroundTransparency = 1}, card)
-            local function mkBtn(txt, x, active, cb)
-                local btn = Instance.new("TextButton", toggleFrame)
-                btn.Size = UDim2.new(0.31, 0, 1, 0); btn.Position = UDim2.new(x, 0, 0, 0)
-                btn.BackgroundColor3 = active and Theme.ACCENT1 or Theme.TOGGLE_OFF
-                btn.Text = txt; btn.Font = Enum.Font.GothamBold; btn.TextSize = 12; btn.TextColor3 = Color3.new(1,1,1)
-                corner(6, btn)
-                btn.MouseButton1Click:Connect(function()
-                    active = not active
-                    btn.BackgroundColor3 = active and Color3.fromRGB(130, 80, 255) or Color3.fromRGB(35, 35, 40)
-                    cb(active)
-                end)
-                return btn
-            end
-            mkBtn("Path", 0, State.ShowPath, function(v) State.ShowPath = v end)
-            mkBtn("Respawn", 0.34, false, function(v) end)
-            mkBtn("Safety", 0.68, State.Safety, function(v) State.Safety = v end)
+            -- (Toggles Removed)
 
             -- Logic
             local playbackConn = nil

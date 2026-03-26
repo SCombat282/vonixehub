@@ -392,33 +392,31 @@ local function makeDragConn(dragFrame, moveFrame)
             end
         end
     end)
-    local function makeIconBtn(parent, xOffset, iconName, bgCol, hoverCol)
-        local btn = Instance.new("TextButton")
-        local iconBtnSize = 24
-        btn.Size            = UDim2.new(0, iconBtnSize, 0, iconBtnSize)
-        btn.Position        = UDim2.new(1, xOffset, 0.5, -iconBtnSize/2)
-        btn.BackgroundColor3 = bgCol
-        btn.Text            = ""
-        btn.AutoButtonColor = false
-        btn.BorderSizePixel = 0
-        btn.ZIndex          = 15
-        btn.Parent          = parent
-        corner(99, btn)
-        local ico = mkIcon(iconName, 12, Color3.fromRGB(220, 200, 190), btn, 16)
-        ico.AnchorPoint = Vector2.new(0.5, 0.5); ico.Position = UDim2.new(0.5, 0, 0.5, 0); ico.Size = UDim2.new(0, 12, 0, 12)
-        local function setIcoBtnColor(col)
-            local inner = ico:FindFirstChildWhichIsA("ImageLabel") or ico:FindFirstChildWhichIsA("TextLabel")
-            if inner then if inner:IsA("ImageLabel") then tween(inner, 0.1, {ImageColor3 = col}) else tween(inner, 0.1, {TextColor3 = col}) end end
-        end
-        btn.MouseEnter:Connect(function() tween(btn, 0.1, {BackgroundColor3 = hoverCol}); setIcoBtnColor(Color3.new(1,1,1)) end)
-        btn.MouseLeave:Connect(function() tween(btn, 0.1, {BackgroundColor3 = bgCol}); setIcoBtnColor(Color3.fromRGB(220, 200, 190)) end)
-        return btn
+end
+
+local function makeIconBtn(parent, xOffset, iconName, bgCol, hoverCol)
+    local btn = Instance.new("TextButton")
+    local iconBtnSize = 24
+    btn.Size            = UDim2.new(0, iconBtnSize, 0, iconBtnSize)
+    btn.Position        = UDim2.new(1, xOffset, 0.5, -iconBtnSize/2)
+    btn.BackgroundColor3 = bgCol; btn.Text = ""; btn.AutoButtonColor = false; btn.BorderSizePixel = 0; btn.ZIndex = 15; btn.Parent = parent
+    corner(99, btn)
+    local ico = mkIcon(iconName, 12, Color3.fromRGB(220, 200, 190), btn, 16)
+    ico.AnchorPoint = Vector2.new(0.5, 0.5); ico.Position = UDim2.new(0.5, 0, 0.5, 0); ico.Size = UDim2.new(0, 12, 0, 12)
+    local function setIcoBtnColor(col)
+        local inner = ico:FindFirstChildWhichIsA("ImageLabel") or ico:FindFirstChildWhichIsA("TextLabel")
+        if inner then if inner:IsA("ImageLabel") then tween(inner, 0.1, {ImageColor3 = col}) else tween(inner, 0.1, {TextColor3 = col}) end end
     end
+    btn.MouseEnter:Connect(function() tween(btn, 0.1, {BackgroundColor3 = hoverCol}); setIcoBtnColor(Color3.new(1,1,1)) end)
+    btn.MouseLeave:Connect(function() tween(btn, 0.1, {BackgroundColor3 = bgCol}); setIcoBtnColor(Color3.fromRGB(220, 200, 190)) end)
+    return btn
+end
+VonixeLib.makeIconBtn = makeIconBtn
 
 -- ================================================
--- STANDALONE PATH PLAYER (Mini Window)
+-- STANDALONE PLAYER CARD (Mini Window)
 -- ================================================
-function VonixeLib:CreatePathPlayer(pConfig)
+function VonixeLib:CreatePlayerCard(pConfig)
     local title = pConfig.Title or "Auto Walk Player"
     local data = pConfig.Data or (_G.VonixeData3 and _G.VonixeData3.path) or {}
     

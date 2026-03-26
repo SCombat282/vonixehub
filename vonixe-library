@@ -1783,6 +1783,7 @@ function VonixeLib:CreateWindow(config)
         Tab.Section  = Tab.AddSection
         Tab.Space    = function() end -- no-op
         Tab.MissionBar = Tab.AddMissionBar
+        Tab.PathPlayer = Tab.AddPathPlayer
 
         return Tab
     end

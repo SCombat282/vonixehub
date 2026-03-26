@@ -1602,6 +1602,174 @@ function VonixeLib:CreateWindow(config)
             function LbObj:SetColor(c) lbl.TextColor3 = c end
             return LbObj
         end
+        
+        -- ================================================
+        -- PATH PLAYER (Auto Walk Component - Custom Purple Style)
+        -- ================================================
+        function Tab:AddPathPlayer(pConfig)
+            local title = pConfig.Title or "Auto Walk Player"
+            local data = pConfig.Data or (_G.VonixeData3 and _G.VonixeData3.path) or {}
+            
+            local State = {
+                Playing = false,
+                CurrentTime = 0,
+                Speed = 1,
+                Loop = true,
+                ShowPath = true,
+                Safety = true
+            }
+
+            local card = frame({
+                Size = UDim2.new(1, 0, 0, 145),
+                BackgroundColor3 = Color3.fromRGB(22, 22, 28),
+                Parent = tabContent
+            })
+            corner(10, card)
+            stroke(Color3.fromRGB(130, 80, 255), 1.2, card, 0.4)
+
+            -- Purple top accent
+            local topAcc = frame({
+                Size = UDim2.new(1, 0, 0, 2),
+                BackgroundColor3 = Color3.fromRGB(130, 80, 255),
+            }, card)
+            corner(99, topAcc)
+
+            -- Header with Title
+            local cardTitle = label(title, 16, Enum.Font.GothamBold, Color3.new(1,1,1), Enum.TextXAlignment.Left, card)
+            cardTitle.Size = UDim2.new(1, -110, 0, 26)
+            cardTitle.Position = UDim2.new(0, 15, 0, 10)
+
+            local statusLbl = label("IDLE", 12, Enum.Font.GothamBold, Color3.new(0.5, 0.5, 0.5), Enum.TextXAlignment.Left, card)
+            statusLbl.Size = UDim2.new(1, -110, 0, 18)
+            statusLbl.Position = UDim2.new(0, 15, 0, 32)
+
+            -- Controls Buttons (Icons)
+            local playBtn = Instance.new("TextButton", card)
+            playBtn.Size = UDim2.new(0, 48, 0, 48)
+            playBtn.Position = UDim2.new(1, -110, 0, 10)
+            playBtn.BackgroundColor3 = Color3.fromRGB(130, 80, 255)
+            playBtn.Text = "\u25B6"; playBtn.Font = Enum.Font.GothamBold; playBtn.TextSize = 22; playBtn.TextColor3 = Color3.new(1,1,1)
+            corner(24, playBtn)
+            stroke(Color3.fromRGB(150, 100, 255), 2, playBtn, 0.5)
+
+            local stopBtn = Instance.new("TextButton", card)
+            stopBtn.Size = UDim2.new(0, 36, 0, 36)
+            stopBtn.Position = UDim2.new(1, -50, 0, 16)
+            stopBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+            stopBtn.Text = "\u25FC"; stopBtn.Font = Enum.Font.GothamBold; stopBtn.TextSize = 14; stopBtn.TextColor3 = Color3.new(1,1,1)
+            corner(18, stopBtn)
+
+            -- Speed Selector
+            local speedFrame = frame({Size = UDim2.new(1, -30, 0, 32), Position = UDim2.new(0, 15, 0, 65), BackgroundTransparency = 1}, card)
+            local speedBtns = {}
+            for i = 1, 5 do
+                local sBtn = Instance.new("TextButton", speedFrame)
+                sBtn.Size = UDim2.new(0.18, 0, 1, 0)
+                sBtn.Position = UDim2.new((i-1)*0.2, 0, 0, 0)
+                sBtn.BackgroundColor3 = (i == 1) and Color3.fromRGB(130, 80, 255) or Color3.fromRGB(35, 35, 40)
+                sBtn.Text = i.."x"; sBtn.Font = Enum.Font.GothamBold; sBtn.TextSize = 12; sBtn.TextColor3 = Color3.new(1,1,1)
+                corner(6, sBtn)
+                speedBtns[i] = sBtn
+                sBtn.MouseButton1Click:Connect(function()
+                    State.Speed = i
+                    for v, b in pairs(speedBtns) do b.BackgroundColor3 = (v == i) and Color3.fromRGB(130, 80, 255) or Color3.fromRGB(35, 35, 40) end
+                end)
+            end
+
+            -- Toggles (Path, Safety)
+            local toggleFrame = frame({Size = UDim2.new(1, -30, 0, 32), Position = UDim2.new(0, 15, 0, 105), BackgroundTransparency = 1}, card)
+            local function mkBtn(txt, x, active, cb)
+                local btn = Instance.new("TextButton", toggleFrame)
+                btn.Size = UDim2.new(0.31, 0, 1, 0); btn.Position = UDim2.new(x, 0, 0, 0)
+                btn.BackgroundColor3 = active and Color3.fromRGB(130, 80, 255) or Color3.fromRGB(35, 35, 40)
+                btn.Text = txt; btn.Font = Enum.Font.GothamBold; btn.TextSize = 12; btn.TextColor3 = Color3.new(1,1,1)
+                corner(6, btn)
+                btn.MouseButton1Click:Connect(function()
+                    active = not active
+                    btn.BackgroundColor3 = active and Color3.fromRGB(130, 80, 255) or Color3.fromRGB(35, 35, 40)
+                    cb(active)
+                end)
+                return btn
+            end
+            mkBtn("Path", 0, State.ShowPath, function(v) State.ShowPath = v end)
+            mkBtn("Respawn", 0.34, false, function(v) end)
+            mkBtn("Safety", 0.68, State.Safety, function(v) State.Safety = v end)
+
+            -- Logic
+            local playbackConn = nil
+            local function findInPath(t)
+                local d = pConfig.Data or (_G.VonixeData3 and _G.VonixeData3.path) or {}
+                if #d < 1 then return nil, nil end
+                local totalT = d[#d].t
+                if t > totalT then return nil, nil end
+                local ratio = math.clamp(t / totalT, 0, 1)
+                local approxIdx = math.clamp(math.round(ratio * (#d-1)) + 1, 1, #d)
+                local si = math.max(1, approxIdx - 20)
+                for i = si, #d - 1 do if d[i].t <= t and d[i+1].t >= t then return d[i], d[i+1] end end
+                for i = 1, #d - 1 do if d[i].t <= t and d[i+1].t >= t then return d[i], d[i+1] end end
+                return d[1], d[2]
+            end
+
+            local function stop()
+                if playbackConn then playbackConn:Disconnect(); playbackConn = nil end
+                State.Playing = false
+                playBtn.Text = "\u25B6"
+                statusLbl.Text = "IDLE"; statusLbl.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+                local char = Player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hrp then hrp.Anchored = false end
+                if hum then hum:Move(Vector3.zero, false); pcall(function() char.Animate.Enabled = true end); hum.PlatformStand = false end
+            end
+
+            playBtn.MouseButton1Click:Connect(function()
+                if State.Playing then
+                    State.Playing = false; playBtn.Text = "\u25B6"; statusLbl.Text = "PAUSED"
+                else
+                    local d = pConfig.Data or (_G.VonixeData3 and _G.VonixeData3.path) or {}
+                    if #d < 2 then return end
+                    State.Playing = true; playBtn.Text = "\u23F8"; statusLbl.Text = "PLAYING"; statusLbl.TextColor3 = Color3.fromRGB(130, 80, 255)
+                    if not playbackConn then
+                        State.CurrentTime = 0
+                        playbackConn = RunService.Heartbeat:Connect(function(dt)
+                            if not State.Playing then return end
+                            State.CurrentTime = State.CurrentTime + (dt * State.Speed)
+                            local dLoop = pConfig.Data or (_G.VonixeData3 and _G.VonixeData3.path) or {}
+                            local totalT = dLoop[#dLoop].t
+                            if State.CurrentTime >= totalT then
+                                if State.Loop then State.CurrentTime = 0 else stop() return end
+                            end
+                            local p1, p2 = findInPath(State.CurrentTime)
+                            local char = Player.Character
+                            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                            local hum = char and char:FindFirstChildOfClass("Humanoid")
+                            if p1 and hrp and hum then
+                                local alpha = (p2 and p2.t ~= p1.t) and (State.CurrentTime - p1.t) / (p2.t - p1.t) or 0
+                                hrp.Anchored = false
+                                hrp.CFrame = p2 and p1.cf:Lerp(p2.cf, alpha) or p1.cf
+                                hum:Move(p1.md, false); hum:ChangeState(p1.st)
+                                if p1.jump then hum.Jump = true end
+                                hrp.AssemblyLinearVelocity = p2 and p1.vel:Lerp(p2.vel, alpha) or p1.vel
+                            end
+                        end)
+                    end
+                end
+            end)
+
+            stopBtn.MouseButton1Click:Connect(stop)
+            
+            RunService.Stepped:Connect(function()
+                if State.Playing and State.Safety then
+                    local char = Player.Character
+                    if char then for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false; v.CanTouch = true end end end
+                end
+            end)
+
+            local Obj = {}
+            function Obj:Stop() stop() end
+            function Obj:SetTitle(t) cardTitle.Text = t end
+            return Obj
+        end
 
         -- ================================================
         -- ALIASES (WindUI compat)

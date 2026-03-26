@@ -394,6 +394,155 @@ local function makeDragConn(dragFrame, moveFrame)
 end
 
 -- ================================================
+-- STANDALONE PATH PLAYER (Mini Window)
+-- ================================================
+function VonixeLib:CreatePathPlayer(pConfig)
+    local title = pConfig.Title or "Auto Walk Player"
+    local data = pConfig.Data or (_G.VonixeData3 and _G.VonixeData3.path) or {}
+    
+    local sg = getParent():FindFirstChild("VonixePathPlayer")
+    if not sg then
+        sg = Instance.new("ScreenGui")
+        sg.Name = "VonixePathPlayer"; sg.ResetOnSpawn = false; sg.DisplayOrder = 1000
+        pcall(function() if syn and syn.protect_gui then syn.protect_gui(sg) end end)
+        sg.Parent = getParent()
+    end
+
+    local mainW, mainH = 340, 168
+    local main = frame({
+        Size = UDim2.new(0, mainW, 0, mainH),
+        Position = UDim2.new(0.5, -mainW/2, 0.5, -mainH/2),
+        BackgroundColor3 = Theme.BG,
+        Active = true,
+        ClipsDescendants = true,
+    }, sg)
+    corner(12, main)
+    stroke(Theme.ACCENT1, 1.5, main)
+    
+    -- Title Bar (Drag Area)
+    local titleBar = frame({
+        Size = UDim2.new(1, 0, 0, 26),
+        BackgroundTransparency = 1,
+    }, main)
+    
+    local titleLbl = label(title, 11, Enum.Font.GothamBold, Theme.TEXT2, Enum.TextXAlignment.Left, titleBar)
+    titleLbl.Position = UDim2.new(0, 12, 0, 0); titleLbl.Size = UDim2.new(1, -40, 1, 0)
+    
+    local closeBtn = Instance.new("TextButton", titleBar)
+    closeBtn.Size = UDim2.new(0, 26, 0, 26); closeBtn.Position = UDim2.new(1, -26, 0, 0)
+    closeBtn.BackgroundTransparency = 1; closeBtn.Text = "✕"; closeBtn.TextColor3 = Theme.RED; closeBtn.TextSize = 14; closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.MouseButton1Click:Connect(function() main:Destroy() end)
+    
+    makeDragConn(titleBar, main)
+
+    -- Content Area
+    local card = frame({
+        Size = UDim2.new(1, -20, 1, -38),
+        Position = UDim2.new(0, 10, 0, 28),
+        BackgroundColor3 = Theme.BG2,
+    }, main)
+    corner(10, card)
+    stroke(Theme.ACCENT1, 1, card, 0.5)
+
+    -- Internal Components (Copied from Tab:AddPathPlayer but localized)
+    local State = { Playing = false, CurrentTime = 0, Speed = 1, Loop = true, ShowPath = true, Safety = true }
+    
+    local cardTitle = label(title, 16, Enum.Font.GothamBold, Color3.new(1,1,1), Enum.TextXAlignment.Left, card)
+    cardTitle.Size = UDim2.new(1, -110, 0, 26); cardTitle.Position = UDim2.new(0, 15, 0, 10)
+
+    local statusLbl = label("IDLE", 12, Enum.Font.GothamBold, Color3.new(0.5, 0.5, 0.5), Enum.TextXAlignment.Left, card)
+    statusLbl.Size = UDim2.new(1, -110, 0, 18); statusLbl.Position = UDim2.new(0, 15, 0, 32)
+
+    local playBtn = Instance.new("TextButton", card)
+    playBtn.Size = UDim2.new(0, 48, 0, 48); playBtn.Position = UDim2.new(1, -110, 0, 10)
+    playBtn.BackgroundColor3 = Theme.ACCENT1; playBtn.Text = "▶"; playBtn.Font = Enum.Font.GothamBold; playBtn.TextSize = 22; playBtn.TextColor3 = Color3.new(1,1,1)
+    corner(24, playBtn); stroke(Theme.ACCENT2, 2, playBtn, 0.5)
+
+    local stopBtn = Instance.new("TextButton", card)
+    stopBtn.Size = UDim2.new(0, 36, 0, 36); stopBtn.Position = UDim2.new(1, -50, 0, 16)
+    stopBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); stopBtn.Text = "◼"; stopBtn.Font = Enum.Font.GothamBold; stopBtn.TextSize = 14; stopBtn.TextColor3 = Color3.new(1,1,1)
+    corner(18, stopBtn)
+
+    local speedFrame = frame({Size = UDim2.new(1, -30, 0, 32), Position = UDim2.new(0, 15, 0, 65), BackgroundTransparency = 1}, card)
+    local speedBtns = {}
+    for i = 1, 5 do
+        local sBtn = Instance.new("TextButton", speedFrame)
+        sBtn.Size = UDim2.new(0.18, 0, 1, 0); sBtn.Position = UDim2.new((i-1)*0.2, 0, 0, 0)
+        sBtn.BackgroundColor3 = (i == 1) and Theme.ACCENT1 or Theme.TOGGLE_OFF
+        sBtn.Text = i.."x"; sBtn.Font = Enum.Font.GothamBold; sBtn.TextSize = 12; sBtn.TextColor3 = Color3.new(1,1,1)
+        corner(6, sBtn)
+        speedBtns[i] = sBtn
+        sBtn.MouseButton1Click:Connect(function() State.Speed = i; for v, b in pairs(speedBtns) do b.BackgroundColor3 = (v == i) and Theme.ACCENT1 or Theme.TOGGLE_OFF end end)
+    end
+
+    local toggleFrame = frame({Size = UDim2.new(1, -30, 0, 32), Position = UDim2.new(0, 15, 0, 105), BackgroundTransparency = 1}, card)
+    local function mkBtn(txt, x, active, cb)
+        local btn = Instance.new("TextButton", toggleFrame)
+        btn.Size = UDim2.new(0.31, 0, 1, 0); btn.Position = UDim2.new(x, 0, 0, 0)
+        btn.BackgroundColor3 = active and Theme.ACCENT1 or Theme.TOGGLE_OFF
+        btn.Text = txt; btn.Font = Enum.Font.GothamBold; btn.TextSize = 12; btn.TextColor3 = Color3.new(1,1,1)
+        corner(6, btn)
+        btn.MouseButton1Click:Connect(function() active = not active; btn.BackgroundColor3 = active and Theme.ACCENT1 or Theme.TOGGLE_OFF; cb(active) end)
+        return btn
+    end
+    mkBtn("Path", 0, State.ShowPath, function(v) State.ShowPath = v end)
+    mkBtn("Respawn", 0.34, false, function(v) end)
+    mkBtn("Safety", 0.68, State.Safety, function(v) State.Safety = v end)
+
+    local playbackConn = nil
+    local function findInPath(t)
+        local d = data; if #d < 1 then return nil, nil end
+        local totalT = d[#d].t; if t > totalT then return nil, nil end
+        local ratio = math.clamp(t / totalT, 0, 1)
+        local approxIdx = math.clamp(math.floor(ratio * (#d-1) + 0.5) + 1, 1, #d)
+        local si = math.max(1, approxIdx - 20)
+        for i = si, #d - 1 do if d[i].t <= t and d[i+1].t >= t then return d[i], d[i+1] end end
+        for i = 1, #d - 1 do if d[i].t <= t and d[i+1].t >= t then return d[i], d[i+1] end end
+        return d[1], d[2]
+    end
+
+    local function stop()
+        if playbackConn then playbackConn:Disconnect(); playbackConn = nil end
+        State.Playing = false; playBtn.Text = "▶"; statusLbl.Text = "IDLE"; statusLbl.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+        local char = Player.Character; if char then local hrp = char:FindFirstChild("HumanoidRootPart") if hrp then hrp.Anchored = false end end
+    end
+
+    playBtn.MouseButton1Click:Connect(function()
+        if State.Playing then State.Playing = false; playBtn.Text = "▶"; statusLbl.Text = "PAUSED"
+        else
+            if #data < 2 then return end
+            State.Playing = true; playBtn.Text = "⏸"; statusLbl.Text = "PLAYING"; statusLbl.TextColor3 = Theme.ACCENT1
+            if not playbackConn then
+                State.CurrentTime = 0
+                playbackConn = RunService.Heartbeat:Connect(function(dt)
+                    if not State.Playing then return end
+                    State.CurrentTime = State.CurrentTime + (dt * State.Speed)
+                    local p1, p2 = findInPath(State.CurrentTime)
+                    if not p1 then stop(); return end
+                    local char = Player.Character; local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        local alpha = (State.CurrentTime - p1.t) / (p2.t - p1.t)
+                        hrp.CFrame = p1.pos:Lerp(p2.pos, alpha)
+                        if p1.jump then local hum = char:FindFirstChildOfClass("Humanoid") if hum then hum.Jump = true end end
+                        hrp.AssemblyLinearVelocity = p1.vel:Lerp(p2.vel, alpha)
+                    end
+                end)
+            end
+        end
+    end)
+    stopBtn.MouseButton1Click:Connect(stop)
+    RunService.Stepped:Connect(function()
+        if State.Playing and State.Safety then
+            local char = Player.Character; if char then for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false; v.CanTouch = true end end end
+        end
+    end)
+
+    local Obj = {}
+    function Obj:Destroy() main:Destroy() end
+    return Obj
+end
+
+-- ================================================
 -- WINDOW
 -- ================================================
 function VonixeLib:CreateWindow(config)

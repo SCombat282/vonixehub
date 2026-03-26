@@ -1607,8 +1607,6 @@ function VonixeLib:CreateWindow(config)
         -- PATH PLAYER (Auto Walk Component - Custom Purple Style)
         -- ================================================
         function Tab:AddPathPlayer(pConfig)
-            print("[VonixeLib] AddPathPlayer Called")
-            local success, err = pcall(function()
             local title = pConfig.Title or "Auto Walk Player"
             local data = pConfig.Data or (_G.VonixeData3 and _G.VonixeData3.path) or {}
             
@@ -1621,7 +1619,6 @@ function VonixeLib:CreateWindow(config)
                 Safety = true
             }
 
-            print("[VonixeLib] Creating Card...")
             local card = frame({
                 Size = UDim2.new(1, 0, 0, 145),
                 BackgroundColor3 = Color3.fromRGB(22, 22, 28),
@@ -1771,11 +1768,6 @@ function VonixeLib:CreateWindow(config)
             function Obj:Stop() stop() end
             function Obj:SetTitle(t) cardTitle.Text = t end
             return Obj
-            end)
-            if not success then
-                warn("[VonixeLib] Error in AddPathPlayer: " .. tostring(err))
-            end
-            return {}
         end
 
         -- ================================================

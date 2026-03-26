@@ -1622,8 +1622,7 @@ function VonixeLib:CreateWindow(config)
             local card = frame({
                 Size = UDim2.new(1, 0, 0, 145),
                 BackgroundColor3 = Color3.fromRGB(22, 22, 28),
-                Parent = tabContent
-            })
+            }, tabContent)
             corner(10, card)
             stroke(Color3.fromRGB(130, 80, 255), 1.2, card, 0.4)
 

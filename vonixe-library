@@ -1648,7 +1648,7 @@ function VonixeLib:CreateWindow(config)
             playBtn.Size = UDim2.new(0, 48, 0, 48)
             playBtn.Position = UDim2.new(1, -110, 0, 10)
             playBtn.BackgroundColor3 = Color3.fromRGB(130, 80, 255)
-            playBtn.Text = "\u25B6"; playBtn.Font = Enum.Font.GothamBold; playBtn.TextSize = 22; playBtn.TextColor3 = Color3.new(1,1,1)
+            playBtn.Text = "▶"; playBtn.Font = Enum.Font.GothamBold; playBtn.TextSize = 22; playBtn.TextColor3 = Color3.new(1,1,1)
             corner(24, playBtn)
             stroke(Color3.fromRGB(150, 100, 255), 2, playBtn, 0.5)
 
@@ -1656,7 +1656,7 @@ function VonixeLib:CreateWindow(config)
             stopBtn.Size = UDim2.new(0, 36, 0, 36)
             stopBtn.Position = UDim2.new(1, -50, 0, 16)
             stopBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-            stopBtn.Text = "\u25FC"; stopBtn.Font = Enum.Font.GothamBold; stopBtn.TextSize = 14; stopBtn.TextColor3 = Color3.new(1,1,1)
+            stopBtn.Text = "◼"; stopBtn.Font = Enum.Font.GothamBold; stopBtn.TextSize = 14; stopBtn.TextColor3 = Color3.new(1,1,1)
             corner(18, stopBtn)
 
             -- Speed Selector
@@ -1703,7 +1703,7 @@ function VonixeLib:CreateWindow(config)
                 local totalT = d[#d].t
                 if t > totalT then return nil, nil end
                 local ratio = math.clamp(t / totalT, 0, 1)
-                local approxIdx = math.clamp(math.round(ratio * (#d-1)) + 1, 1, #d)
+                local approxIdx = math.clamp(math.floor(ratio * (#d-1) + 0.5) + 1, 1, #d)
                 local si = math.max(1, approxIdx - 20)
                 for i = si, #d - 1 do if d[i].t <= t and d[i+1].t >= t then return d[i], d[i+1] end end
                 for i = 1, #d - 1 do if d[i].t <= t and d[i+1].t >= t then return d[i], d[i+1] end end
@@ -1713,7 +1713,7 @@ function VonixeLib:CreateWindow(config)
             local function stop()
                 if playbackConn then playbackConn:Disconnect(); playbackConn = nil end
                 State.Playing = false
-                playBtn.Text = "\u25B6"
+                playBtn.Text = "▶"
                 statusLbl.Text = "IDLE"; statusLbl.TextColor3 = Color3.new(0.5, 0.5, 0.5)
                 local char = Player.Character
                 local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -1728,7 +1728,7 @@ function VonixeLib:CreateWindow(config)
                 else
                     local d = pConfig.Data or (_G.VonixeData3 and _G.VonixeData3.path) or {}
                     if #d < 2 then return end
-                    State.Playing = true; playBtn.Text = "\u23F8"; statusLbl.Text = "PLAYING"; statusLbl.TextColor3 = Color3.fromRGB(130, 80, 255)
+                    State.Playing = true; playBtn.Text = "⏸"; statusLbl.Text = "PLAYING"; statusLbl.TextColor3 = Color3.fromRGB(130, 80, 255)
                     if not playbackConn then
                         State.CurrentTime = 0
                         playbackConn = RunService.Heartbeat:Connect(function(dt)

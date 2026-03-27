@@ -21,6 +21,11 @@ local RunService       = game:GetService("RunService")
 local Players          = game:GetService("Players")
 local Player           = Players.LocalPlayer
 
+local function getParent()
+    if gethui then return gethui() end
+    return game:GetService("CoreGui")
+end
+
 -- ================================================
 -- ICON SYSTEM (sama persis kayak WindUI, load dari GitHub)
 -- ================================================
@@ -1254,7 +1259,6 @@ function VonixeLib:CreateWindow(config)
                 optLbl.ZIndex   = 22
 
                 local function getIsSel()
-                    return selected == opt
                     if isMulti then
                         for _, v in pairs(selected) do if v == opt then return true end end
                         return false

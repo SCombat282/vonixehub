@@ -11,7 +11,6 @@
 
 local VonixeLib = {}
 VonixeLib.__index = VonixeLib
-VonixeLib.Version = "1.0.2-CleanUI"
 
 -- ================================================
 -- SERVICES
@@ -220,15 +219,15 @@ function VonixeLib:Notify(nConfig)
     local nf = Instance.new("Frame", notifHolder)
     nf.Size = UDim2.new(1, 0, 0, 0); nf.BackgroundColor3 = Color3.fromRGB(20, 16, 12); nf.ClipsDescendants = true
     nf.LayoutOrder = -tick()
-    
+
     local function mkCorner(r,p) local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,r);c.Parent=p end
     local function mkStroke(c,t,p) local s=Instance.new("UIStroke");s.Color=c;s.Thickness=t;s.Parent=p end
     mkCorner(10, nf); mkStroke(col, 1, nf)
-    
+
     local bg = Instance.new("Frame", nf)
     bg.Size = UDim2.new(1, 0, 1, 0); bg.BackgroundColor3 = col; bg.BackgroundTransparency = 0.92; bg.ZIndex = 201; bg.BorderSizePixel = 0
     mkCorner(10, bg)
-    
+
     local lbar = Instance.new("Frame", nf)
     lbar.Size = UDim2.new(0, 4, 1, 0); lbar.BackgroundColor3 = col; lbar.ZIndex = 202; lbar.BorderSizePixel = 0
     mkCorner(2, lbar)
@@ -245,7 +244,7 @@ function VonixeLib:Notify(nConfig)
 
     local bar = Instance.new("Frame", nf)
     bar.Size = UDim2.new(1, 0, 0, 2); bar.Position = UDim2.new(0, 0, 1, -2); bar.BackgroundColor3 = col; bar.ZIndex = 205; bar.BorderSizePixel = 0
-    
+
     local twInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     TweenService:Create(nf, twInfo, {Size = UDim2.new(1, 0, 0, NH)}):Play()
     task.delay(0.1, function() 
@@ -394,167 +393,6 @@ local function makeDragConn(dragFrame, moveFrame)
     end)
 end
 
-local function makeIconBtn(parent, xOffset, iconName, bgCol, hoverCol)
-    local btn = Instance.new("TextButton")
-    local iconBtnSize = 24
-    btn.Size            = UDim2.new(0, iconBtnSize, 0, iconBtnSize)
-    btn.Position        = UDim2.new(1, xOffset, 0.5, -iconBtnSize/2)
-    btn.BackgroundColor3 = bgCol; btn.Text = ""; btn.AutoButtonColor = false; btn.BorderSizePixel = 0; btn.ZIndex = 15; btn.Parent = parent
-    corner(99, btn)
-    local ico = mkIcon(iconName, 12, Color3.fromRGB(220, 200, 190), btn, 16)
-    ico.AnchorPoint = Vector2.new(0.5, 0.5); ico.Position = UDim2.new(0.5, 0, 0.5, 0); ico.Size = UDim2.new(0, 12, 0, 12)
-    local function setIcoBtnColor(col)
-        local inner = ico:FindFirstChildWhichIsA("ImageLabel") or ico:FindFirstChildWhichIsA("TextLabel")
-        if inner then if inner:IsA("ImageLabel") then tween(inner, 0.1, {ImageColor3 = col}) else tween(inner, 0.1, {TextColor3 = col}) end end
-    end
-    btn.MouseEnter:Connect(function() tween(btn, 0.1, {BackgroundColor3 = hoverCol}); setIcoBtnColor(Color3.new(1,1,1)) end)
-    btn.MouseLeave:Connect(function() tween(btn, 0.1, {BackgroundColor3 = bgCol}); setIcoBtnColor(Color3.fromRGB(220, 200, 190)) end)
-    return btn
-end
-VonixeLib.makeIconBtn = makeIconBtn
-
--- ================================================
--- STANDALONE PLAYER CARD (Mini Window)
--- ================================================
-function VonixeLib:CreatePlayerCard(pConfig)
-    local title = pConfig.Title or "Auto Walk Player"
-    local data = pConfig.Data or (_G.VonixeData3 and _G.VonixeData3.path) or {}
-    
-    local sg = getParent():FindFirstChild("VonixePathPlayer")
-    if not sg then
-        sg = Instance.new("ScreenGui")
-        sg.Name = "VonixePathPlayer"; sg.ResetOnSpawn = false; sg.DisplayOrder = 1000
-        pcall(function() if syn and syn.protect_gui then syn.protect_gui(sg) end end)
-        sg.Parent = getParent()
-    end
-
-    local mainW, mainH = 340, 134
-    local main = frame({
-        Size = UDim2.new(0, mainW, 0, mainH),
-        Position = UDim2.new(0.5, -mainW/2, 0.5, -mainH/2),
-        BackgroundColor3 = Theme.BG,
-        Active = true,
-        ClipsDescendants = true,
-    }, sg)
-    corner(12, main)
-    stroke(Theme.ACCENT1, 1.5, main)
-    
-    -- Title Bar (Drag Area)
-    local titleBar = frame({
-        Size = UDim2.new(1, 0, 0, 26),
-        BackgroundTransparency = 1,
-    }, main)
-    
-    local titleLbl = label(title, 11, Enum.Font.GothamBold, Theme.TEXT2, Enum.TextXAlignment.Left, titleBar)
-    titleLbl.Position = UDim2.new(0, 12, 0, 0); titleLbl.Size = UDim2.new(1, -70, 1, 0)
-    
-    local closeBtn = makeIconBtn(titleBar, -30, "x", Color3.fromRGB(50, 20, 20), Color3.fromRGB(180, 40, 40))
-    local minBtn   = makeIconBtn(titleBar, -60, "minus", Color3.fromRGB(35, 28, 10), Color3.fromRGB(100, 70, 10))
-    closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
-    
-    local minimized = false
-    minBtn.MouseButton1Click:Connect(function()
-        minimized = not minimized
-        tween(main, 0.3, {Size = minimized and UDim2.new(0, mainW, 0, 26) or UDim2.new(0, mainW, 0, mainH)})
-    end)
-    
-    makeDragConn(titleBar, main)
-
-    -- Content Area
-    local card = frame({
-        Size = UDim2.new(1, -20, 1, -38),
-        Position = UDim2.new(0, 10, 0, 28),
-        BackgroundColor3 = Theme.BG2,
-    }, main)
-    corner(10, card)
-    stroke(Theme.ACCENT1, 1, card, 0.5)
-
-    -- Internal Components (Copied from Tab:AddPathPlayer but localized)
-    local State = { Playing = false, CurrentTime = 0, Speed = 1, Loop = true, ShowPath = true, Safety = true }
-    
-    local cardTitle = label(title, 16, Enum.Font.GothamBold, Color3.new(1,1,1), Enum.TextXAlignment.Left, card)
-    cardTitle.Size = UDim2.new(1, -110, 0, 26); cardTitle.Position = UDim2.new(0, 15, 0, 10)
-
-    local statusLbl = label("IDLE", 12, Enum.Font.GothamBold, Color3.new(0.5, 0.5, 0.5), Enum.TextXAlignment.Left, card)
-    statusLbl.Size = UDim2.new(1, -110, 0, 18); statusLbl.Position = UDim2.new(0, 15, 0, 32)
-
-    local playBtn = Instance.new("TextButton", card)
-    playBtn.Size = UDim2.new(0, 48, 0, 48); playBtn.Position = UDim2.new(1, -110, 0, 10)
-    playBtn.BackgroundColor3 = Theme.ACCENT1; playBtn.Text = "▶"; playBtn.Font = Enum.Font.GothamBold; playBtn.TextSize = 22; playBtn.TextColor3 = Color3.new(1,1,1)
-    corner(24, playBtn); stroke(Theme.ACCENT2, 2, playBtn, 0.5)
-
-    local stopBtn = Instance.new("TextButton", card)
-    stopBtn.Size = UDim2.new(0, 36, 0, 36); stopBtn.Position = UDim2.new(1, -50, 0, 16)
-    stopBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); stopBtn.Text = "◼"; stopBtn.Font = Enum.Font.GothamBold; stopBtn.TextSize = 14; stopBtn.TextColor3 = Color3.new(1,1,1)
-    corner(18, stopBtn)
-
-    local speedFrame = frame({Size = UDim2.new(1, -30, 0, 32), Position = UDim2.new(0, 15, 0, 65), BackgroundTransparency = 1}, card)
-    local speedBtns = {}
-    for i = 1, 5 do
-        local sBtn = Instance.new("TextButton", speedFrame)
-        sBtn.Size = UDim2.new(0.18, 0, 1, 0); sBtn.Position = UDim2.new((i-1)*0.2, 0, 0, 0)
-        sBtn.BackgroundColor3 = (i == 1) and Theme.ACCENT1 or Theme.TOGGLE_OFF
-        sBtn.Text = i.."x"; sBtn.Font = Enum.Font.GothamBold; sBtn.TextSize = 12; sBtn.TextColor3 = Color3.new(1,1,1)
-        corner(6, sBtn)
-        speedBtns[i] = sBtn
-        sBtn.MouseButton1Click:Connect(function() State.Speed = i; for v, b in pairs(speedBtns) do b.BackgroundColor3 = (v == i) and Theme.ACCENT1 or Theme.TOGGLE_OFF end end)
-    end
-
-    -- Speed / Play (No Toggles as requested)
-
-    local playbackConn = nil
-    local function findInPath(t)
-        local d = data; if #d < 1 then return nil, nil end
-        local totalT = d[#d].t; if t > totalT then return nil, nil end
-        local ratio = math.clamp(t / totalT, 0, 1)
-        local approxIdx = math.clamp(math.floor(ratio * (#d-1) + 0.5) + 1, 1, #d)
-        local si = math.max(1, approxIdx - 20)
-        for i = si, #d - 1 do if d[i].t <= t and d[i+1].t >= t then return d[i], d[i+1] end end
-        for i = 1, #d - 1 do if d[i].t <= t and d[i+1].t >= t then return d[i], d[i+1] end end
-        return d[1], d[2]
-    end
-
-    local function stop()
-        if playbackConn then playbackConn:Disconnect(); playbackConn = nil end
-        State.Playing = false; playBtn.Text = "▶"; statusLbl.Text = "IDLE"; statusLbl.TextColor3 = Color3.new(0.5, 0.5, 0.5)
-        local char = Player.Character; if char then local hrp = char:FindFirstChild("HumanoidRootPart") if hrp then hrp.Anchored = false end end
-    end
-
-    playBtn.MouseButton1Click:Connect(function()
-        if State.Playing then State.Playing = false; playBtn.Text = "▶"; statusLbl.Text = "PAUSED"
-        else
-            if #data < 2 then return end
-            State.Playing = true; playBtn.Text = "⏸"; statusLbl.Text = "PLAYING"; statusLbl.TextColor3 = Theme.ACCENT1
-            if not playbackConn then
-                State.CurrentTime = 0
-                playbackConn = RunService.Heartbeat:Connect(function(dt)
-                    if not State.Playing then return end
-                    State.CurrentTime = State.CurrentTime + (dt * State.Speed)
-                    local p1, p2 = findInPath(State.CurrentTime)
-                    if not p1 then stop(); return end
-                    local char = Player.Character; local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        local alpha = (State.CurrentTime - p1.t) / (p2.t - p1.t)
-                        hrp.CFrame = p1.pos:Lerp(p2.pos, alpha)
-                        if p1.jump then local hum = char:FindFirstChildOfClass("Humanoid") if hum then hum.Jump = true end end
-                        hrp.AssemblyLinearVelocity = p1.vel:Lerp(p2.vel, alpha)
-                    end
-                end)
-            end
-        end
-    end)
-    stopBtn.MouseButton1Click:Connect(stop)
-    RunService.Stepped:Connect(function()
-        if State.Playing and State.Safety then
-            local char = Player.Character; if char then for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false; v.CanTouch = true end end end
-        end
-    end)
-
-    local Obj = {}
-    function Obj:Destroy() main:Destroy() end
-    return Obj
-end
-
 -- ================================================
 -- WINDOW
 -- ================================================
@@ -568,13 +406,13 @@ function VonixeLib:CreateWindow(config)
 
     local W     = config.Width        or 560
     local H     = config.Height       or 420
-    
+
     -- FORCE KONSISTENSI "KOTAK" (WindUI Style)
     -- Jika di mobile inputnya terlalu tinggi/lonjong, kita paksa balik ke rasio box
     if isMobile and H > W then
         H = W * (420/560) -- Kembalikan ke rasio 4:3
     end
-    
+
     local sideW = config.SidebarWidth or (isMobile and 140 or 140)
 
     local Window = {}
@@ -589,7 +427,7 @@ function VonixeLib:CreateWindow(config)
     sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     sg.IgnoreGuiInset = true
     sg.DisplayOrder  = 999
-    
+
     pcall(function() if syn and syn.protect_gui then syn.protect_gui(sg) end end)
     sg.Parent = getParent()
 
@@ -620,7 +458,7 @@ function VonixeLib:CreateWindow(config)
         local scaleX = (vp.X - 40) / W
         local scaleY = (vp.Y - 40) / H
         local finalScale = math.min(scaleX, scaleY)
-        
+
         -- Clamp lebih ketat di mobile biar tetep "Kotak" mini
         local maxS = isMobile and 0.85 or 0.95
         uiScale.Scale = math.clamp(finalScale, 0.4, maxS)
@@ -1263,15 +1101,17 @@ function VonixeLib:CreateWindow(config)
         function Tab:AddDropdown(dConfig)
             local isMulti  = dConfig.Multi or false
             local options  = dConfig.Options or dConfig.Values or {}
-            
+
             local selected = dConfig.Value or dConfig.Default
+            if type(selected) == "table" then selected = selected[1] or "" end
+            if not selected or selected == "" then selected = options[1] or "" end
             if isMulti then
                 if type(selected) ~= "table" then selected = {selected} end
             else
                 if type(selected) == "table" then selected = selected[1] or "" end
                 if not selected or selected == "" then selected = options[1] or "" end
             end
-            
+
             local opened = false
             local DdObj  = {} 
 
@@ -1304,6 +1144,7 @@ function VonixeLib:CreateWindow(config)
             nameLbl.Position = UDim2.new(0, 10, 0, 0)
             nameLbl.ZIndex   = 11
 
+            local valLbl = label(tostring(selected), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
             local function formatValText(val)
                 if isMulti then
                     local str = table.concat(val, ", ")
@@ -1342,8 +1183,9 @@ function VonixeLib:CreateWindow(config)
             stroke(Theme.STROKE2, 1, menu)
 
             local menuList = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, menu)
-            
+
             local searchBox = nil
+            if #options > 4 then
             if #options > 4 or isMulti then
                 local searchRow = frame({Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1, ZIndex = 21}, menu)
                 local searchBg = frame({Size = UDim2.new(1, -12, 1, -6), Position = UDim2.new(0, 6, 0, 3), BackgroundColor3 = Theme.BG4, ZIndex = 21}, searchRow)
@@ -1365,7 +1207,7 @@ function VonixeLib:CreateWindow(config)
                 searchBox.ZIndex = 22
                 searchBox.Parent = searchBg
             end
-            
+
             local scroll = Instance.new("ScrollingFrame")
             scroll.BackgroundTransparency = 1
             scroll.BorderSizePixel = 0
@@ -1410,8 +1252,9 @@ function VonixeLib:CreateWindow(config)
                 optLbl.Size     = UDim2.new(1, -50, 1, 0)
                 optLbl.Position = UDim2.new(0, 22, 0, 0)
                 optLbl.ZIndex   = 22
-                
+
                 local function getIsSel()
+                    return selected == opt
                     if isMulti then
                         for _, v in pairs(selected) do if v == opt then return true end end
                         return false
@@ -1454,6 +1297,15 @@ function VonixeLib:CreateWindow(config)
                 end)
 
                 optBtn.MouseButton1Click:Connect(function()
+                    selected = opt
+                    valLbl.Text = tostring(opt)
+                    DdObj.Value = opt
+                    for _, vFunc in pairs(optViews) do vFunc(true) end
+                    if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
+                    opened = false
+                    tween(arrow, 0.15, {Rotation = 0})
+                    tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                    task.delay(0.15, function() menu.Visible = false end)
                     if isMulti then
                         local foundIdx = nil
                         for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end
@@ -1524,6 +1376,7 @@ function VonixeLib:CreateWindow(config)
             function DdObj:SetValue(v)
                 selected = v
                 DdObj.Value = v
+                valLbl.Text = tostring(v)
                 valLbl.Text = formatValText(v)
                 for _, vFunc in pairs(optViews) do vFunc(false) end
             end
@@ -1764,62 +1617,6 @@ function VonixeLib:CreateWindow(config)
             function LbObj:SetColor(c) lbl.TextColor3 = c end
             return LbObj
         end
-        
-        -- ================================================
-        -- PATH PLAYER (Auto Walk Component - Custom Purple Style)
-        -- ================================================
-        function Tab:AddPlayerCard(pConfig)
-            local title = pConfig.Title or "Player"
-            
-            local card = frame({Size = UDim2.new(1, 0, 0, 105), BackgroundColor3 = Theme.BG2}, tabContent)
-            corner(10, card); stroke(Theme.ACCENT1, 1.2, card, 0.4)
-            local topAcc = frame({Size = UDim2.new(1, 0, 0, 2), BackgroundColor3 = Theme.ACCENT1}, card); corner(99, topAcc)
-
-            local cardTitle = label(title, 16, Enum.Font.GothamBold, Color3.new(1,1,1), Enum.TextXAlignment.Left, card)
-            cardTitle.Size = UDim2.new(1, -110, 0, 26); cardTitle.Position = UDim2.new(0, 15, 0, 10)
-            local statusLbl = label("IDLE", 12, Enum.Font.GothamBold, Color3.new(0.5, 0.5, 0.5), Enum.TextXAlignment.Left, card)
-            statusLbl.Size = UDim2.new(1, -110, 0, 18); statusLbl.Position = UDim2.new(0, 15, 0, 32)
-
-            local playBtn = Instance.new("TextButton", card)
-            playBtn.Size = UDim2.new(0, 48, 0, 48); playBtn.Position = UDim2.new(1, -110, 0, 10)
-            playBtn.BackgroundColor3 = Theme.ACCENT1; playBtn.Text = "▶"; playBtn.Font = Enum.Font.GothamBold; playBtn.TextSize = 22; playBtn.TextColor3 = Color3.new(1,1,1)
-            corner(24, playBtn); stroke(Theme.ACCENT2, 2, playBtn, 0.5)
-
-            local stopBtn = Instance.new("TextButton", card)
-            stopBtn.Size = UDim2.new(0, 36, 0, 36); stopBtn.Position = UDim2.new(1, -50, 0, 16)
-            stopBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); stopBtn.Text = "◼"; stopBtn.Font = Enum.Font.GothamBold; stopBtn.TextSize = 14; stopBtn.TextColor3 = Color3.new(1,1,1)
-            corner(18, stopBtn)
-
-            local speedFrame = frame({Size = UDim2.new(1, -30, 0, 32), Position = UDim2.new(0, 15, 0, 65), BackgroundTransparency = 1}, card)
-            local speedBtns = {}
-            local Obj = { Playing = false, Speed = 1 }
-            for i = 1, 5 do
-                local sBtn = Instance.new("TextButton", speedFrame)
-                sBtn.Size = UDim2.new(0.18, 0, 1, 0); sBtn.Position = UDim2.new((i-1)*0.2, 0, 0, 0)
-                sBtn.BackgroundColor3 = (i == 1) and Theme.ACCENT1 or Theme.TOGGLE_OFF
-                sBtn.Text = i.."x"; sBtn.Font = Enum.Font.GothamBold; sBtn.TextSize = 12; sBtn.TextColor3 = Color3.new(1,1,1)
-                corner(6, sBtn); speedBtns[i] = sBtn
-                sBtn.MouseButton1Click:Connect(function() 
-                    Obj.Speed = i; for v, b in pairs(speedBtns) do b.BackgroundColor3 = (v == i) and Theme.ACCENT1 or Theme.TOGGLE_OFF end 
-                    if pConfig.OnSpeed then pConfig.OnSpeed(i) end
-                end)
-            end
-
-            playBtn.MouseButton1Click:Connect(function()
-                Obj.Playing = not Obj.Playing
-                playBtn.Text = Obj.Playing and "⏸" or "▶"
-                if pConfig.OnPlay then pConfig.OnPlay(Obj.Playing) end
-            end)
-            stopBtn.MouseButton1Click:Connect(function()
-                Obj.Playing = false; playBtn.Text = "▶"
-                if pConfig.OnStop then pConfig.OnStop() end
-            end)
-
-            function Obj:SetStatus(txt, col) statusLbl.Text = txt; if col then statusLbl.TextColor3 = col end end
-            function Obj:SetPlaying(v) Obj.Playing = v; playBtn.Text = v and "⏸" or "▶" end
-            function Obj:SetTitle(t) cardTitle.Text = t end
-            return Obj
-        end
 
         -- ================================================
         -- ALIASES (WindUI compat)
@@ -1833,8 +1630,6 @@ function VonixeLib:CreateWindow(config)
         Tab.Section  = Tab.AddSection
         Tab.Space    = function() end -- no-op
         Tab.MissionBar = Tab.AddMissionBar
-        Tab.PathPlayer = Tab.AddPlayerCard
-        Tab.PlayerCard = Tab.AddPlayerCard
 
         return Tab
     end
@@ -1852,7 +1647,7 @@ function VonixeLib:CreateWindow(config)
     notifHolder.BackgroundTransparency = 1
     notifHolder.ZIndex           = 200
     notifHolder.Parent           = sg
-    
+
     local notifScale = Instance.new("UIScale", notifHolder)
     if isMobile then
         local function updN()
@@ -2273,7 +2068,7 @@ function VonixeLib:CreateKeySystem(config)
             savedKey = readfile(savePath) 
         end 
     end)
-    
+
     if savedKey ~= "" and onVerify then
         local ok, result = pcall(onVerify, savedKey)
         if ok and result then
@@ -2293,7 +2088,7 @@ function VonixeLib:CreateKeySystem(config)
     sg.Name="VonixeKeySystem"; sg.ResetOnSpawn=false
     sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
     sg.IgnoreGuiInset=true; sg.DisplayOrder=9999
-    
+
     pcall(function() if syn and syn.protect_gui then syn.protect_gui(sg) end end)
     sg.Parent = getParent()
 
@@ -2325,12 +2120,12 @@ function VonixeLib:CreateKeySystem(config)
         ZIndex=2, ClipsDescendants=false, Active=true,
     },sg)
     mkCorner(16,card)
-    
+
     local uiScale = Instance.new("UIScale", card)
     local function upd()
         local vp = workspace.CurrentCamera.ViewportSize
         if vp.X < 10 then return end
-        
+
         -- Key system harus lebih mungil (85% dari layar di mobile)
         local scaleX = (vp.X * 0.9) / W
         local scaleY = (vp.Y * 0.9) / H
@@ -2526,7 +2321,7 @@ function VonixeLib:CreateKeySystem(config)
         task.spawn(function()
             local ok=false
             if onVerify then local s,r=pcall(onVerify,key); ok=s and r end
-            
+
             -- [THREAD SAFE FIX]: Cek apakah UI sudah ditutup paksa sebelum nge-set verified
             if not closed and ok then
                 -- [LOGIC FIX]: Ikuti WindUI (SaveKey flag)
@@ -2536,12 +2331,12 @@ function VonixeLib:CreateKeySystem(config)
                         if writefile then writefile(savePath, key) end 
                     end)
                 end
-                
+
                 statusLbl.Text="Key valid!"; statusLbl.TextColor3=Color3.fromRGB(80,220,120)
                 verifyLbl.Text="✓"; tw(verifyBtn,0.2,{BackgroundColor3=Color3.fromRGB(30,120,60)})
                 tw(card,0.4,{BackgroundTransparency=1}); tw(overlay,0.4,{BackgroundTransparency=1})
                 task.wait(0.8)
-                
+
                 -- Re-check for closed before final signal
                 if not closed then
                     pulseConn:Disconnect(); sg:Destroy(); verified=true

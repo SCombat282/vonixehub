@@ -2335,7 +2335,7 @@ function VonixeLib:CreateKeySystem(config)
                     pulseConn:Disconnect(); sg:Destroy(); verified=true
                 end
             elseif not closed then
-                statusLbl.Text="Key tidak valid atau expired!"; statusLbl.TextColor3=Color3.fromRGB(255,80,80)
+                statusLbl.Text="Key not valid or expired!"; statusLbl.TextColor3=Color3.fromRGB(255,80,80)
                 verifyLbl.Text="Verifikasi Key"
                 tw(inputBg,0.1,{BackgroundColor3=Color3.fromRGB(30,10,10)})
                 task.delay(0.3,function() tw(inputBg,0.2,{BackgroundColor3=Color3.fromRGB(16,12,10)}) end)
@@ -2345,7 +2345,7 @@ function VonixeLib:CreateKeySystem(config)
 
     getkeyBtn.MouseButton1Click:Connect(function()
         if onGetKey then pcall(onGetKey) end
-        statusLbl.Text="Link sudah tercopy ke clipboard!"
+        statusLbl.Text="The link has been copied"
         statusLbl.TextColor3=Color3.fromRGB(80,220,120)
         task.delay(3,function() if statusLbl and statusLbl.Parent then statusLbl.Text="" end end)
     end)

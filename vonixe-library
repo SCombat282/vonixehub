@@ -1190,7 +1190,6 @@ function VonixeLib:CreateWindow(config)
             local menuList = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, menu)
 
             local searchBox = nil
-            if #options > 4 then
             if #options > 4 or isMulti then
                 local searchRow = frame({Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1, ZIndex = 21}, menu)
                 local searchBg = frame({Size = UDim2.new(1, -12, 1, -6), Position = UDim2.new(0, 6, 0, 3), BackgroundColor3 = Theme.BG4, ZIndex = 21}, searchRow)
@@ -1301,15 +1300,6 @@ function VonixeLib:CreateWindow(config)
                 end)
 
                 optBtn.MouseButton1Click:Connect(function()
-                    selected = opt
-                    valLbl.Text = tostring(opt)
-                    DdObj.Value = opt
-                    for _, vFunc in pairs(optViews) do vFunc(true) end
-                    if dConfig.Callback then task.spawn(dConfig.Callback, opt) end
-                    opened = false
-                    tween(arrow, 0.15, {Rotation = 0})
-                    tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
-                    task.delay(0.15, function() menu.Visible = false end)
                     if isMulti then
                         local foundIdx = nil
                         for i, v in ipairs(selected) do if v == opt then foundIdx = i; break end end

@@ -1149,7 +1149,6 @@ function VonixeLib:CreateWindow(config)
             nameLbl.Position = UDim2.new(0, 10, 0, 0)
             nameLbl.ZIndex   = 11
 
-            local valLbl = label(tostring(selected), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
             local function formatValText(val)
                 if isMulti then
                     local str = table.concat(val, ", ")

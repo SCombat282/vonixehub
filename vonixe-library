@@ -1600,13 +1600,32 @@ function VonixeLib:CreateWindow(config)
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 0),
                 AutomaticSize    = Enum.AutomaticSize.Y,
-                BackgroundTransparency = 1,
+                BackgroundColor3 = Theme.BG2,
             }, tabContent)
+            corner(8, row)
+            stroke(Theme.STROKE, 1, row)
+            
+            local acc = frame({
+                Size             = UDim2.new(0, 20, 0, 2),
+                Position         = UDim2.new(0, 0, 0, -10),
+                BackgroundColor3 = Theme.ACCENT3,
+                ZIndex           = 2,
+            }, row)
+            corner(99, acc)
+            gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
+
+            local pd = Instance.new("UIPadding")
+            pd.PaddingTop    = UDim.new(0, 10)
+            pd.PaddingBottom = UDim.new(0, 10)
+            pd.PaddingLeft   = UDim.new(0, 10)
+            pd.PaddingRight  = UDim.new(0, 10)
+            pd.Parent        = row
 
             local lbl = label(lConfig.Title or "", 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, row)
             lbl.Size          = UDim2.new(1, 0, 0, 0)
             lbl.AutomaticSize = Enum.AutomaticSize.Y
             lbl.TextWrapped   = true
+            lbl.TextYAlignment= Enum.TextYAlignment.Top
             lbl.TextTruncate  = Enum.TextTruncate.None
 
             local LbObj = {}

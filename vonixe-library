@@ -1598,12 +1598,16 @@ function VonixeLib:CreateWindow(config)
         -- ================================================
         function Tab:AddLabel(lConfig)
             local row = frame({
-                Size             = UDim2.new(1, 0, 0, 30),
+                Size             = UDim2.new(1, 0, 0, 0),
+                AutomaticSize    = Enum.AutomaticSize.Y,
                 BackgroundTransparency = 1,
             }, tabContent)
 
-            local lbl = label(lConfig.Title or "", 12, Enum.Font.Gotham, Theme.TEXT3, Enum.TextXAlignment.Left, row)
-            lbl.Size     = UDim2.new(1, 0, 1, 0)
+            local lbl = label(lConfig.Title or "", 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, row)
+            lbl.Size          = UDim2.new(1, 0, 0, 0)
+            lbl.AutomaticSize = Enum.AutomaticSize.Y
+            lbl.TextWrapped   = true
+            lbl.TextTruncate  = Enum.TextTruncate.None
 
             local LbObj = {}
             function LbObj:SetTitle(t) lbl.Text = t end

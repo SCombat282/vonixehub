@@ -1108,10 +1108,10 @@ function VonixeLib:CreateWindow(config)
             local options  = dConfig.Options or dConfig.Values or {}
 
             local selected = dConfig.Value or dConfig.Default
-            if type(selected) == "table" then selected = selected[1] or "" end
-            if not selected or selected == "" then selected = options[1] or "" end
             if isMulti then
-                if type(selected) ~= "table" then selected = {selected} end
+                if type(selected) ~= "table" then
+                    selected = (selected and selected ~= "") and {selected} or {}
+                end
             else
                 if type(selected) == "table" then selected = selected[1] or "" end
                 if not selected or selected == "" then selected = options[1] or "" end

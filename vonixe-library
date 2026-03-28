@@ -1621,7 +1621,7 @@ function VonixeLib:CreateWindow(config)
             pd.PaddingRight  = UDim.new(0, 10)
             pd.Parent        = row
 
-            local lbl = label(lConfig.Title or "", 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, row)
+            local lbl = label(lConfig.Title or "", 12, Enum.Font.Gotham, Theme.ACCENT2, Enum.TextXAlignment.Left, row)
             lbl.Size          = UDim2.new(1, 0, 0, 0)
             lbl.AutomaticSize = Enum.AutomaticSize.Y
             lbl.TextWrapped   = true

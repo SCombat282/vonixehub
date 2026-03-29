@@ -990,7 +990,7 @@ function VonixeLib:CreateWindow(config)
         function Tab:AddSlider(sConfig)
             local min   = sConfig.Min or 0
             local max   = sConfig.Max or 100
-            local value = math.clamp(sConfig.Value or min, min, max)
+            local value = math.clamp(sConfig.Value or sConfig.Default or min, min, max)
             local step  = sConfig.Step or 1
 
             local row = frame({

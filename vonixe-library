@@ -1505,7 +1505,7 @@ function VonixeLib:CreateWindow(config)
             stoneBadge.Visible     = false
 
             -- Main label (tier @ zone)
-            local mainLbl = label("Mission: OFF", 15, Enum.Font.GothamBlack, Theme.TEXT3, Enum.TextXAlignment.Left, card)
+            local mainLbl = label("Idle", 15, Enum.Font.GothamBlack, Theme.TEXT3, Enum.TextXAlignment.Left, card)
             mainLbl.Size     = UDim2.new(1, -16, 0, 20)
             mainLbl.Position = UDim2.new(0, 10, 0, 24)
 
@@ -1555,7 +1555,7 @@ function VonixeLib:CreateWindow(config)
             local MB = {}
             function MB:SetStatus(data)
                 if not data then
-                    mainLbl.Text       = "Mission: OFF"
+                    mainLbl.Text       = "Idle"
                     mainLbl.TextColor3 = Theme.TEXT3
                     indexLbl.Text      = ""
                     progLbl.Text       = ""

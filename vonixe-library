@@ -1,54 +1,29 @@
--- ================================================
---   VonixeLib v1.0
---   Custom Roblox UI Library
---   Style: Dark + Orange
---   Author: Vonixe Hub
---
---   Usage:
---   local VonixeLib = loadstring(game:HttpGet("RAW_URL"))()
---   local Window = VonixeLib:CreateWindow({ Title = "My Hub" })
--- ================================================
-
 local VonixeLib = {}
 VonixeLib.__index = VonixeLib
-
--- ================================================
--- SERVICES
--- ================================================
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService       = game:GetService("RunService")
 local Players          = game:GetService("Players")
 local Player           = Players.LocalPlayer
-
 local function getParent()
     if gethui then return gethui() end
     return game:GetService("CoreGui")
 end
-
--- ================================================
--- ICON SYSTEM (sama persis kayak WindUI, load dari GitHub)
--- ================================================
 local Icons = nil
 task.spawn(function()
     local src = nil
-
-    -- Coba executor HttpGet dulu (syn, krnl, dll)
     local ok1, res1 = pcall(function()
         return game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
     end)
     if ok1 and res1 then
         src = res1
     end
-
-    -- Fallback ke HttpService (Studio / executor lain)
     if not src then
         local ok2, res2 = pcall(function()
             return game:GetService("HttpService"):GetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
         end)
         if ok2 and res2 then src = res2 end
     end
-
     if src then
         local ok3, lib = pcall(loadstring, src)
         if ok3 and lib then
@@ -60,15 +35,12 @@ task.spawn(function()
         end
     end
 end)
-
 local function getIcon(name)
     if not Icons then return nil end
     local ok, r = pcall(function() return Icons.Icon(name) end)
     if ok and r and type(r) == "table" then return r end
     return nil
 end
-
--- Teks fallback kalau icon gagal load
 local textFallback = {
     ["x"]               = "X",  ["minus"]         = "—",
     ["chevron-right"]   = "›",  ["chevron-down"]  = "⌄",
@@ -79,15 +51,12 @@ local textFallback = {
     ["map-pin"]         = "◎",  ["shopping-cart"] = "🛒",
     ["layout-dashboard"]= "⊞",
 }
-
 local function mkIcon(name, size, col, parent, zindex)
-    -- Container frame supaya bisa ganti isi
     local container = Instance.new("Frame")
     container.BackgroundTransparency = 1
     container.Size   = UDim2.new(0, size, 0, size)
     container.ZIndex = zindex or 2
     container.Parent = parent
-
     local img = Instance.new("ImageLabel")
     img.BackgroundTransparency = 1
     img.Size        = UDim2.new(1, 0, 1, 0)
@@ -95,7 +64,6 @@ local function mkIcon(name, size, col, parent, zindex)
     img.ImageColor3 = col or Color3.new(1,1,1)
     img.ScaleType   = Enum.ScaleType.Fit
     img.Parent      = container
-
     local function applyIcon()
         if not Icons then return false end
         local r = getIcon(name)
@@ -115,7 +83,6 @@ local function mkIcon(name, size, col, parent, zindex)
         end
         return img.Image ~= ""
     end
-
     local function useFallback()
         img:Destroy()
         local txt = Instance.new("TextLabel")
@@ -130,7 +97,6 @@ local function mkIcon(name, size, col, parent, zindex)
         txt.TextYAlignment = Enum.TextYAlignment.Center
         txt.Parent         = container
     end
-
     local applied = applyIcon()
     task.spawn(function()
         if not applied then
@@ -138,60 +104,40 @@ local function mkIcon(name, size, col, parent, zindex)
                 task.wait(0.2)
                 if applyIcon() then return end
             end
-            -- Masih gagal → fallback text
             if container and container.Parent then
                 useFallback()
             end
         end
     end)
-
     return container
 end
-
--- ================================================
--- TEMA
--- ================================================
 local Theme = {
-    -- Background
     BG          = Color3.fromRGB(12, 12, 18),
     BG2         = Color3.fromRGB(18, 14, 12),
     BG3         = Color3.fromRGB(22, 16, 12),
     BG4         = Color3.fromRGB(26, 20, 14),
     SIDEBAR     = Color3.fromRGB(14, 10, 8),
-
-    -- Accent
     ACCENT1     = Color3.fromRGB(200, 60, 0),
     ACCENT2     = Color3.fromRGB(255, 160, 0),
     ACCENT3     = Color3.fromRGB(220, 80, 0),
-
-    -- Text
     TEXT        = Color3.fromRGB(255, 255, 255),
     TEXT2       = Color3.fromRGB(200, 195, 190),
     TEXT3       = Color3.fromRGB(130, 120, 110),
     TEXT_DIM    = Color3.fromRGB(70, 60, 50),
-
-    -- Element
     STROKE      = Color3.fromRGB(50, 30, 10),
     STROKE2     = Color3.fromRGB(80, 40, 0),
     TOGGLE_ON   = Color3.fromRGB(255, 120, 0),
     TOGGLE_OFF  = Color3.fromRGB(40, 32, 28),
     INPUT_BG    = Color3.fromRGB(16, 12, 10),
-
-    -- Status
     GREEN       = Color3.fromRGB(80, 220, 120),
     YELLOW      = Color3.fromRGB(255, 220, 50),
     RED         = Color3.fromRGB(255, 80, 80),
 }
-
--- ================================================
--- [GLOBAL NOTIFY SYSTEM]: Initialize Early
--- ================================================
 local function getParent()
     if gethui then return gethui() end
     if game:GetService("CoreGui"):FindFirstChild("RobloxGui") then return game:GetService("CoreGui") end
     return Player:WaitForChild("PlayerGui")
 end
-
 local notifSG = getParent():FindFirstChild("VonixeNotif")
 if not notifSG then
     notifSG = Instance.new("ScreenGui")
@@ -199,7 +145,6 @@ if not notifSG then
     pcall(function() if syn and syn.protect_gui then syn.protect_gui(notifSG) end end)
     notifSG.Parent = getParent()
 end
-
 local notifHolder = notifSG:FindFirstChild("Holder") or Instance.new("Frame", notifSG)
 if notifHolder.Name ~= "Holder" then
     notifHolder.Name = "Holder"; notifHolder.AnchorPoint = Vector2.new(1, 1)
@@ -211,7 +156,6 @@ if notifHolder.Name ~= "Holder" then
     nl.FillDirection, nl.VerticalAlignment, nl.HorizontalAlignment = 1, 2, 2
     nl.Padding = UDim.new(0, 8); nl.SortOrder = Enum.SortOrder.LayoutOrder
 end
-
 function VonixeLib:Notify(nConfig)
     local title   = nConfig.Title or "Notif"
     local content = nConfig.Content or ""
@@ -220,36 +164,28 @@ function VonixeLib:Notify(nConfig)
     local typeColor = {Info=Theme.ACCENT2, Success=Theme.GREEN, Warning=Theme.YELLOW, Error=Theme.RED}
     local col = typeColor[nType] or Theme.ACCENT2
     local NH = (content ~= "" and content ~= " ") and 72 or 52
-
     local nf = Instance.new("Frame", notifHolder)
     nf.Size = UDim2.new(1, 0, 0, 0); nf.BackgroundColor3 = Color3.fromRGB(20, 16, 12); nf.ClipsDescendants = true
     nf.LayoutOrder = -tick()
-
     local function mkCorner(r,p) local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,r);c.Parent=p end
     local function mkStroke(c,t,p) local s=Instance.new("UIStroke");s.Color=c;s.Thickness=t;s.Parent=p end
     mkCorner(10, nf); mkStroke(col, 1, nf)
-
     local bg = Instance.new("Frame", nf)
     bg.Size = UDim2.new(1, 0, 1, 0); bg.BackgroundColor3 = col; bg.BackgroundTransparency = 0.92; bg.ZIndex = 201; bg.BorderSizePixel = 0
     mkCorner(10, bg)
-
     local lbar = Instance.new("Frame", nf)
     lbar.Size = UDim2.new(0, 4, 1, 0); lbar.BackgroundColor3 = col; lbar.ZIndex = 202; lbar.BorderSizePixel = 0
     mkCorner(2, lbar)
-
     local t = Instance.new("TextLabel", nf)
     t.Text = title; t.TextSize = 14; t.Font = Enum.Font.GothamBold; t.TextColor3 = Color3.new(1,1,1); t.BackgroundTransparency = 1
     t.Position = UDim2.new(0, 14, 0, (NH > 52 and 18 or 26)); t.ZIndex = 203; t.AnchorPoint = Vector2.new(0, 0.5); t.TextXAlignment = 0
-
     if content ~= "" and content ~= " " then
         local c = Instance.new("TextLabel", nf)
         c.Text = content; c.TextSize = 12; c.Font = Enum.Font.Gotham; c.TextColor3 = Color3.fromRGB(220, 200, 190); c.BackgroundTransparency = 1
         c.Position = UDim2.new(0, 14, 0, 42); c.TextWrapped = true; c.ZIndex = 203; c.AnchorPoint = Vector2.new(0, 0); c.TextXAlignment = 0
     end
-
     local bar = Instance.new("Frame", nf)
     bar.Size = UDim2.new(1, 0, 0, 2); bar.Position = UDim2.new(0, 0, 1, -2); bar.BackgroundColor3 = col; bar.ZIndex = 205; bar.BorderSizePixel = 0
-
     local twInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     TweenService:Create(nf, twInfo, {Size = UDim2.new(1, 0, 0, NH)}):Play()
     task.delay(0.1, function() 
@@ -260,17 +196,12 @@ function VonixeLib:Notify(nConfig)
         task.wait(0.3); nf:Destroy()
     end)
 end
-
--- ================================================
--- UTILITY
--- ================================================
 local function corner(r, p)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, r)
     c.Parent = p
     return c
 end
-
 local function stroke(col, thick, p, trans)
     local s = Instance.new("UIStroke")
     s.Color = col
@@ -280,7 +211,6 @@ local function stroke(col, thick, p, trans)
     s.Parent = p
     return s
 end
-
 local function gradient(col1, col2, rot, p)
     local g = Instance.new("UIGradient")
     g.Color = ColorSequence.new(col1, col2)
@@ -288,7 +218,6 @@ local function gradient(col1, col2, rot, p)
     g.Parent = p
     return g
 end
-
 local function padding(t, l, r, b, p)
     local pd = Instance.new("UIPadding")
     pd.PaddingTop    = UDim.new(0, t or 0)
@@ -298,7 +227,6 @@ local function padding(t, l, r, b, p)
     pd.Parent = p
     return pd
 end
-
 local function listLayout(dir, halign, valign, pad, p)
     local ll = Instance.new("UIListLayout")
     ll.FillDirection       = dir or Enum.FillDirection.Vertical
@@ -309,14 +237,12 @@ local function listLayout(dir, halign, valign, pad, p)
     ll.Parent              = p
     return ll
 end
-
 local function tween(obj, t, props, style, dir)
     TweenService:Create(obj,
         TweenInfo.new(t, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out),
         props
     ):Play()
 end
-
 local function frame(props, p)
     local f = Instance.new("Frame")
     f.BorderSizePixel = 0
@@ -324,7 +250,6 @@ local function frame(props, p)
     f.Parent = p
     return f
 end
-
 local function label(txt, size, font, col, xa, p)
     local l = Instance.new("TextLabel")
     l.BackgroundTransparency = 1
@@ -338,17 +263,14 @@ local function label(txt, size, font, col, xa, p)
     l.Parent = p
     return l
 end
-
 local function makeDragConn(dragFrame, moveFrame)
     local dragging   = false
-    local dragInput  = nil   -- input objek aktif
+    local dragInput  = nil
     local dragStart  = nil
     local startPos   = nil
-
     local function update(input)
         if not dragging then return end
         local delta = input.Position - dragStart
-        -- Smooth tween snap ala WindUI (0.02s)
         TweenService:Create(moveFrame, TweenInfo.new(0.02, Enum.EasingStyle.Linear), {
             Position = UDim2.new(
                 startPos.X.Scale, startPos.X.Offset + delta.X,
@@ -356,8 +278,6 @@ local function makeDragConn(dragFrame, moveFrame)
             )
         }):Play()
     end
-
-    -- InputBegan: mulai drag
     dragFrame.InputBegan:Connect(function(i)
         if (i.UserInputType == Enum.UserInputType.MouseButton1
         or  i.UserInputType == Enum.UserInputType.Touch)
@@ -366,8 +286,6 @@ local function makeDragConn(dragFrame, moveFrame)
             dragInput  = i
             dragStart  = i.Position
             startPos   = moveFrame.Position
-
-            -- Selesai saat input selesai (lebih reliable dari InputEnded frame)
             i.Changed:Connect(function()
                 if i.UserInputState == Enum.UserInputState.End then
                     dragging  = false
@@ -376,8 +294,6 @@ local function makeDragConn(dragFrame, moveFrame)
             end)
         end
     end)
-
-    -- InputChanged pada frame (jaga-jaga mouse belum keluar)
     dragFrame.InputChanged:Connect(function(i)
         if dragging and dragInput == i then
             if i.UserInputType == Enum.UserInputType.MouseMovement
@@ -386,8 +302,6 @@ local function makeDragConn(dragFrame, moveFrame)
             end
         end
     end)
-
-    -- Backup: UserInputService.InputChanged (handle saat mouse keluar frame)
     UserInputService.InputChanged:Connect(function(i)
         if dragging and dragInput ~= nil then
             if i.UserInputType == Enum.UserInputType.MouseMovement
@@ -397,48 +311,30 @@ local function makeDragConn(dragFrame, moveFrame)
         end
     end)
 end
-
--- ================================================
--- WINDOW
--- ================================================
 function VonixeLib:CreateWindow(config)
     local title    = config.Title or "VonixeLib"
     local subtitle = config.Subtitle or ""
-
-    -- Deteksi mobile via TouchEnabled (paling reliable):
     local UIS      = game:GetService("UserInputService")
     local isMobile = UIS.TouchEnabled or (UIS.TouchEnabled and not UIS.KeyboardEnabled)
-
     local W     = config.Width        or 560
     local H     = config.Height       or 420
-
-    -- FORCE KONSISTENSI "KOTAK" (WindUI Style)
-    -- Jika di mobile inputnya terlalu tinggi/lonjong, kita paksa balik ke rasio box
     if isMobile and H > W then
-        H = W * (420/560) -- Kembalikan ke rasio 4:3
+        H = W * (420/560)
     end
-
     local sideW = config.SidebarWidth or (isMobile and 140 or 140)
-
     local Window = {}
     Window._tabs       = {}
     Window._selected   = nil
     Window._callbacks  = {}
-
-    -- ScreenGui
     local sg = Instance.new("ScreenGui")
     sg.Name          = "VonixeLib_" .. title
     sg.ResetOnSpawn  = false
     sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     sg.IgnoreGuiInset = true
     sg.DisplayOrder  = 999
-
     pcall(function() if syn and syn.protect_gui then syn.protect_gui(sg) end end)
     sg.Parent = getParent()
-
     Window._sg = sg
-
-    -- Main frame — Absolute Center with AnchorPoint
     local main = frame({
         AnchorPoint      = Vector2.new(0.5, 0.5),
         Size             = UDim2.new(0, W, 0, H),
@@ -446,25 +342,18 @@ function VonixeLib:CreateWindow(config)
         BackgroundColor3 = Theme.BG,
         ClipsDescendants = false,
         ZIndex           = 1,
-        Active           = true, -- Stop click through
+        Active           = true,
     }, sg)
     corner(14, main)
     Window._main = main
-
     local camera = workspace.CurrentCamera
-
     local uiScale = Instance.new("UIScale", main)
     local function updateScale()
         local vp = camera.ViewportSize
-        -- Wait for real resolution
         if vp.X < 10 then return end
-
-        -- Margin lebih besar biar gak menuhin layar (80px)
         local scaleX = (vp.X - 40) / W
         local scaleY = (vp.Y - 40) / H
         local finalScale = math.min(scaleX, scaleY)
-
-        -- Clamp lebih ketat di mobile biar tetep "Kotak" mini
         local maxS = isMobile and 0.85 or 0.95
         uiScale.Scale = math.clamp(finalScale, 0.4, maxS)
     end
@@ -475,12 +364,7 @@ function VonixeLib:CreateWindow(config)
             task.wait(0.2)
         end
     end)
-
-    -- Auto re-center & re-scale saat layar berubah
     camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
-
-
-    -- Gradient border
     local bfr = frame({
         Size             = UDim2.new(1, 4, 1, 4),
         Position         = UDim2.new(0, -2, 0, -2),
@@ -489,8 +373,6 @@ function VonixeLib:CreateWindow(config)
     }, main)
     corner(16, bfr)
     gradient(Theme.ACCENT1, Theme.ACCENT2, 135, bfr)
-
-    -- Inner bg
     local bgo = frame({
         Size             = UDim2.new(1, 0, 1, 0),
         BackgroundColor3 = Theme.BG,
@@ -498,8 +380,6 @@ function VonixeLib:CreateWindow(config)
         ClipsDescendants = true,
     }, main)
     corner(13, bgo)
-
-    -- Top glow
     local topGlow = frame({
         Size             = UDim2.new(1, 0, 0, 120),
         BackgroundColor3 = Theme.ACCENT1,
@@ -507,10 +387,6 @@ function VonixeLib:CreateWindow(config)
         ZIndex           = 2,
     }, bgo)
     gradient(Color3.fromRGB(255, 80, 0), Theme.BG, 90, topGlow)
-
-    -- ================================================
-    -- HEADER
-    -- ================================================
     local headerH = 54
     local header = frame({
         Size             = UDim2.new(1, 0, 0, headerH),
@@ -518,8 +394,6 @@ function VonixeLib:CreateWindow(config)
         ZIndex           = 5,
         Active           = true,
     }, bgo)
-
-    -- Dot
     local dot = frame({
         Size             = UDim2.new(0, 8, 0, 8),
         Position         = UDim2.new(0, 18, 0, (headerH/2)-4),
@@ -527,25 +401,18 @@ function VonixeLib:CreateWindow(config)
         ZIndex           = 6,
     }, header)
     corner(99, dot)
-
-    -- Title label
     local titleLbl = label(title, 15, Enum.Font.GothamBlack, Theme.TEXT, Enum.TextXAlignment.Left, header)
     titleLbl.Size     = UDim2.new(1, -90, 0, 20)
     titleLbl.Position = UDim2.new(0, 34, 0, (headerH/2)-18)
     titleLbl.ZIndex   = 6
-
-    -- Subtitle
     if subtitle ~= "" then
         local subLbl = label(subtitle, 9, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Left, header)
         subLbl.Size     = UDim2.new(1, -90, 0, 12)
         subLbl.Position = UDim2.new(0, 34, 0, (headerH/2)+2)
         subLbl.ZIndex   = 6
     end
-
-    -- Icon buttons kanan header
     local iconBtnSize = 28
     local iconBtnY    = (headerH/2) - (iconBtnSize/2)
-
     local function makeIconBtn(xOffset, iconName, bgCol, hoverCol)
         local btn = Instance.new("TextButton")
         btn.Size            = UDim2.new(0, iconBtnSize, 0, iconBtnSize)
@@ -557,7 +424,6 @@ function VonixeLib:CreateWindow(config)
         btn.ZIndex          = 10
         btn.Parent          = bgo
         corner(99, btn)
-        -- Icon di tengah
         local ico = mkIcon(iconName, 14, Color3.fromRGB(220, 200, 190), btn, 11)
         ico.AnchorPoint = Vector2.new(0.5, 0.5)
         ico.Position    = UDim2.new(0.5, 0, 0.5, 0)
@@ -579,12 +445,9 @@ function VonixeLib:CreateWindow(config)
         end)
         return btn
     end
-
     local closeBtn = makeIconBtn(-36, "x",     Color3.fromRGB(50, 20, 20),  Color3.fromRGB(180, 40, 40))
     local minBtn   = makeIconBtn(-70, "minus",  Color3.fromRGB(35, 28, 10),  Color3.fromRGB(100, 70, 10))
     closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
-
-    -- Floating restore button - mungil (32x32) biar gak ganggu game
     local restoreBtn = Instance.new("ImageButton")
     restoreBtn.Size            = UDim2.new(0, 32, 0, 32)
     restoreBtn.Position        = UDim2.new(0.5, -16, 0, 10)
@@ -598,12 +461,10 @@ function VonixeLib:CreateWindow(config)
     restoreBtn.Active          = true
     restoreBtn.Parent          = sg
     corner(99, restoreBtn)
-
     local glowStroke = Instance.new("UIStroke")
     glowStroke.Color       = Theme.ACCENT1
     glowStroke.Thickness   = 2
     glowStroke.Parent      = restoreBtn
-
     restoreBtn.MouseEnter:Connect(function()
         tween(restoreBtn, 0.15, {BackgroundColor3 = Color3.fromRGB(35, 22, 8)})
         tween(glowStroke, 0.15, {Color = Theme.ACCENT2})
@@ -614,8 +475,6 @@ function VonixeLib:CreateWindow(config)
         tween(glowStroke, 0.15, {Color = Theme.ACCENT1})
         tween(restoreBtn, 0.15, {Size = UDim2.new(0, 32, 0, 32)})
     end)
-
-    -- Draggable restore button
     local rbDragging, rbDragStart, rbStartPos = false, nil, nil
     restoreBtn.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
@@ -635,8 +494,6 @@ function VonixeLib:CreateWindow(config)
             rbDragging = false
         end
     end)
-
-    -- Klik restore (hanya kalau tidak drag)
     local rbMoved = false
     restoreBtn.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
@@ -650,15 +507,12 @@ function VonixeLib:CreateWindow(config)
     end)
     restoreBtn.InputEnded:Connect(function(i)
         if (i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch) and not rbMoved then
-            -- Restore window
             restoreBtn.Visible = false
             main.Visible = true
             main.Size = UDim2.new(0, W, 0, 0)
             tween(main, 0.3, {Size = UDim2.new(0, W, 0, H)}, Enum.EasingStyle.Quint)
         end
     end)
-
-    -- Minimize logic
     minBtn.MouseButton1Click:Connect(function()
         tween(main, 0.25, {Size = UDim2.new(0, W, 0, 0)}, Enum.EasingStyle.Quint)
         task.delay(0.25, function()
@@ -666,8 +520,6 @@ function VonixeLib:CreateWindow(config)
             restoreBtn.Visible = true
         end)
     end)
-
-    -- Separator
     local sep = frame({
         Size             = UDim2.new(1, -32, 0, 1),
         Position         = UDim2.new(0, 16, 0, headerH),
@@ -675,20 +527,13 @@ function VonixeLib:CreateWindow(config)
         ZIndex           = 5,
     }, bgo)
     gradient(Theme.ACCENT1, Theme.ACCENT2, 0, sep)
-
-    -- Drag
     makeDragConn(header, main)
-
-    -- ================================================
-    -- SIDEBAR
-    -- ================================================
     local sidebar = frame({
         Size             = UDim2.new(0, sideW, 1, -(headerH + 1)),
         Position         = UDim2.new(0, 0, 0, headerH + 1),
         BackgroundColor3 = Theme.SIDEBAR,
         ZIndex           = 3,
     }, bgo)
-
     local sideScroll = Instance.new("ScrollingFrame")
     sideScroll.Size                  = UDim2.new(1, 0, 1, -8)
     sideScroll.Position              = UDim2.new(0, 0, 0, 4)
@@ -700,36 +545,23 @@ function VonixeLib:CreateWindow(config)
     sideScroll.Parent                = sidebar
     padding(4, 6, 6, 4, sideScroll)
     listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Top, 3, sideScroll)
-
-    -- Sidebar right border
     local sideLine = frame({
         Size             = UDim2.new(0, 1, 1, 0),
         Position         = UDim2.new(1, 0, 0, 0),
         BackgroundColor3 = Theme.STROKE2,
         ZIndex           = 4,
     }, sidebar)
-
-    -- ================================================
-    -- CONTENT AREA
-    -- ================================================
     local contentArea = frame({
         Size             = UDim2.new(1, -(sideW + 1), 1, -(headerH + 1)),
         Position         = UDim2.new(0, sideW + 1, 0, headerH + 1),
         BackgroundTransparency = 1,
         ZIndex           = 3,
     }, bgo)
-
-    -- ================================================
-    -- TAB FUNCTION
-    -- ================================================
     function Window:AddTab(tabConfig)
         local tabName = tabConfig.Title or "Tab"
         local tabIcon = tabConfig.Icon or ""
-
         local Tab = {}
         Tab._elements = {}
-
-        -- Tab button (sidebar)
         local tabBtn = Instance.new("TextButton")
         tabBtn.Size            = UDim2.new(1, 0, 0, 34)
         tabBtn.BackgroundColor3 = Theme.BG2
@@ -740,20 +572,14 @@ function VonixeLib:CreateWindow(config)
         tabBtn.ZIndex          = 5
         tabBtn.Parent          = sideScroll
         corner(8, tabBtn)
-
-        -- Tab icon - absolute positioning, no UIListLayout
         local iconName = tabConfig.Icon or "chevron-right"
         local iconDot = mkIcon(iconName, 14, Theme.TEXT3, tabBtn, 7)
         iconDot.AnchorPoint = Vector2.new(0, 0.5)
         iconDot.Position    = UDim2.new(0, 10, 0.5, 0)
-
-        -- Tab name
         local tabNameLbl = label(tabName, 13, Enum.Font.GothamSemibold, Theme.TEXT3, Enum.TextXAlignment.Left, tabBtn)
         tabNameLbl.Size     = UDim2.new(1, -36, 1, 0)
         tabNameLbl.Position = UDim2.new(0, 30, 0, 0)
         tabNameLbl.ZIndex   = 7
-
-        -- Active indicator
         local activeBar = frame({
             Size             = UDim2.new(0, 2, 0, 18),
             Position         = UDim2.new(0, 0, 0.5, -9),
@@ -762,8 +588,6 @@ function VonixeLib:CreateWindow(config)
             ZIndex           = 6,
         }, tabBtn)
         corner(99, activeBar)
-
-        -- Tab content scroll
         local tabContent = Instance.new("ScrollingFrame")
         tabContent.Size                  = UDim2.new(1, 0, 1, 0)
         tabContent.BackgroundTransparency = 1
@@ -776,17 +600,13 @@ function VonixeLib:CreateWindow(config)
         tabContent.Parent                = contentArea
         padding(10, 12, 12, 10, tabContent)
         listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 6, tabContent)
-
         Tab._btn        = tabBtn
         Tab._content    = tabContent
         Tab._activeBar  = activeBar
         Tab._iconDot    = iconDot
         Tab._nameLbl    = tabNameLbl
-
-        -- Select tab
         local function setIconColor(iconContainer, col)
             if not iconContainer or not iconContainer.Parent then return end
-            -- mkIcon returns Frame container, inner child is ImageLabel or TextLabel
             local inner = iconContainer:FindFirstChildWhichIsA("ImageLabel")
                 or iconContainer:FindFirstChildWhichIsA("TextLabel")
             if inner then
@@ -797,9 +617,7 @@ function VonixeLib:CreateWindow(config)
                 end
             end
         end
-
         local function selectTab()
-            -- Deselect semua
             for _, t in ipairs(Window._tabs) do
                 tween(t._btn, 0.15, {BackgroundTransparency = 1})
                 tween(t._activeBar, 0.15, {BackgroundTransparency = 1})
@@ -807,7 +625,6 @@ function VonixeLib:CreateWindow(config)
                 setIconColor(t._iconDot, Theme.TEXT3)
                 t._content.Visible = false
             end
-            -- Select ini
             tween(tabBtn, 0.15, {BackgroundTransparency = 0.85})
             tween(activeBar, 0.15, {BackgroundTransparency = 0})
             tabNameLbl.TextColor3 = Theme.TEXT
@@ -815,7 +632,6 @@ function VonixeLib:CreateWindow(config)
             tabContent.Visible = true
             Window._selected = Tab
         end
-
         tabBtn.MouseButton1Click:Connect(selectTab)
         tabBtn.MouseEnter:Connect(function()
             if Window._selected ~= Tab then
@@ -827,40 +643,26 @@ function VonixeLib:CreateWindow(config)
                 tween(tabBtn, 0.1, {BackgroundTransparency = 1})
             end
         end)
-
         table.insert(Window._tabs, Tab)
-
-        -- Auto select tab pertama
         if #Window._tabs == 1 then
             selectTab()
         end
-
-        -- ================================================
-        -- SECTION
-        -- ================================================
         function Tab:AddSection(sConfig)
             local sec = frame({
                 Size             = UDim2.new(1, 0, 0, 20),
                 AutomaticSize    = Enum.AutomaticSize.Y,
                 BackgroundTransparency = 1,
             }, tabContent)
-
             local secLbl = label((sConfig.Title or "Section"):upper(), 9, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Left, sec)
             secLbl.Size     = UDim2.new(1, -8, 0, 14)
             secLbl.Position = UDim2.new(0, 4, 0, 0)
-
             local secLine = frame({
                 Size             = UDim2.new(1, -4, 0, 1),
                 Position         = UDim2.new(0, 4, 0, 16),
                 BackgroundColor3 = Theme.STROKE,
             }, sec)
-
             return sec
         end
-
-        -- ================================================
-        -- BUTTON
-        -- ================================================
         function Tab:AddButton(bConfig)
             local btn = Instance.new("TextButton")
             btn.Size            = UDim2.new(1, 0, 0, 36)
@@ -871,8 +673,6 @@ function VonixeLib:CreateWindow(config)
             btn.Parent          = tabContent
             corner(8, btn)
             stroke(Theme.STROKE, 1, btn)
-
-            -- Accent top
             local acc = frame({
                 Size             = UDim2.new(0, 20, 0, 2),
                 Position         = UDim2.new(0, 10, 0, 0),
@@ -881,12 +681,10 @@ function VonixeLib:CreateWindow(config)
             }, btn)
             corner(99, acc)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
             local btnLbl = label(bConfig.Title or "Button", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, btn)
             btnLbl.Size     = UDim2.new(1, -20, 1, 0)
             btnLbl.Position = UDim2.new(0, 10, 0, 0)
             btnLbl.ZIndex   = 2
-
             btn.MouseEnter:Connect(function() tween(btn, 0.1, {BackgroundColor3 = Theme.BG3}) end)
             btn.MouseLeave:Connect(function() tween(btn, 0.1, {BackgroundColor3 = Theme.BG2}) end)
             btn.MouseButton1Click:Connect(function()
@@ -896,25 +694,18 @@ function VonixeLib:CreateWindow(config)
                     task.spawn(bConfig.Callback)
                 end
             end)
-
             local BtnObj = {}
             function BtnObj:SetTitle(t) btnLbl.Text = t end
             return BtnObj
         end
-
-        -- ================================================
-        -- TOGGLE
-        -- ================================================
         function Tab:AddToggle(tConfig)
             local value = tConfig.Value or false
-
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 36),
                 BackgroundColor3 = Theme.BG2,
             }, tabContent)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
-
             local acc = frame({
                 Size             = UDim2.new(0, 20, 0, 2),
                 Position         = UDim2.new(0, 10, 0, 0),
@@ -923,13 +714,10 @@ function VonixeLib:CreateWindow(config)
             }, row)
             corner(99, acc)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
             local nameLbl = label(tConfig.Title or "Toggle", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
             nameLbl.Size     = UDim2.new(1, -60, 1, 0)
             nameLbl.Position = UDim2.new(0, 10, 0, 0)
             nameLbl.ZIndex   = 2
-
-            -- Toggle track
             local track = frame({
                 Size             = UDim2.new(0, 38, 0, 20),
                 Position         = UDim2.new(1, -46, 0.5, -10),
@@ -938,8 +726,6 @@ function VonixeLib:CreateWindow(config)
             }, row)
             corner(99, track)
             stroke(Theme.STROKE, 1, track)
-
-            -- Toggle thumb
             local thumb = frame({
                 Size             = UDim2.new(0, 14, 0, 14),
                 Position         = value and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7),
@@ -947,20 +733,17 @@ function VonixeLib:CreateWindow(config)
                 ZIndex           = 3,
             }, track)
             corner(99, thumb)
-
-            local TogObj = {} -- Pindah ke atas biar 'set' bisa nengok
+            local TogObj = {}
             local function set(v, fireCallback)
                 value = v
-                TogObj.Value = v -- UPDATE MEMORI!
+                TogObj.Value = v
                 tween(track, 0.15, {BackgroundColor3 = v and Theme.TOGGLE_ON or Theme.TOGGLE_OFF})
                 tween(thumb, 0.15, {Position = v and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)})
                 if fireCallback and tConfig.Callback then
                     task.spawn(tConfig.Callback, v)
                 end
             end
-
             set(value, false)
-
             local clickArea = Instance.new("TextButton")
             clickArea.Size            = UDim2.new(1, 0, 1, 0)
             clickArea.BackgroundTransparency = 1
@@ -970,36 +753,28 @@ function VonixeLib:CreateWindow(config)
             clickArea.MouseButton1Click:Connect(function() set(not value, true) end)
             row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
             row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
-
             TogObj.Value = value
             function TogObj:SetValue(v)
                 set(v, true)
             end
             function TogObj:SetValueSilent(v)
-                -- Update UI tanpa fire callback
                 set(v, false)
                 TogObj.Value = v
             end
             function TogObj:SetTitle(t) nameLbl.Text = t end
             return TogObj
         end
-
-        -- ================================================
-        -- SLIDER
-        -- ================================================
         function Tab:AddSlider(sConfig)
             local min   = sConfig.Min or 0
             local max   = sConfig.Max or 100
             local value = math.clamp(sConfig.Value or sConfig.Default or min, min, max)
             local step  = sConfig.Step or 1
-
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 52),
                 BackgroundColor3 = Theme.BG2,
             }, tabContent)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
-
             local acc = frame({
                 Size             = UDim2.new(0, 20, 0, 2),
                 Position         = UDim2.new(0, 10, 0, 0),
@@ -1008,18 +783,14 @@ function VonixeLib:CreateWindow(config)
             }, row)
             corner(99, acc)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
             local nameLbl = label(sConfig.Title or "Slider", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
             nameLbl.Size     = UDim2.new(1, -60, 0, 20)
             nameLbl.Position = UDim2.new(0, 10, 0, 10)
             nameLbl.ZIndex   = 2
-
             local valLbl = label(tostring(value), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
             valLbl.Size     = UDim2.new(0, 50, 0, 20)
             valLbl.Position = UDim2.new(1, -58, 0, 10)
             valLbl.ZIndex   = 2
-
-            -- Track
             local trackBg = frame({
                 Size             = UDim2.new(1, -20, 0, 6),
                 Position         = UDim2.new(0, 10, 0, 36),
@@ -1028,7 +799,6 @@ function VonixeLib:CreateWindow(config)
             }, row)
             corner(99, trackBg)
             stroke(Theme.STROKE, 1, trackBg)
-
             local fill = frame({
                 Size             = UDim2.new((value - min) / (max - min), 0, 1, 0),
                 BackgroundColor3 = Theme.ACCENT1,
@@ -1036,8 +806,6 @@ function VonixeLib:CreateWindow(config)
             }, trackBg)
             corner(99, fill)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, fill)
-
-            -- Thumb
             local thumb = frame({
                 Size             = UDim2.new(0, 12, 0, 12),
                 Position         = UDim2.new((value - min) / (max - min), -6, 0.5, -6),
@@ -1045,12 +813,11 @@ function VonixeLib:CreateWindow(config)
                 ZIndex           = 4,
             }, trackBg)
             corner(99, thumb)
-
-            local SlObj = {} -- Pindah ke atas
+            local SlObj = {}
             local function setValue(v, fireCallback)
                 v = math.clamp(math.floor(v / step + 0.5) * step, min, max)
                 value = v
-                SlObj.Value = v -- UPDATE MEMORI!
+                SlObj.Value = v
                 local ratio = (v - min) / (max - min)
                 tween(fill, 0.05, {Size = UDim2.new(ratio, 0, 1, 0)})
                 tween(thumb, 0.05, {Position = UDim2.new(ratio, -6, 0.5, -6)})
@@ -1059,22 +826,17 @@ function VonixeLib:CreateWindow(config)
                     task.spawn(sConfig.Callback, v)
                 end
             end
-
-            -- Drag logic (fix: support Touch + proper InputEnded on trackBg)
             local draggingSlider = false
-
-            trackBg.InputBegan:Connect(function(i)
+            row.InputBegan:Connect(function(i)
                 if i.UserInputType == Enum.UserInputType.MouseButton1
                 or i.UserInputType == Enum.UserInputType.Touch then
                     draggingSlider = true
-                    -- Langsung set nilai saat klik
                     local abs = trackBg.AbsolutePosition
                     local siz = trackBg.AbsoluteSize
                     local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
                     setValue(min + ratio * (max - min), true)
                 end
             end)
-
             UserInputService.InputChanged:Connect(function(i)
                 if draggingSlider and (i.UserInputType == Enum.UserInputType.MouseMovement
                 or i.UserInputType == Enum.UserInputType.Touch) then
@@ -1084,29 +846,21 @@ function VonixeLib:CreateWindow(config)
                     setValue(min + ratio * (max - min), true)
                 end
             end)
-
             UserInputService.InputEnded:Connect(function(i)
                 if i.UserInputType == Enum.UserInputType.MouseButton1
                 or i.UserInputType == Enum.UserInputType.Touch then
                     draggingSlider = false
                 end
             end)
-
             setValue(value, false)
-
             SlObj.Value = value
             function SlObj:SetValue(v) setValue(v, false) end
             function SlObj:SetTitle(t) nameLbl.Text = t end
             return SlObj
         end
-
-        -- ================================================
-        -- DROPDOWN
-        -- ================================================
         function Tab:AddDropdown(dConfig)
             local isMulti  = dConfig.Multi or false
             local options  = dConfig.Options or dConfig.Values or {}
-
             local selected = dConfig.Value or dConfig.Default
             if isMulti then
                 if type(selected) ~= "table" then
@@ -1116,17 +870,14 @@ function VonixeLib:CreateWindow(config)
                 if type(selected) == "table" then selected = selected[1] or "" end
                 if not selected or selected == "" then selected = options[1] or "" end
             end
-
             local opened = false
             local DdObj  = {} 
-
             local wrapper = frame({
                 Size             = UDim2.new(1, 0, 0, 36),
                 BackgroundTransparency = 1,
                 AutomaticSize    = Enum.AutomaticSize.Y,
                 ZIndex           = 10,
             }, tabContent)
-
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 36),
                 BackgroundColor3 = Theme.BG2,
@@ -1134,7 +885,6 @@ function VonixeLib:CreateWindow(config)
             }, wrapper)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
-
             local acc = frame({
                 Size             = UDim2.new(0, 20, 0, 2),
                 Position         = UDim2.new(0, 10, 0, 0),
@@ -1143,12 +893,10 @@ function VonixeLib:CreateWindow(config)
             }, row)
             corner(99, acc)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
             local nameLbl = label(dConfig.Title or "Dropdown", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
             nameLbl.Size     = UDim2.new(0.5, -10, 1, 0)
             nameLbl.Position = UDim2.new(0, 10, 0, 0)
             nameLbl.ZIndex   = 11
-
             local function formatValText(val)
                 if isMulti then
                     local str = table.concat(val, ", ")
@@ -1159,12 +907,10 @@ function VonixeLib:CreateWindow(config)
                     return tostring(val)
                 end
             end
-
             local valLbl = label(formatValText(selected), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
             valLbl.Size     = UDim2.new(0.5, -30, 1, 0)
             valLbl.Position = UDim2.new(0.5, 0, 0, 0)
             valLbl.ZIndex   = 11
-
             local arrowFrame = Instance.new("Frame")
             arrowFrame.Size             = UDim2.new(0, 20, 0, 20)
             arrowFrame.Position         = UDim2.new(1, -26, 0.5, -10)
@@ -1174,7 +920,6 @@ function VonixeLib:CreateWindow(config)
             local arrow = mkIcon("chevron-down", 14, Theme.TEXT3, arrowFrame, 12)
             arrow.AnchorPoint = Vector2.new(0.5, 0.5)
             arrow.Position    = UDim2.new(0.5, 0, 0.5, 0)
-
             local menu = frame({
                 Size             = UDim2.new(1, 0, 0, 0),
                 Position         = UDim2.new(0, 0, 0, 38),
@@ -1185,9 +930,7 @@ function VonixeLib:CreateWindow(config)
             }, wrapper)
             corner(8, menu)
             stroke(Theme.STROKE2, 1, menu)
-
             local menuList = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, menu)
-
             local searchBox = nil
             if #options > 4 or isMulti then
                 local searchRow = frame({Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1, ZIndex = 21}, menu)
@@ -1210,7 +953,6 @@ function VonixeLib:CreateWindow(config)
                 searchBox.ZIndex = 22
                 searchBox.Parent = searchBg
             end
-
             local scroll = Instance.new("ScrollingFrame")
             scroll.BackgroundTransparency = 1
             scroll.BorderSizePixel = 0
@@ -1221,7 +963,6 @@ function VonixeLib:CreateWindow(config)
             local optsLayout   = listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top, 0, scroll)
             local optViews     = {} 
             local optBtns      = {} 
-
             local function updateMenuSize()
                 local th = 0
                 for _,o in pairs(optBtns) do if o.btn.Visible then th = th + 30 end end
@@ -1230,7 +971,6 @@ function VonixeLib:CreateWindow(config)
                 scroll.Size = UDim2.new(1, 0, 0, maxH)
                 return maxH + (searchBox and 32 or 0)
             end
-
             local function createOption(opt)
                 local optBtn = Instance.new("TextButton")
                 optBtn.Size            = UDim2.new(1, 0, 0, 30)
@@ -1241,7 +981,6 @@ function VonixeLib:CreateWindow(config)
                 optBtn.AutoButtonColor = false
                 optBtn.ZIndex          = 21
                 optBtn.Parent          = scroll
-
                 local dot = frame({
                     Size             = UDim2.new(0, 6, 0, 6),
                     Position         = UDim2.new(0, 8, 0.5, -3),
@@ -1250,12 +989,10 @@ function VonixeLib:CreateWindow(config)
                     ZIndex           = 23,
                 }, optBtn)
                 corner(99, dot)
-
                 local optLbl = label(tostring(opt), 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, optBtn)
                 optLbl.Size     = UDim2.new(1, -50, 1, 0)
                 optLbl.Position = UDim2.new(0, 22, 0, 0)
                 optLbl.ZIndex   = 22
-
                 local function getIsSel()
                     if isMulti then
                         for _, v in pairs(selected) do if v == opt then return true end end
@@ -1264,7 +1001,6 @@ function VonixeLib:CreateWindow(config)
                         return selected == opt
                     end
                 end
-
                 local function refreshVisual(anim)
                     local isS = getIsSel()
                     if isS then
@@ -1291,13 +1027,11 @@ function VonixeLib:CreateWindow(config)
                         end
                     end
                 end
-
                 optBtn.MouseEnter:Connect(function() tween(optBtn, 0.08, {BackgroundTransparency = 0.85}) end)
                 optBtn.MouseLeave:Connect(function() 
                     if getIsSel() then tween(optBtn, 0.08, {BackgroundTransparency = 0.6})
                     else tween(optBtn, 0.08, {BackgroundTransparency = 1}) end
                 end)
-
                 optBtn.MouseButton1Click:Connect(function()
                     if isMulti then
                         local foundIdx = nil
@@ -1319,14 +1053,11 @@ function VonixeLib:CreateWindow(config)
                         task.delay(0.15, function() menu.Visible = false end)
                     end
                 end)
-
                 optViews[opt] = refreshVisual
                 table.insert(optBtns, {btn = optBtn, txt = tostring(opt):lower()})
                 refreshVisual(false)
             end
-
             for _, o in ipairs(options) do createOption(o) end
-
             if searchBox then
                 searchBox.Changed:Connect(function(prop)
                     if prop == "Text" then
@@ -1341,7 +1072,6 @@ function VonixeLib:CreateWindow(config)
                     end
                 end)
             end
-
             local clickArea = Instance.new("TextButton")
             clickArea.Size            = UDim2.new(1, 0, 1, 0)
             clickArea.BackgroundTransparency = 1
@@ -1361,10 +1091,8 @@ function VonixeLib:CreateWindow(config)
                     task.delay(0.15, function() menu.Visible = false end)
                 end
             end)
-
             row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
             row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
-
             DdObj.Value = selected
             function DdObj:SetValue(v)
                 selected = v
@@ -1386,10 +1114,6 @@ function VonixeLib:CreateWindow(config)
             DdObj.SetOptions = DdObj.Refresh
             return DdObj
         end
-
-        -- ================================================
-        -- INPUT
-        -- ================================================
         function Tab:AddInput(iConfig)
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 54),
@@ -1397,7 +1121,6 @@ function VonixeLib:CreateWindow(config)
             }, tabContent)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
-
             local acc = frame({
                 Size             = UDim2.new(0, 20, 0, 2),
                 Position         = UDim2.new(0, 10, 0, 0),
@@ -1406,12 +1129,10 @@ function VonixeLib:CreateWindow(config)
             }, row)
             corner(99, acc)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
             local nameLbl = label(iConfig.Title or "Input", 11, Enum.Font.GothamBold, Theme.TEXT3, Enum.TextXAlignment.Left, row)
             nameLbl.Size     = UDim2.new(1, -20, 0, 16)
             nameLbl.Position = UDim2.new(0, 10, 0, 8)
             nameLbl.ZIndex   = 2
-
             local inputBox = Instance.new("TextBox")
             inputBox.Size            = UDim2.new(1, -20, 0, 22)
             inputBox.Position        = UDim2.new(0, 10, 0, 26)
@@ -1430,17 +1151,14 @@ function VonixeLib:CreateWindow(config)
             corner(6, inputBox)
             stroke(Theme.STROKE2, 1, inputBox)
             padding(0, 8, 8, 0, inputBox)
-
             inputBox.Focused:Connect(function()
                 tween(inputBox, 0.1, {BackgroundColor3 = Color3.fromRGB(24, 16, 10)})
             end)
             inputBox.FocusLost:Connect(function()
                 tween(inputBox, 0.1, {BackgroundColor3 = Theme.INPUT_BG})
             end)
-
             local InObj = {}
             InObj.Value = inputBox.Text
-
             inputBox.Changed:Connect(function(prop)
                 if prop == "Text" then InObj.Value = inputBox.Text end
             end)
@@ -1450,15 +1168,10 @@ function VonixeLib:CreateWindow(config)
                     task.spawn(iConfig.Callback, inputBox.Text)
                 end
             end)
-
             function InObj:SetValue(v) inputBox.Text = v; InObj.Value = v end
             function InObj:SetTitle(t) nameLbl.Text = t end
             return InObj
         end
-
-        -- ================================================
-        -- MISSION BAR
-        -- ================================================
         function Tab:AddMissionBar()
             local card = frame({
                 Size             = UDim2.new(1, 0, 0, 66),
@@ -1466,28 +1179,20 @@ function VonixeLib:CreateWindow(config)
             }, tabContent)
             corner(10, card)
             stroke(Theme.STROKE, 1, card)
-
-            -- Accent top bar
             local acc = frame({
                 Size             = UDim2.new(1, 0, 0, 2),
                 BackgroundColor3 = Theme.ACCENT3,
             }, card)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
-            -- Pulse dot
             local dot = frame({
                 Size             = UDim2.new(0, 8, 0, 8),
                 Position         = UDim2.new(0, 10, 0, 12),
                 BackgroundColor3 = Theme.TEXT3,
             }, card)
             corner(99, dot)
-
-            -- Index (e.g. "2/5")
             local indexLbl = label("", 10, Enum.Font.GothamBold, Theme.TEXT3, Enum.TextXAlignment.Left, card)
             indexLbl.Size     = UDim2.new(0, 50, 0, 14)
             indexLbl.Position = UDim2.new(0, 24, 0, 8)
-
-            -- Stone badge kanan atas
             local stoneBadge = frame({
                 Size             = UDim2.new(0, 0, 0, 18),
                 Position         = UDim2.new(1, -8, 0, 5),
@@ -1503,13 +1208,9 @@ function VonixeLib:CreateWindow(config)
             stoneLbl.AutomaticSize = Enum.AutomaticSize.X
             stoneLbl.Size          = UDim2.new(0, 0, 1, 0)
             stoneBadge.Visible     = false
-
-            -- Main label (tier @ zone)
-            local mainLbl = label("Idle", 15, Enum.Font.GothamBlack, Theme.TEXT3, Enum.TextXAlignment.Left, card)
+            local mainLbl = label("Mission: OFF", 15, Enum.Font.GothamBlack, Theme.TEXT3, Enum.TextXAlignment.Left, card)
             mainLbl.Size     = UDim2.new(1, -16, 0, 20)
             mainLbl.Position = UDim2.new(0, 10, 0, 24)
-
-            -- Progress bar
             local track = frame({
                 Size             = UDim2.new(1, -20, 0, 5),
                 Position         = UDim2.new(0, 10, 0, 50),
@@ -1522,13 +1223,9 @@ function VonixeLib:CreateWindow(config)
             }, track)
             corner(99, fill)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, fill)
-
-            -- Progress count kanan
             local progLbl = label("", 10, Enum.Font.GothamBold, Theme.TEXT3, Enum.TextXAlignment.Right, card)
             progLbl.Size     = UDim2.new(1, -20, 0, 14)
             progLbl.Position = UDim2.new(0, 10, 0, 50)
-
-            -- Pulse animasi
             local pulseConn
             local function setPulse(col, active)
                 if pulseConn then pcall(function() pulseConn:Disconnect() end) end
@@ -1543,7 +1240,6 @@ function VonixeLib:CreateWindow(config)
                 end
             end
             setPulse(Theme.TEXT3, false)
-
             local tierColors = {
                 COMMON = Theme.TEXT2,
                 RARE   = Color3.fromRGB(100, 180, 255),
@@ -1551,11 +1247,10 @@ function VonixeLib:CreateWindow(config)
                 SECRET = Color3.fromRGB(255, 200, 50),
                 LEGEND = Color3.fromRGB(255, 120, 30),
             }
-
             local MB = {}
             function MB:SetStatus(data)
                 if not data then
-                    mainLbl.Text       = "Idle"
+                    mainLbl.Text       = "Mission: OFF"
                     mainLbl.TextColor3 = Theme.TEXT3
                     indexLbl.Text      = ""
                     progLbl.Text       = ""
@@ -1568,7 +1263,6 @@ function VonixeLib:CreateWindow(config)
                 local col = tierColors[(data.tier or ""):upper()] or Theme.TEXT2
                 local isMission = tierColors[(data.tier or ""):upper()] ~= nil
                 local prefix = isMission and "CATCHING " or ""
-
                 if data.zone and data.zone ~= "" and data.zone ~= "—" then
                     mainLbl.Text = prefix .. (data.tier or "?"):upper() .. " " .. data.zone:upper()
                 else
@@ -1593,9 +1287,6 @@ function VonixeLib:CreateWindow(config)
             function MB:SetOff() MB:SetStatus(nil) end
             return MB
         end
-
-        -- LABEL (read-only text)
-        -- ================================================
         function Tab:AddLabel(lConfig)
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 0),
@@ -1604,7 +1295,6 @@ function VonixeLib:CreateWindow(config)
             }, tabContent)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
-            
             local acc = frame({
                 Size             = UDim2.new(0, 20, 0, 2),
                 Position         = UDim2.new(0, 0, 0, -10),
@@ -1613,30 +1303,23 @@ function VonixeLib:CreateWindow(config)
             }, row)
             corner(99, acc)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, acc)
-
             local pd = Instance.new("UIPadding")
             pd.PaddingTop    = UDim.new(0, 10)
             pd.PaddingBottom = UDim.new(0, 10)
             pd.PaddingLeft   = UDim.new(0, 10)
             pd.PaddingRight  = UDim.new(0, 10)
             pd.Parent        = row
-
             local lbl = label(lConfig.Title or "", 12, Enum.Font.Gotham, Theme.ACCENT2, Enum.TextXAlignment.Left, row)
             lbl.Size          = UDim2.new(1, 0, 0, 0)
             lbl.AutomaticSize = Enum.AutomaticSize.Y
             lbl.TextWrapped   = true
             lbl.TextYAlignment= Enum.TextYAlignment.Top
             lbl.TextTruncate  = Enum.TextTruncate.None
-
             local LbObj = {}
             function LbObj:SetTitle(t) lbl.Text = t end
             function LbObj:SetColor(c) lbl.TextColor3 = c end
             return LbObj
         end
-
-        -- ================================================
-        -- ALIASES (WindUI compat)
-        -- ================================================
         Tab.Button   = Tab.AddButton
         Tab.Toggle   = Tab.AddToggle
         Tab.Slider   = Tab.AddSlider
@@ -1644,18 +1327,12 @@ function VonixeLib:CreateWindow(config)
         Tab.Input    = Tab.AddInput
         Tab.Label    = Tab.AddLabel
         Tab.Section  = Tab.AddSection
-        Tab.Space    = function() end -- no-op
+        Tab.Space    = function() end
         Tab.MissionBar = Tab.AddMissionBar
-
         return Tab
     end
-
-    -- ================================================
-    -- NOTIFY SYSTEM (stacked, with duration bar + close btn)
-    -- ================================================
     local NW = isMobile and 220 or 280
     local NOTIF_GAP = 6
-    -- Container untuk stack notif
     local notifHolder = Instance.new("Frame")
     notifHolder.AnchorPoint      = Vector2.new(1, 1)
     notifHolder.Size             = UDim2.new(0, NW, 1, -20)
@@ -1663,12 +1340,10 @@ function VonixeLib:CreateWindow(config)
     notifHolder.BackgroundTransparency = 1
     notifHolder.ZIndex           = 200
     notifHolder.Parent           = sg
-
     local notifScale = Instance.new("UIScale", notifHolder)
     if isMobile then
         local function updN()
             local v = workspace.CurrentCamera.ViewportSize
-            -- Scaling notif mungil di pojok
             notifScale.Scale = 0.75
         end
         updN()
@@ -1681,22 +1356,18 @@ function VonixeLib:CreateWindow(config)
     notifLayout.Padding             = UDim.new(0, NOTIF_GAP)
     notifLayout.SortOrder           = Enum.SortOrder.LayoutOrder
     notifLayout.Parent              = notifHolder
-
     local function dismissNotif(nf, onDone)
-        -- Di UIListLayout ga bisa tween Position, shrink height instead
         tween(nf, 0.2, {Size = UDim2.new(1, 0, 0, 0)}, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
         task.delay(0.25, function()
             if nf and nf.Parent then nf:Destroy() end
             if onDone then onDone() end
         end)
     end
-
     function Window:Notify(nConfig)
         local title   = nConfig.Title or "Notif"
         local content = nConfig.Content or ""
         local dur     = nConfig.Duration or 3
         local nType   = nConfig.Type or "Info"
-
         local typeColor = {
             Info    = Theme.ACCENT2,
             Success = Theme.GREEN,
@@ -1705,8 +1376,6 @@ function VonixeLib:CreateWindow(config)
         }
         local col = typeColor[nType] or Theme.ACCENT2
         local NH = content ~= "" and 72 or 52
-
-        -- Frame notif
         local nf = Instance.new("Frame")
         nf.Size             = UDim2.new(1, 0, 0, 0)
         nf.BackgroundColor3 = Color3.fromRGB(20, 16, 12)
@@ -1716,8 +1385,6 @@ function VonixeLib:CreateWindow(config)
         nf.Parent           = notifHolder
         corner(10, nf)
         stroke(col, 1, nf)
-
-        -- Background gradient subtle
         local bg = frame({
             Size             = UDim2.new(1, 0, 1, 0),
             BackgroundColor3 = col,
@@ -1725,8 +1392,6 @@ function VonixeLib:CreateWindow(config)
             ZIndex           = 201,
         }, nf)
         corner(10, bg)
-
-        -- Left color bar
         local leftBar = frame({
             Size             = UDim2.new(0, 3, 0.7, 0),
             Position         = UDim2.new(0, 0, 0.15, 0),
@@ -1734,8 +1399,6 @@ function VonixeLib:CreateWindow(config)
             ZIndex           = 203,
         }, nf)
         corner(99, leftBar)
-
-        -- Icon teks per type
         local iconTexts = {
             Info    = "ℹ",
             Success = "✓",
@@ -1752,14 +1415,10 @@ function VonixeLib:CreateWindow(config)
         ico.Font       = Enum.Font.GothamBold
         ico.ZIndex     = 203
         ico.Parent     = nf
-
-        -- Title
         local titleLbl = label(title, 14, Enum.Font.GothamBold, Theme.TEXT, Enum.TextXAlignment.Left, nf)
         titleLbl.Size     = UDim2.new(1, -70, 0, 18)
         titleLbl.Position = UDim2.new(0, 34, 0, 10)
         titleLbl.ZIndex   = 203
-
-        -- Content
         if content ~= "" then
             local contLbl = label(content, 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, nf)
             contLbl.Size        = UDim2.new(1, -70, 0, 16)
@@ -1768,9 +1427,6 @@ function VonixeLib:CreateWindow(config)
             contLbl.TextTruncate = Enum.TextTruncate.AtEnd
             contLbl.TextColor3  = col:Lerp(Theme.TEXT2, 0.5)
         end
-
-
-        -- Duration bar (berkurang seiring waktu)
         local durTrack = frame({
             Size             = UDim2.new(1, 0, 0, 3),
             Position         = UDim2.new(0, 0, 1, -3),
@@ -1784,18 +1440,13 @@ function VonixeLib:CreateWindow(config)
         }, durTrack)
         corner(0, durFill)
         gradient(col, col:Lerp(Color3.new(1,1,1), 0.15), 0, durFill)
-
-        -- Slide in dari kanan
         tween(nf, 0.3, {Size = UDim2.new(1, 0, 0, NH)}, Enum.EasingStyle.Quint)
-
         local closed = false
         local function close()
             if closed then return end
             closed = true
             dismissNotif(nf)
         end
-
-        -- Duration bar shrink
         task.spawn(function()
             task.wait(0.31)
             tween(durFill, dur, {Size = UDim2.new(0, 0, 1, 0)}, Enum.EasingStyle.Linear)
@@ -1803,32 +1454,21 @@ function VonixeLib:CreateWindow(config)
             close()
         end)
     end
-
     print("[VonixeLib] Script Loaded! Join Discord Vonixe Hub untuk mendapatkan update!")
-
-    -- ================================================
-    -- MONITOR TAB
-    -- ================================================
     function Window:AddMonitor(mConfig)
         local tab = self:AddTab({ Title = mConfig.Title or "Monitor", Icon = mConfig.Icon or "activity" })
-
-        -- Status banner besar
         local statusBanner = frame({
             Size             = UDim2.new(1, 0, 0, 52),
             BackgroundColor3 = Theme.BG3,
         }, tab._content)
         corner(10, statusBanner)
         stroke(Theme.STROKE2, 1, statusBanner)
-
-        -- Animated left bar
         local statusBar = frame({
             Size             = UDim2.new(0, 3, 0, 32),
             Position         = UDim2.new(0, 10, 0.5, -16),
             BackgroundColor3 = Theme.GREEN,
         }, statusBanner)
         corner(99, statusBar)
-
-        -- Pulse animasi
         local pulseConn
         local function startPulse(col)
             if pulseConn then pcall(function() pulseConn:Disconnect() end) end
@@ -1842,23 +1482,18 @@ function VonixeLib:CreateWindow(config)
             end)
         end
         startPulse(Theme.TEXT3)
-
         local statusDot = frame({
             Size             = UDim2.new(0, 8, 0, 8),
             Position         = UDim2.new(0, 20, 0.5, -4),
             BackgroundColor3 = Theme.TEXT3,
         }, statusBanner)
         corner(99, statusDot)
-
         local statusLbl = label("IDLE", 14, Enum.Font.GothamBold, Theme.TEXT2, Enum.TextXAlignment.Left, statusBanner)
         statusLbl.Size     = UDim2.new(0.6, 0, 1, 0)
         statusLbl.Position = UDim2.new(0, 36, 0, 0)
-
         local statusTime = label("--:--", 13, Enum.Font.GothamBold, Theme.TEXT3, Enum.TextXAlignment.Right, statusBanner)
         statusTime.Size     = UDim2.new(0.4, -14, 1, 0)
         statusTime.Position = UDim2.new(0.6, 0, 0, 0)
-
-        -- Cards grid
         local cards = {}
         local function addCard(parent, title, value, accent)
             local card = frame({
@@ -1867,8 +1502,6 @@ function VonixeLib:CreateWindow(config)
             }, parent)
             corner(10, card)
             stroke(Theme.STROKE, 1, card)
-
-            -- accent top bar gradient
             local acc = frame({
                 Size             = UDim2.new(0, 22, 0, 2),
                 Position         = UDim2.new(0, 10, 0, 0),
@@ -1876,26 +1509,20 @@ function VonixeLib:CreateWindow(config)
             }, card)
             corner(99, acc)
             gradient(Theme.ACCENT1, accent or Theme.ACCENT2, 0, acc)
-
             local tl = label(title, 10, Enum.Font.Gotham, Theme.TEXT3, Enum.TextXAlignment.Left, card)
             tl.Size     = UDim2.new(1, -12, 0, 16)
             tl.Position = UDim2.new(0, 10, 0, 10)
-
             local vl = label(value, 20, Enum.Font.GothamBlack, Theme.TEXT, Enum.TextXAlignment.Left, card)
             vl.Size     = UDim2.new(1, -12, 0, 26)
             vl.Position = UDim2.new(0, 10, 0, 28)
-
             return card, vl
         end
-
-        -- Grid wrapper (2 kolom)
         local function makeGrid(cardDefs)
             local grid = frame({
                 Size             = UDim2.new(1, 0, 0, 0),
                 AutomaticSize    = Enum.AutomaticSize.Y,
                 BackgroundTransparency = 1,
             }, tab._content)
-
             local layout = Instance.new("UIGridLayout")
             layout.CellSize         = UDim2.new(0.5, -3, 0, 58)
             layout.CellPadding      = UDim2.new(0, 6, 0, 6)
@@ -1903,12 +1530,9 @@ function VonixeLib:CreateWindow(config)
             layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
             layout.SortOrder        = Enum.SortOrder.LayoutOrder
             layout.Parent           = grid
-
-            -- Auto resize grid
             layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
                 grid.Size = UDim2.new(1, 0, 0, layout.AbsoluteContentSize.Y)
             end)
-
             local valueLabels = {}
             for _, def in ipairs(cardDefs) do
                 local _, vl = addCard(grid, def[1], def[2], def[3])
@@ -1916,8 +1540,6 @@ function VonixeLib:CreateWindow(config)
             end
             return valueLabels
         end
-
-        -- Bar chart mini
         local function makeBar(parent, title, col)
             local wrapper = frame({
                 Size             = UDim2.new(1, 0, 0, 36),
@@ -1925,29 +1547,24 @@ function VonixeLib:CreateWindow(config)
             }, parent)
             corner(8, wrapper)
             stroke(Theme.STROKE, 1, wrapper)
-
             local tl = label(title, 10, Enum.Font.Gotham, Theme.TEXT3, Enum.TextXAlignment.Left, wrapper)
             tl.Size     = UDim2.new(0.5, 0, 1, 0)
             tl.Position = UDim2.new(0, 10, 0, 0)
-
             local track = frame({
                 Size             = UDim2.new(0.45, 0, 0, 6),
                 Position         = UDim2.new(0.5, 0, 0.5, -3),
                 BackgroundColor3 = Color3.fromRGB(30, 22, 14),
             }, wrapper)
             corner(99, track)
-
             local fill = frame({
                 Size             = UDim2.new(0, 0, 1, 0),
                 BackgroundColor3 = col or Theme.ACCENT1,
             }, track)
             corner(99, fill)
             gradient(col or Theme.ACCENT1, (col or Theme.ACCENT1):Lerp(Color3.new(1,1,1), 0.2), 0, fill)
-
             local valLbl = label("0", 10, Enum.Font.GothamBold, col or Theme.ACCENT2, Enum.TextXAlignment.Right, wrapper)
             valLbl.Size     = UDim2.new(0, 36, 1, 0)
             valLbl.Position = UDim2.new(1, -40, 0, 0)
-
             return {
                 SetValue = function(_, ratio, text)
                     tween(fill, 0.3, {Size = UDim2.new(math.clamp(ratio, 0, 1), 0, 1, 0)})
@@ -1955,14 +1572,10 @@ function VonixeLib:CreateWindow(config)
                 end
             }
         end
-
-        -- Monitor object yang dikembalikan ke user
         local Monitor = {}
         Monitor._cards    = {}
         Monitor._bars     = {}
         Monitor._conn     = nil
-
-        -- Section stats cards
         tab:AddSection({ Title = "Statistics" })
         local statDefs = mConfig.Stats or {
             { "Total Cast",   "0" },
@@ -1973,8 +1586,6 @@ function VonixeLib:CreateWindow(config)
             { "Respawn",      "0x" },
         }
         Monitor._statLabels = makeGrid(statDefs)
-
-        -- Section bars (opsional)
         if mConfig.Bars then
             tab:AddSection({ Title = "Rates" })
             for _, b in ipairs(mConfig.Bars) do
@@ -1982,10 +1593,7 @@ function VonixeLib:CreateWindow(config)
                 table.insert(Monitor._bars, { obj = bar, key = b.Key })
             end
         end
-
-        -- Update function yang dipanggil user
         function Monitor:Update(data)
-            -- Status
             if data.status then
                 local colors = {
                     FISHING    = Theme.GREEN,
@@ -2003,13 +1611,10 @@ function VonixeLib:CreateWindow(config)
             if data.time then
                 statusTime.Text = data.time
             end
-
-            -- Stat cards
             if data.stats then
                 for i, val in ipairs(data.stats) do
                     if Monitor._statLabels[i] then
                         Monitor._statLabels[i].Text = tostring(val)
-                        -- Animate angka berubah
                         tween(Monitor._statLabels[i], 0.1, {TextColor3 = Theme.ACCENT2})
                         task.delay(0.15, function()
                             tween(Monitor._statLabels[i], 0.2, {TextColor3 = Theme.TEXT})
@@ -2017,8 +1622,6 @@ function VonixeLib:CreateWindow(config)
                     end
                 end
             end
-
-            -- Bars
             if data.bars then
                 for i, barData in ipairs(data.bars) do
                     if Monitor._bars[i] then
@@ -2027,8 +1630,6 @@ function VonixeLib:CreateWindow(config)
                 end
             end
         end
-
-        -- Auto update via callback tiap interval
         function Monitor:StartAutoUpdate(interval, callback)
             if Monitor._conn then Monitor._conn:Disconnect() end
             local t = 0
@@ -2041,73 +1642,55 @@ function VonixeLib:CreateWindow(config)
                 end
             end)
         end
-
         function Monitor:Stop()
             if Monitor._conn then Monitor._conn:Disconnect(); Monitor._conn = nil end
             if pulseConn then pulseConn:Disconnect(); pulseConn = nil end
         end
-
         return Monitor
     end
-
-    -- Window-level aliases (WindUI compat)
     Window.Section = function(self, cfg)
-        -- WindUI Window:Section() returns a section object with :Tab()
         local fakeSection = {}
         fakeSection.Tab = function(self2, tabCfg)
             return Window:AddTab(tabCfg)
         end
         return fakeSection
     end
-
     return Window
 end
-
--- ================================================
--- KEY SYSTEM
--- ================================================
 function VonixeLib:CreateKeySystem(config)
     local title    = config.Title    or "Key System"
     local desc     = config.Desc     or "Enter your key to continue"
     local logoId   = config.Logo     or "rbxassetid://107213987130538"
     local onVerify = config.OnVerify
     local onGetKey = config.OnGetKey
-
-    -- [LOGIC FIX]: WindUI Logic (Auto-Verify)
     local saveFolder = config.Folder or "VonixeHub"
     local saveName   = title:gsub("%s+", "_") .. ".key"
     local savePath   = saveFolder .. "/" .. saveName
-
     local savedKey = ""
     pcall(function() 
         if isfile and isfile(savePath) then 
             savedKey = readfile(savePath) 
         end 
     end)
-
     if savedKey ~= "" and onVerify then
         local ok, result = pcall(onVerify, savedKey)
         if ok and result then
             if config.Callback then task.spawn(config.Callback, true) end
-            return true -- SKIP UI!
+            return true
         end
     end
-
     local Players      = game:GetService("Players")
     local TweenService = game:GetService("TweenService")
     local RunService   = game:GetService("RunService")
     local Player       = Players.LocalPlayer
     local verified     = false
     local closed       = false
-
     local sg = Instance.new("ScreenGui")
     sg.Name="VonixeKeySystem"; sg.ResetOnSpawn=false
     sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
     sg.IgnoreGuiInset=true; sg.DisplayOrder=9999
-
     pcall(function() if syn and syn.protect_gui then syn.protect_gui(sg) end end)
     sg.Parent = getParent()
-
     local function tw(obj,t,props)
         TweenService:Create(obj,TweenInfo.new(t,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),props):Play()
     end
@@ -2119,14 +1702,9 @@ function VonixeLib:CreateKeySystem(config)
         l.Text=txt;l.TextSize=sz;l.Font=font;l.TextColor3=col
         l.TextXAlignment=xa or Enum.TextXAlignment.Center;l.Parent=p;return l
     end
-
-    -- Overlay
     local overlay = mkFrame({Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.fromRGB(0,0,0),BackgroundTransparency=0.6,ZIndex=1,Active=true},sg)
-
     local UIS = game:GetService("UserInputService")
     local isMobile = UIS.TouchEnabled or (UIS.TouchEnabled and not UIS.KeyboardEnabled)
-
-    -- Card: Absolute Center with AnchorPoint
     local W,H = 440,320
     local card = mkFrame({
         AnchorPoint=Vector2.new(0.5, 0.5),
@@ -2136,13 +1714,10 @@ function VonixeLib:CreateKeySystem(config)
         ZIndex=2, ClipsDescendants=false, Active=true,
     },sg)
     mkCorner(16,card)
-
     local uiScale = Instance.new("UIScale", card)
     local function upd()
         local vp = workspace.CurrentCamera.ViewportSize
         if vp.X < 10 then return end
-
-        -- Key system harus lebih mungil (85% dari layar di mobile)
         local scaleX = (vp.X * 0.9) / W
         local scaleY = (vp.Y * 0.9) / H
         local fs = math.min(scaleX, scaleY)
@@ -2156,21 +1731,13 @@ function VonixeLib:CreateKeySystem(config)
         end
     end)
     workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(upd)
-
-    -- Gradient border
     local bfr = mkFrame({Size=UDim2.new(1,4,1,4),Position=UDim2.new(0,-2,0,-2),BackgroundColor3=Color3.fromRGB(200,60,0),ZIndex=1},card)
     mkCorner(18,bfr)
     mkGrad(Color3.fromRGB(220,60,0),Color3.fromRGB(255,180,0),135,bfr)
-
-    -- Inner (deklarasi dulu sebelum child apapun)
     local inner = mkFrame({Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.fromRGB(10,10,14),ZIndex=2},card)
     mkCorner(15,inner)
-
-    -- Top glow
     local glow = mkFrame({Size=UDim2.new(1,0,0,160),BackgroundColor3=Color3.fromRGB(200,50,0),BackgroundTransparency=0.88,ZIndex=3},inner)
     mkGrad(Color3.fromRGB(255,80,0),Color3.fromRGB(10,10,14),90,glow)
-
-    -- X close button - sama persis style dengan window close button di library
     local closeBtn = Instance.new("TextButton")
     closeBtn.Size=UDim2.new(0,28,0,28)
     closeBtn.Position=UDim2.new(1,-38,0,13)
@@ -2178,7 +1745,6 @@ function VonixeLib:CreateKeySystem(config)
     closeBtn.Text=""; closeBtn.AutoButtonColor=false
     closeBtn.BorderSizePixel=0; closeBtn.ZIndex=10; closeBtn.Parent=inner
     local closeCorn=Instance.new("UICorner"); closeCorn.CornerRadius=UDim.new(0,99); closeCorn.Parent=closeBtn
-    -- Icon X pakai ImageLabel sama persis kayak window button
     local closeIco=Instance.new("Frame")
     closeIco.BackgroundTransparency=1; closeIco.Size=UDim2.new(0,14,0,14)
     closeIco.AnchorPoint=Vector2.new(0.5,0.5); closeIco.Position=UDim2.new(0.5,0,0.5,0)
@@ -2187,7 +1753,6 @@ function VonixeLib:CreateKeySystem(config)
     closeIcoImg.BackgroundTransparency=1; closeIcoImg.Size=UDim2.new(1,0,1,0)
     closeIcoImg.ImageColor3=Color3.fromRGB(220,200,190)
     closeIcoImg.ScaleType=Enum.ScaleType.Fit; closeIcoImg.ZIndex=12; closeIcoImg.Parent=closeIco
-    -- Load icon X dari library icons
     task.spawn(function()
         local ok,r=pcall(function()
             local src=game:GetService("HttpService"):GetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
@@ -2201,7 +1766,6 @@ function VonixeLib:CreateKeySystem(config)
                 closeIcoImg.ImageRectOffset=r[2].ImageRectPosition or Vector2.new(0,0)
             end
         else
-            -- Fallback: teks X kalau icon gagal
             closeIcoImg:Destroy()
             local xt=Instance.new("TextLabel")
             xt.BackgroundTransparency=1; xt.Size=UDim2.new(1,0,1,0)
@@ -2222,8 +1786,6 @@ function VonixeLib:CreateKeySystem(config)
         tw(closeBtn,0.1,{BackgroundColor3=Color3.fromRGB(50,20,20)})
         setCloseBtnColor(Color3.fromRGB(220,200,190))
     end)
-
-    -- Logo
     local logoFrame = mkFrame({
         Size=UDim2.new(0,64,0,64),Position=UDim2.new(0.5,-32,0,20),
         BackgroundColor3=Color3.fromRGB(18,12,8),ZIndex=4
@@ -2234,56 +1796,40 @@ function VonixeLib:CreateKeySystem(config)
     logoImg.Size=UDim2.new(1,0,1,0);logoImg.BackgroundTransparency=1
     logoImg.Image=logoId;logoImg.ScaleType=Enum.ScaleType.Fit
     logoImg.ZIndex=5;logoImg.Parent=logoFrame
-
-    -- Pulse logo border
     local t2=0
     local pulseConn=RunService.Heartbeat:Connect(function(dt)
         t2=t2+dt*2
         local a=(math.sin(t2)+1)/2
         logoStroke.Color=Color3.fromRGB(220,60,0):Lerp(Color3.fromRGB(255,200,50),a*0.6)
     end)
-
-    -- Close callback (setelah pulseConn dideklarasi)
     closeBtn.MouseButton1Click:Connect(function()
         pulseConn:Disconnect()
         tw(card,0.25,{Size=UDim2.new(0,W,0,0)})
         tw(overlay,0.25,{BackgroundTransparency=1})
         task.wait(0.3); sg:Destroy()
-        closed = true -- Hentikan while loop agar script tidak freeze
+        closed = true
     end)
-
-    -- Title
     local titleLbl=mkLabel(title,20,Enum.Font.GothamBlack,Color3.fromRGB(255,255,255),Enum.TextXAlignment.Center,inner)
     titleLbl.Size=UDim2.new(1,0,0,24);titleLbl.Position=UDim2.new(0,0,0,92);titleLbl.ZIndex=4
-
-    -- Desc
     local descLbl=mkLabel(desc,11,Enum.Font.Gotham,Color3.fromRGB(140,120,100),Enum.TextXAlignment.Center,inner)
     descLbl.Size=UDim2.new(1,-40,0,14);descLbl.Position=UDim2.new(0,20,0,118);descLbl.ZIndex=4
-
-    -- Divider
     local div=mkFrame({Size=UDim2.new(0,180,0,1),Position=UDim2.new(0.5,-90,0,140),BackgroundColor3=Color3.fromRGB(200,60,0),ZIndex=4},inner)
     mkGrad(Color3.fromRGB(200,60,0),Color3.fromRGB(255,180,0),0,div)
-
-    -- Input bg
     local inputBg=mkFrame({
         Size=UDim2.new(1,-48,0,42),Position=UDim2.new(0,24,0,152),
         BackgroundColor3=Color3.fromRGB(16,12,10),ZIndex=4,
     },inner)
     mkCorner(10,inputBg)
     local inputStroke=Instance.new("UIStroke");inputStroke.Color=Color3.fromRGB(60,40,20);inputStroke.Thickness=1;inputStroke.Parent=inputBg
-
-    -- [LOGIC FIX]: WindUI Style Save/Load
     local saveFolder = config.Folder or "VonixeHub"
     local saveName   = config.FileName or ((config.Title or "KeySystem"):gsub("%s+", "_") .. ".key")
     local savePath   = saveFolder .. "/" .. saveName
-
     local savedKey = ""
     pcall(function() 
         if isfile and isfile(savePath) then 
             savedKey = readfile(savePath) 
         end 
     end)
-
     local inputBox=Instance.new("TextBox")
     inputBox.Size=UDim2.new(1,-20,1,0);inputBox.Position=UDim2.new(0,10,0,0)
     inputBox.BackgroundTransparency=1;inputBox.Text=savedKey
@@ -2295,12 +1841,8 @@ function VonixeLib:CreateKeySystem(config)
     inputBox.ClearTextOnFocus=false;inputBox.ZIndex=5;inputBox.Parent=inputBg
     inputBox.Focused:Connect(function() tw(inputStroke,0.15,{Color=Color3.fromRGB(200,100,0)}) end)
     inputBox.FocusLost:Connect(function() tw(inputStroke,0.15,{Color=Color3.fromRGB(60,40,20)}) end)
-
-    -- Status label
     local statusLbl=mkLabel("",11,Enum.Font.GothamBold,Color3.fromRGB(255,220,50),Enum.TextXAlignment.Center,inner)
     statusLbl.Size=UDim2.new(1,-40,0,14);statusLbl.Position=UDim2.new(0,20,0,200);statusLbl.ZIndex=4
-
-    -- Buttons
     local function makeBtn(txt,x,w,bg,hover)
         local btn=Instance.new("TextButton")
         btn.Size=UDim2.new(0,w,0,34);btn.Position=UDim2.new(0,x,0,222)
@@ -2313,16 +1855,12 @@ function VonixeLib:CreateKeySystem(config)
         btn.MouseLeave:Connect(function() tw(btn,0.1,{BackgroundColor3=bg}) end)
         return btn,lbl
     end
-
     local bW=(W-48-8)/2
     local verifyBtn,verifyLbl=makeBtn("Verifikasi Key",24,bW,Color3.fromRGB(180,60,0),Color3.fromRGB(220,80,0))
     local getkeyBtn,getkeyLbl=makeBtn("Dapatkan Key",24+bW+8,bW,Color3.fromRGB(30,22,14),Color3.fromRGB(50,35,18))
     local gks=Instance.new("UIStroke");gks.Color=Color3.fromRGB(80,50,20);gks.Thickness=1;gks.Parent=getkeyBtn
-
-    -- Accent bar on verify btn
     local vAcc=mkFrame({Size=UDim2.new(1,0,0,2),BackgroundColor3=Color3.fromRGB(220,80,0),ZIndex=5},verifyBtn)
     mkGrad(Color3.fromRGB(200,60,0),Color3.fromRGB(255,200,0),0,vAcc)
-
     verifyBtn.MouseButton1Click:Connect(function()
         local key=inputBox.Text
         if key=="" then
@@ -2337,23 +1875,17 @@ function VonixeLib:CreateKeySystem(config)
         task.spawn(function()
             local ok=false
             if onVerify then local s,r=pcall(onVerify,key); ok=s and r end
-
-            -- [THREAD SAFE FIX]: Cek apakah UI sudah ditutup paksa sebelum nge-set verified
             if not closed and ok then
-                -- [LOGIC FIX]: Ikuti WindUI (SaveKey flag)
                 if config.SaveKey then
                     pcall(function() 
                         if makefolder then makefolder(saveFolder) end
                         if writefile then writefile(savePath, key) end 
                     end)
                 end
-
                 statusLbl.Text="Key valid!"; statusLbl.TextColor3=Color3.fromRGB(80,220,120)
                 verifyLbl.Text="✓"; tw(verifyBtn,0.2,{BackgroundColor3=Color3.fromRGB(30,120,60)})
                 tw(card,0.4,{BackgroundTransparency=1}); tw(overlay,0.4,{BackgroundTransparency=1})
                 task.wait(0.8)
-
-                -- Re-check for closed before final signal
                 if not closed then
                     pulseConn:Disconnect(); sg:Destroy(); verified=true
                 end
@@ -2365,24 +1897,17 @@ function VonixeLib:CreateKeySystem(config)
             end
         end)
     end)
-
     getkeyBtn.MouseButton1Click:Connect(function()
         if onGetKey then pcall(onGetKey) end
         statusLbl.Text="Link sudah tercopy ke clipboard!"
         statusLbl.TextColor3=Color3.fromRGB(80,220,120)
         task.delay(3,function() if statusLbl and statusLbl.Parent then statusLbl.Text="" end end)
     end)
-
-    -- Animate in
     card.Size=UDim2.new(0,W,0,0)
     tw(card,0.4,{Size=UDim2.new(0,W,0,H)})
-
-    -- [LOGIC FIX]: WindUI Loop Style
-    -- Gunakan closed flag agar script tidak nyangkut saat window ditutup tanpa verifikasi
     while not verified and not closed do 
         task.wait(0.1) 
     end
     return verified
 end
-
 return VonixeLib

@@ -601,14 +601,26 @@ function VonixeLib:CreateWindow(config)
         local notifContent = ""
 
         if lockType == "Premium" then
-            lockIcoImg.Image = "rbxassetid://7733765398" -- Crown
+            lockIcoImg.Image = "rbxassetid://7733765398"
             lockIcoImg.ImageColor3 = Color3.fromRGB(255, 200, 50)
             lockText.Text = "[ PREMIUM ]"
             lockText.TextColor3 = Color3.fromRGB(255, 200, 50)
             notifTitle = "Premium Feature"
             notifContent = "Fitur ini khusus untuk pengguna Premium!"
         elseif lockType == "Maintenance" then
-            lockIcoImg.Image = "rbxassetid://7733920510" -- Lock
+            task.spawn(function()
+                if type(getIcon) == "function" then
+                    local icoData = getIcon("lock")
+                    if icoData then
+                        lockIcoImg.Image = icoData[1]
+                        if icoData[2] and icoData[2].ImageRectSize then
+                            lockIcoImg.ImageRectSize = icoData[2].ImageRectSize
+                            lockIcoImg.ImageRectOffset = icoData[2].ImageRectPosition or Vector2.new(0,0)
+                        end
+                    end
+                end
+            end)
+            
             lockIcoImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
             lockText.Text = "Maintenance"
             lockText.TextColor3 = Color3.fromRGB(255, 255, 255)

@@ -487,11 +487,19 @@ function VonixeLib:CreateWindow(config)
         if not Window._binding and i.UserInputType == Enum.UserInputType.Keyboard then
             local kName = i.KeyCode.Name
             
-            -- Bypass GPE ONLY for the Menu Bind key so it works even when hovering UI or using ShiftLock
+            -- FIRST-CLASS MENU BIND: Always process menu bind directly, bypass GPE entirely
             local menuBindObj = Window.Flags and Window.Flags["UI_MenuBind"]
             local menuBindKey = menuBindObj and type(menuBindObj.Value) == "string" and menuBindObj.Value or "RightShift"
             
-            if gpe and string.lower(kName) ~= string.lower(menuBindKey) then return end
+            if string.lower(kName) == string.lower(menuBindKey) then
+                if Window.ToggleVisibility then
+                    task.spawn(function() Window:ToggleVisibility() end)
+                end
+                return -- Stop processing other keybinds for this key to prevent double triggers
+            end
+            
+            -- For all other keybinds, respect GPE (don't trigger when typing in chat)
+            if gpe then return end
             
             for _, kb in ipairs(Window._keybinds) do
                 if type(kb.Key) == "string" and string.lower(kb.Key) == string.lower(kName) then
@@ -2690,8 +2698,7 @@ function VonixeLib:CreateWindow(config)
             Callback = function(v) Window:SetCornerRadius(v) end
         })
         MenuSettings:AddKeybind({
-            Title = "Menu bind", Keybind = Enum.KeyCode.RightShift, Flag = "UI_MenuBind",
-            Callback = function(key) Window:ToggleVisibility() end
+            Title = "Menu bind", Keybind = Enum.KeyCode.RightShift, Flag = "UI_MenuBind"
         })
         
         local ConfigGroup = SettingsTab:AddGroupbox({ Title = "Configuration" })

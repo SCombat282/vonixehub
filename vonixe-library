@@ -857,6 +857,7 @@ function VonixeLib:CreateWindow(config)
             end
             
             local TogObj = {}
+            TogObj._dependents = {}
             local function set(v, fireCallback)
                 value = v
                 TogObj.Value = v
@@ -864,6 +865,11 @@ function VonixeLib:CreateWindow(config)
                 tween(thumb, 0.25, {Position = v and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
                 if fireCallback and tConfig.Callback then
                     task.spawn(tConfig.Callback, v)
+                end
+                for _, dep in ipairs(TogObj._dependents) do
+                    if dep.SetEnabled then
+                        dep:SetEnabled(v)
+                    end
                 end
             end
             set(value, false)
@@ -1967,6 +1973,21 @@ function VonixeLib:CreateWindow(config)
             clickArea.Parent          = row
             
             local ChkObj = {}
+            local disabled = false
+            
+            local disabledOverlay
+            local dependsOn = cConfig.DependsOn or nil
+            if dependsOn then
+                disabledOverlay = frame({
+                    Size = UDim2.new(1, 0, 1, 0),
+                    BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                    BackgroundTransparency = 0.6,
+                    ZIndex = 10,
+                }, row)
+                disabledOverlay.Visible = not (dependsOn.Value == true)
+                disabled = not (dependsOn.Value == true)
+            end
+            
             local function set(v, fireCallback)
                 value = v
                 ChkObj.Value = v
@@ -1988,16 +2009,32 @@ function VonixeLib:CreateWindow(config)
                 end
             end
             
+            function ChkObj:SetEnabled(enabled)
+                disabled = not enabled
+                if disabledOverlay then
+                    disabledOverlay.Visible = not enabled
+                end
+            end
+            
+            if dependsOn and dependsOn._dependents then
+                table.insert(dependsOn._dependents, ChkObj)
+            end
+            
             if cConfig.Maintenance then
                 applyOverlayLock(Window, row, "Maintenance")
             elseif cConfig.Locked then
                 applyOverlayLock(Window, row, "Premium")
             else
-                clickArea.MouseButton1Click:Connect(function() set(not value, true) end)
+                clickArea.MouseButton1Click:Connect(function()
+                    if disabled then return end
+                    set(not value, true)
+                end)
                 row.MouseEnter:Connect(function() 
+                    if disabled then return end
                     if not value then tween(box, 0.1, {BackgroundColor3 = Theme.BG3}) end
                 end)
                 row.MouseLeave:Connect(function() 
+                    if disabled then return end
                     if not value then tween(box, 0.1, {BackgroundColor3 = Theme.BG2}) end
                 end)
             end

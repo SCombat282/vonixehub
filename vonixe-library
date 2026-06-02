@@ -666,6 +666,27 @@ function VonixeLib:CreateWindow(config)
         end
     end
 
+    function Window:SetCornerRadius(radius)
+        if main:FindFirstChildWhichIsA("UICorner") then main:FindFirstChildWhichIsA("UICorner").CornerRadius = UDim.new(0, radius) end
+        if bgo:FindFirstChildWhichIsA("UICorner") then bgo:FindFirstChildWhichIsA("UICorner").CornerRadius = UDim.new(0, math.max(0, radius - 1)) end
+        if sidebar:FindFirstChildWhichIsA("UICorner") then sidebar:FindFirstChildWhichIsA("UICorner").CornerRadius = UDim.new(0, math.max(0, radius - 1)) end
+    end
+
+    Window._lockGui = false
+    function Window:SetLockGui(state)
+        Window._lockGui = state
+        if state then
+            RunService:BindToRenderStep("VonixeHub_LockGui", 3000, function()
+                if sg and sg.Enabled and Window._lockGui then
+                    UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+                    UserInputService.MouseIconEnabled = true
+                end
+            end)
+        else
+            pcall(function() RunService:UnbindFromRenderStep("VonixeHub_LockGui") end)
+        end
+    end
+
     function Window:AddTab(tabConfig)
         local tabName = tabConfig.Title or "Tab"
         local tabIcon = tabConfig.Icon or ""

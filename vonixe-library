@@ -608,24 +608,12 @@ function VonixeLib:CreateWindow(config)
             notifTitle = "Premium Feature"
             notifContent = "Fitur ini khusus untuk pengguna Premium!"
         elseif lockType == "Maintenance" then
-            task.spawn(function()
-                if type(getIcon) == "function" then
-                    local icoData = getIcon("lock")
-                    if icoData then
-                        lockIcoImg.Image = icoData[1]
-                        if icoData[2] and icoData[2].ImageRectSize then
-                            lockIcoImg.ImageRectSize = icoData[2].ImageRectSize
-                            lockIcoImg.ImageRectOffset = icoData[2].ImageRectPosition or Vector2.new(0,0)
-                        end
-                    end
-                end
-            end)
-            
+            lockIcoImg.Image = "rbxassetid://10723434711"
             lockIcoImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
             lockText.Text = "Maintenance"
             lockText.TextColor3 = Color3.fromRGB(255, 255, 255)
-            notifTitle = "Maintenance"
-            notifContent = "Fitur ini sedang dalam perbaikan (Maintenance)!"
+            notifTitle = "[ MAINTENANCE ]"
+            notifContent = "Fitur ini sedang dalam perbaikan!"
         end
 
         local btn = Instance.new("TextButton")

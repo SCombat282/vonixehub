@@ -840,19 +840,19 @@ function VonixeLib:CreateWindow(config)
                     Size             = UDim2.new(0, 40, 0, 22),
                     Position         = UDim2.new(1, -100, 0.5, -11),
                     BackgroundColor3 = Theme.BG,
-                    ZIndex           = 3,
+                    ZIndex           = 5,
                 }, row)
                 corner(6, kbBox)
                 stroke(Theme.STROKE, 1, kbBox)
                 kbLbl = label(currentKey and currentKey.Name or "...", 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Center, kbBox)
                 kbLbl.Size = UDim2.new(1, 0, 1, 0)
-                kbLbl.ZIndex = 4
+                kbLbl.ZIndex = 6
                 
                 kbBtn = Instance.new("TextButton")
                 kbBtn.Size = UDim2.new(1, 0, 1, 0)
                 kbBtn.BackgroundTransparency = 1
                 kbBtn.Text = ""
-                kbBtn.ZIndex = 5
+                kbBtn.ZIndex = 7
                 kbBtn.Parent = kbBox
             end
             
@@ -875,7 +875,7 @@ function VonixeLib:CreateWindow(config)
             set(value, false)
             
             local clickArea = Instance.new("TextButton")
-            clickArea.Size            = UDim2.new(1, hasKeybind and -110 or -60, 1, 0)
+            clickArea.Size            = UDim2.new(1, 0, 1, 0)
             clickArea.BackgroundTransparency = 1
             clickArea.Text            = ""
             clickArea.ZIndex          = 4
@@ -1984,24 +1984,24 @@ function VonixeLib:CreateWindow(config)
                     Size             = UDim2.new(0, 40, 0, 22),
                     Position         = UDim2.new(1, -54, 0.5, -11),
                     BackgroundColor3 = Theme.BG,
-                    ZIndex           = 3,
+                    ZIndex           = 5,
                 }, row)
                 corner(6, kbBox)
                 stroke(Theme.STROKE, 1, kbBox)
                 kbLbl = label(currentKey and currentKey.Name or "...", 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Center, kbBox)
                 kbLbl.Size = UDim2.new(1, 0, 1, 0)
-                kbLbl.ZIndex = 4
+                kbLbl.ZIndex = 6
                 
                 kbBtn = Instance.new("TextButton")
                 kbBtn.Size = UDim2.new(1, 0, 1, 0)
                 kbBtn.BackgroundTransparency = 1
                 kbBtn.Text = ""
-                kbBtn.ZIndex = 5
+                kbBtn.ZIndex = 7
                 kbBtn.Parent = kbBox
             end
             
             local clickArea = Instance.new("TextButton")
-            clickArea.Size            = UDim2.new(1, hasKeybind and -60 or 0, 1, 0)
+            clickArea.Size            = UDim2.new(1, 0, 1, 0)
             clickArea.BackgroundTransparency = 1
             clickArea.Text            = ""
             clickArea.ZIndex          = 4

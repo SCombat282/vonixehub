@@ -566,9 +566,48 @@ function VonixeLib:CreateWindow(config)
         }, parentFrame)
         corner(8, overlay)
         
-        local lockIcon = label("🔒 [ PREMIUM ]", 14, Enum.Font.GothamBold, Color3.fromRGB(255, 200, 50), Enum.TextXAlignment.Center, overlay)
-        lockIcon.Size = UDim2.new(1, 0, 1, 0)
-        lockIcon.ZIndex = 21
+        local lockContainer = frame({
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 1,
+            ZIndex = 21,
+        }, overlay)
+        
+        local UIListLayout = Instance.new("UIListLayout", lockContainer)
+        UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+        UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+        UIListLayout.Padding = UDim.new(0, 6)
+        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        
+        local iconFrame = frame({
+            Size = UDim2.new(0, 16, 0, 16),
+            BackgroundTransparency = 1,
+            LayoutOrder = 1,
+        }, lockContainer)
+        
+        local lockIcoImg = Instance.new("ImageLabel", iconFrame)
+        lockIcoImg.Size = UDim2.new(1, 0, 1, 0)
+        lockIcoImg.BackgroundTransparency = 1
+        lockIcoImg.ImageColor3 = Color3.fromRGB(255, 200, 50)
+        lockIcoImg.ScaleType = Enum.ScaleType.Fit
+        lockIcoImg.ZIndex = 21
+        
+        task.spawn(function()
+            local icoData = getIcon("crown")
+            if icoData then
+                lockIcoImg.Image = icoData[1]
+                if icoData[2] and icoData[2].ImageRectSize then
+                    lockIcoImg.ImageRectSize = icoData[2].ImageRectSize
+                    lockIcoImg.ImageRectOffset = icoData[2].ImageRectPosition or Vector2.new(0,0)
+                end
+            end
+        end)
+        
+        local lockText = label("[ PREMIUM ]", 13, Enum.Font.GothamBold, Color3.fromRGB(255, 200, 50), Enum.TextXAlignment.Left, lockContainer)
+        lockText.Size = UDim2.new(0, 0, 0, 16)
+        lockText.AutomaticSize = Enum.AutomaticSize.X
+        lockText.ZIndex = 21
+        lockText.LayoutOrder = 2
 
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(1, 0, 1, 0)

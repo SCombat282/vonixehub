@@ -721,11 +721,12 @@ function VonixeLib:CreateWindow(config)
             selectTab()
         end
         function Tab:AddSection(sConfig)
+            local targetParent = self._container or tabContent
             local sec = frame({
                 Size             = UDim2.new(1, 0, 0, 20),
                 AutomaticSize    = Enum.AutomaticSize.Y,
                 BackgroundTransparency = 1,
-            }, tabContent)
+            }, targetParent)
             local secLbl = label((sConfig.Title or "Section"):upper(), 9, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Left, sec)
             secLbl.Size     = UDim2.new(1, -8, 0, 14)
             secLbl.Position = UDim2.new(0, 4, 0, 0)
@@ -737,13 +738,14 @@ function VonixeLib:CreateWindow(config)
             return sec
         end
         function Tab:AddButton(bConfig)
+            local targetParent = self._container or tabContent
             local btn = Instance.new("TextButton")
             btn.Size            = UDim2.new(1, 0, 0, 36)
             btn.BackgroundColor3 = Theme.BG2
             btn.BorderSizePixel = 0
             btn.Text            = ""
             btn.AutoButtonColor = false
-            btn.Parent          = tabContent
+            btn.Parent          = targetParent
             corner(8, btn)
             stroke(Theme.STROKE, 1, btn)
             local acc = frame({
@@ -778,11 +780,12 @@ function VonixeLib:CreateWindow(config)
             return BtnObj
         end
         function Tab:AddToggle(tConfig)
+            local targetParent = self._container or tabContent
             local value = tConfig.Value or false
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 40),
                 BackgroundColor3 = Theme.BG2,
-            }, tabContent)
+            }, targetParent)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
             
@@ -848,6 +851,7 @@ function VonixeLib:CreateWindow(config)
             return TogObj
         end
         function Tab:AddSlider(sConfig)
+            local targetParent = self._container or tabContent
             local min   = sConfig.Min or 0
             local max   = sConfig.Max or 100
             local value = math.clamp(sConfig.Value or sConfig.Default or min, min, max)
@@ -855,7 +859,7 @@ function VonixeLib:CreateWindow(config)
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 56),
                 BackgroundColor3 = Theme.BG2,
-            }, tabContent)
+            }, targetParent)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
             
@@ -941,6 +945,7 @@ function VonixeLib:CreateWindow(config)
             return SlObj
         end
         function Tab:AddDropdown(dConfig)
+            local targetParent = self._container or tabContent
             local isMulti  = dConfig.Multi or false
             local options  = dConfig.Options or dConfig.Values or {}
             local selected = dConfig.Value or dConfig.Default
@@ -959,7 +964,7 @@ function VonixeLib:CreateWindow(config)
                 BackgroundTransparency = 1,
                 AutomaticSize    = Enum.AutomaticSize.Y,
                 ZIndex           = 10,
-            }, tabContent)
+            }, targetParent)
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 40),
                 BackgroundColor3 = Theme.BG2,
@@ -1197,10 +1202,11 @@ function VonixeLib:CreateWindow(config)
             return DdObj
         end
         function Tab:AddInput(iConfig)
+            local targetParent = self._container or tabContent
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 58),
                 BackgroundColor3 = Theme.BG2,
-            }, tabContent)
+            }, targetParent)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
             
@@ -1257,11 +1263,13 @@ function VonixeLib:CreateWindow(config)
             return InObj
         end
         function Tab:AddColorPicker(cConfig)
+            local targetParent = self._container or tabContent
             local defaultColor = cConfig.Default or Color3.fromRGB(255, 255, 255)
             local h, s, v = defaultColor:ToHSV()
             local opened = false
             local CpObj = {}
             local hasToggle = cConfig.HasToggle or false
+            local hasCheckbox = cConfig.HasCheckbox or false
             local toggleValue = cConfig.ToggleValue or false
             
             local wrapper = frame({
@@ -1269,7 +1277,7 @@ function VonixeLib:CreateWindow(config)
                 BackgroundTransparency = 1,
                 AutomaticSize    = Enum.AutomaticSize.Y,
                 ZIndex           = 10,
-            }, tabContent)
+            }, targetParent)
             
             local wLayout = Instance.new("UIListLayout")
             wLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1286,8 +1294,27 @@ function VonixeLib:CreateWindow(config)
             
             local nameLbl = label(cConfig.Title or "Color Picker", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
             nameLbl.Size     = UDim2.new(0.5, -10, 1, 0)
-            nameLbl.Position = UDim2.new(0, 14, 0, 0)
+            nameLbl.Position = hasCheckbox and UDim2.new(0, 42, 0, 0) or UDim2.new(0, 14, 0, 0)
             nameLbl.ZIndex   = 11
+            
+            local cbox, ccheck
+            if hasCheckbox then
+                cbox = frame({
+                    Size             = UDim2.new(0, 18, 0, 18),
+                    Position         = UDim2.new(0, 14, 0.5, -9),
+                    BackgroundColor3 = toggleValue and Theme.TOGGLE_ON or Theme.BG2,
+                    ZIndex           = 11,
+                }, row)
+                corner(4, cbox)
+                stroke(toggleValue and Theme.TOGGLE_ON or Theme.STROKE, 1, cbox)
+                
+                ccheck = label(getIcon("check"), 12, Enum.Font.Gotham, Theme.BG, Enum.TextXAlignment.Center, cbox)
+                ccheck.Size = UDim2.new(1, 0, 1, 0)
+                ccheck.TextTransparency = toggleValue and 0 or 1
+                ccheck.ZIndex = 12
+                
+                nameLbl.TextColor3 = toggleValue and Theme.TEXT or Theme.TEXT2
+            end
             
             local colorPreview = frame({
                 Size             = UDim2.new(0, 24, 0, 24),
@@ -1550,6 +1577,12 @@ function VonixeLib:CreateWindow(config)
                 if hasToggle then
                     tween(track, 0.25, {BackgroundColor3 = v and Theme.TOGGLE_ON or Theme.TOGGLE_OFF}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                     tween(thumb, 0.25, {Position = v and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                elseif hasCheckbox then
+                    tween(cbox, 0.15, {BackgroundColor3 = v and Theme.TOGGLE_ON or Theme.BG2})
+                    local s = cbox:FindFirstChildWhichIsA("UIStroke")
+                    if s then tween(s, 0.15, {Color = v and Theme.TOGGLE_ON or Theme.STROKE}) end
+                    tween(ccheck, 0.15, {TextTransparency = v and 0 or 1})
+                    tween(nameLbl, 0.15, {TextColor3 = v and Theme.TEXT or Theme.TEXT2})
                 end
                 if fireCb and cConfig.ToggleCallback then
                     task.spawn(cConfig.ToggleCallback, v)
@@ -1562,13 +1595,23 @@ function VonixeLib:CreateWindow(config)
                 applyOverlayLock(Window, row, "Premium")
             else
                 colorBtn.MouseButton1Click:Connect(toggleMenu)
-                if hasToggle then
+                if hasToggle or hasCheckbox then
                     clickArea.MouseButton1Click:Connect(function() setToggle(not toggleValue, true) end)
                 else
                     clickArea.MouseButton1Click:Connect(toggleMenu)
                 end
-                row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
-                row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+                
+                if hasCheckbox then
+                    row.MouseEnter:Connect(function() 
+                        if not toggleValue then tween(cbox, 0.1, {BackgroundColor3 = Theme.BG3}) end
+                    end)
+                    row.MouseLeave:Connect(function() 
+                        if not toggleValue then tween(cbox, 0.1, {BackgroundColor3 = Theme.BG2}) end
+                    end)
+                else
+                    row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
+                    row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+                end
             end
             
             CpObj.Value = Color3.fromHSV(h, s, v)
@@ -1580,10 +1623,12 @@ function VonixeLib:CreateWindow(config)
             return CpObj
         end
         function Tab:AddMissionBar()
+            local targetParent = self._container or tabContent
             local card = frame({
                 Size             = UDim2.new(1, 0, 0, 66),
                 BackgroundColor3 = Theme.BG2,
-            }, tabContent)
+                ClipsDescendants = true,
+            }, targetParent)
             corner(10, card)
             stroke(Theme.STROKE, 1, card)
             local acc = frame({
@@ -1695,11 +1740,12 @@ function VonixeLib:CreateWindow(config)
             return MB
         end
         function Tab:AddLabel(lConfig)
+            local targetParent = self._container or tabContent
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 0),
                 AutomaticSize    = Enum.AutomaticSize.Y,
                 BackgroundColor3 = Theme.BG2,
-            }, tabContent)
+            }, targetParent)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
             local acc = frame({
@@ -1727,6 +1773,134 @@ function VonixeLib:CreateWindow(config)
             function LbObj:SetColor(c) lbl.TextColor3 = c end
             return LbObj
         end
+        function Tab:AddGroupbox(gConfig)
+            local targetParent = self._container or tabContent
+            local gb = frame({
+                Size             = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = Theme.BG,
+                AutomaticSize    = Enum.AutomaticSize.Y,
+            }, targetParent)
+            corner(8, gb)
+            stroke(Theme.STROKE, 1, gb)
+            
+            local topBar = frame({
+                Size             = UDim2.new(1, 0, 0, 36),
+                BackgroundTransparency = 1,
+            }, gb)
+            
+            local titleLbl = label(gConfig.Title or "Groupbox", 13, Enum.Font.GothamSemibold, Theme.TEXT, Enum.TextXAlignment.Left, topBar)
+            titleLbl.Size = UDim2.new(1, -36, 1, 0)
+            
+            if gConfig.Icon then
+                local icn = label("", 14, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Center, topBar)
+                icn.Text = getIcon(gConfig.Icon)
+                icn.Size = UDim2.new(0, 36, 1, 0)
+                titleLbl.Position = UDim2.new(0, 36, 0, 0)
+            else
+                titleLbl.Position = UDim2.new(0, 14, 0, 0)
+            end
+            
+            local line = frame({
+                Size             = UDim2.new(1, 0, 0, 1),
+                Position         = UDim2.new(0, 0, 1, -1),
+                BackgroundColor3 = Theme.STROKE,
+            }, topBar)
+            
+            local content = frame({
+                Size             = UDim2.new(1, 0, 0, 0),
+                Position         = UDim2.new(0, 0, 0, 36),
+                BackgroundTransparency = 1,
+                AutomaticSize    = Enum.AutomaticSize.Y,
+            }, gb)
+            
+            local layout = Instance.new("UIListLayout")
+            layout.SortOrder = Enum.SortOrder.LayoutOrder
+            layout.Padding   = UDim.new(0, 4)
+            layout.Parent    = content
+            
+            padding(8, 8, 8, 8, content)
+            
+            local GroupObj = {}
+            GroupObj._container = content
+            setmetatable(GroupObj, {__index = Tab})
+            return GroupObj
+        end
+        function Tab:AddCheckbox(cConfig)
+            local targetParent = self._container or tabContent
+            local value = cConfig.Value or false
+            local row = frame({
+                Size             = UDim2.new(1, 0, 0, 32),
+                BackgroundTransparency = 1,
+            }, targetParent)
+            
+            local box = frame({
+                Size             = UDim2.new(0, 18, 0, 18),
+                Position         = UDim2.new(0, 14, 0.5, -9),
+                BackgroundColor3 = value and Theme.TOGGLE_ON or Theme.BG2,
+                ZIndex           = 2,
+            }, row)
+            corner(4, box)
+            stroke(value and Theme.TOGGLE_ON or Theme.STROKE, 1, box)
+            
+            local check = label(getIcon("check"), 12, Enum.Font.Gotham, Theme.BG, Enum.TextXAlignment.Center, box)
+            check.Size = UDim2.new(1, 0, 1, 0)
+            check.TextTransparency = value and 0 or 1
+            check.ZIndex = 3
+            
+            local nameLbl = label(cConfig.Title or "Checkbox", 12, Enum.Font.Gotham, value and Theme.TEXT or Theme.TEXT2, Enum.TextXAlignment.Left, row)
+            nameLbl.Size     = UDim2.new(1, -50, 1, 0)
+            nameLbl.Position = UDim2.new(0, 42, 0, 0)
+            nameLbl.ZIndex   = 2
+            
+            local clickArea = Instance.new("TextButton")
+            clickArea.Size            = UDim2.new(1, 0, 1, 0)
+            clickArea.BackgroundTransparency = 1
+            clickArea.Text            = ""
+            clickArea.ZIndex          = 4
+            clickArea.Parent          = row
+            
+            local ChkObj = {}
+            local function set(v, fireCallback)
+                value = v
+                ChkObj.Value = v
+                if v then
+                    tween(box, 0.15, {BackgroundColor3 = Theme.TOGGLE_ON})
+                    local s = box:FindFirstChildWhichIsA("UIStroke")
+                    if s then tween(s, 0.15, {Color = Theme.TOGGLE_ON}) end
+                    tween(check, 0.15, {TextTransparency = 0})
+                    tween(nameLbl, 0.15, {TextColor3 = Theme.TEXT})
+                else
+                    tween(box, 0.15, {BackgroundColor3 = Theme.BG2})
+                    local s = box:FindFirstChildWhichIsA("UIStroke")
+                    if s then tween(s, 0.15, {Color = Theme.STROKE}) end
+                    tween(check, 0.15, {TextTransparency = 1})
+                    tween(nameLbl, 0.15, {TextColor3 = Theme.TEXT2})
+                end
+                if fireCallback and cConfig.Callback then
+                    task.spawn(cConfig.Callback, v)
+                end
+            end
+            
+            if cConfig.Maintenance then
+                applyOverlayLock(Window, row, "Maintenance")
+            elseif cConfig.Locked then
+                applyOverlayLock(Window, row, "Premium")
+            else
+                clickArea.MouseButton1Click:Connect(function() set(not value, true) end)
+                row.MouseEnter:Connect(function() 
+                    if not value then tween(box, 0.1, {BackgroundColor3 = Theme.BG3}) end
+                end)
+                row.MouseLeave:Connect(function() 
+                    if not value then tween(box, 0.1, {BackgroundColor3 = Theme.BG2}) end
+                end)
+            end
+            
+            ChkObj.Value = value
+            function ChkObj:SetValue(v) set(v, true) end
+            function ChkObj:SetValueSilent(v) set(v, false); ChkObj.Value = v end
+            function ChkObj:SetTitle(t) nameLbl.Text = t end
+            return ChkObj
+        end
         Tab.Button   = Tab.AddButton
         Tab.Toggle   = Tab.AddToggle
         Tab.Slider   = Tab.AddSlider
@@ -1736,6 +1910,8 @@ function VonixeLib:CreateWindow(config)
         Tab.Section  = Tab.AddSection
         Tab.Space    = function() end
         Tab.MissionBar = Tab.AddMissionBar
+        Tab.Groupbox = Tab.AddGroupbox
+        Tab.Checkbox = Tab.AddCheckbox
         return Tab
     end
     local NW = isMobile and 220 or 280

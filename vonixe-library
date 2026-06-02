@@ -779,29 +779,39 @@ function VonixeLib:CreateWindow(config)
         end
         function Tab:AddToggle(tConfig)
             local value = tConfig.Value or false
+            local hasDesc = tConfig.Desc ~= nil and tConfig.Desc ~= ""
+            local rowHeight = hasDesc and 54 or 38
             local row = frame({
-                Size             = UDim2.new(1, 0, 0, 40),
-                BackgroundColor3 = Theme.BG2,
+                Size             = UDim2.new(1, 0, 0, rowHeight),
+                BackgroundColor3 = Theme.TEXT,
+                BackgroundTransparency = 1,
             }, tabContent)
             corner(8, row)
-            stroke(Theme.STROKE, 1, row)
             
             local nameLbl = label(tConfig.Title or "Toggle", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
-            nameLbl.Size     = UDim2.new(1, -70, 1, 0)
-            nameLbl.Position = UDim2.new(0, 14, 0, 0)
+            nameLbl.Size     = UDim2.new(1, -70, 0, 16)
+            nameLbl.Position = UDim2.new(0, 14, 0, hasDesc and 10 or (rowHeight/2 - 8))
             nameLbl.ZIndex   = 2
             
+            if hasDesc then
+                local descLbl = label(tConfig.Desc, 11, Enum.Font.Gotham, Theme.TEXT3, Enum.TextXAlignment.Left, row)
+                descLbl.Size     = UDim2.new(1, -70, 0, 14)
+                descLbl.Position = UDim2.new(0, 14, 0, 30)
+                descLbl.ZIndex   = 2
+                descLbl.TextTruncate = Enum.TextTruncate.AtEnd
+            end
+            
             local track = frame({
-                Size             = UDim2.new(0, 44, 0, 22),
-                Position         = UDim2.new(1, -54, 0.5, -11),
+                Size             = UDim2.new(0, 40, 0, 20),
+                Position         = UDim2.new(1, -50, 0.5, -10),
                 BackgroundColor3 = value and Theme.TOGGLE_ON or Theme.TOGGLE_OFF,
                 ZIndex           = 2,
             }, row)
             corner(99, track)
             
             local thumb = frame({
-                Size             = UDim2.new(0, 16, 0, 16),
-                Position         = value and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8),
+                Size             = UDim2.new(0, 14, 0, 14),
+                Position         = value and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7),
                 BackgroundColor3 = Theme.TEXT,
                 ZIndex           = 3,
             }, track)
@@ -812,27 +822,30 @@ function VonixeLib:CreateWindow(config)
                 value = v
                 TogObj.Value = v
                 tween(track, 0.25, {BackgroundColor3 = v and Theme.TOGGLE_ON or Theme.TOGGLE_OFF}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                tween(thumb, 0.25, {Position = v and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                tween(thumb, 0.25, {Position = v and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
                 if fireCallback and tConfig.Callback then
                     task.spawn(tConfig.Callback, v)
                 end
             end
             set(value, false)
+            
             local clickArea = Instance.new("TextButton")
             clickArea.Size            = UDim2.new(1, 0, 1, 0)
             clickArea.BackgroundTransparency = 1
             clickArea.Text            = ""
             clickArea.ZIndex          = 4
             clickArea.Parent          = row
+            
             if tConfig.Maintenance then
                 applyOverlayLock(Window, row, "Maintenance")
             elseif tConfig.Locked then
                 applyOverlayLock(Window, row, "Premium")
             else
                 clickArea.MouseButton1Click:Connect(function() set(not value, true) end)
-                row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
-                row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+                row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundTransparency = 0.95}) end)
+                row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundTransparency = 1}) end)
             end
+            
             TogObj.Value = value
             function TogObj:SetValue(v)
                 set(v, true)
@@ -849,31 +862,40 @@ function VonixeLib:CreateWindow(config)
             local max   = sConfig.Max or 100
             local value = math.clamp(sConfig.Value or sConfig.Default or min, min, max)
             local step  = sConfig.Step or 1
+            local hasDesc = sConfig.Desc ~= nil and sConfig.Desc ~= ""
+            local rowHeight = hasDesc and 54 or 38
             local row = frame({
-                Size             = UDim2.new(1, 0, 0, 56),
-                BackgroundColor3 = Theme.BG2,
+                Size             = UDim2.new(1, 0, 0, rowHeight),
+                BackgroundColor3 = Theme.TEXT,
+                BackgroundTransparency = 1,
             }, tabContent)
             corner(8, row)
-            stroke(Theme.STROKE, 1, row)
             
             local nameLbl = label(sConfig.Title or "Slider", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
-            nameLbl.Size     = UDim2.new(1, -60, 0, 20)
-            nameLbl.Position = UDim2.new(0, 14, 0, 10)
+            nameLbl.Size     = UDim2.new(1, -120, 0, 16)
+            nameLbl.Position = UDim2.new(0, 14, 0, hasDesc and 10 or (rowHeight/2 - 8))
             nameLbl.ZIndex   = 2
             
-            local valLbl = label(tostring(value), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
-            valLbl.Size     = UDim2.new(0, 50, 0, 20)
-            valLbl.Position = UDim2.new(1, -62, 0, 10)
+            if hasDesc then
+                local descLbl = label(sConfig.Desc, 11, Enum.Font.Gotham, Theme.TEXT3, Enum.TextXAlignment.Left, row)
+                descLbl.Size     = UDim2.new(1, -120, 0, 14)
+                descLbl.Position = UDim2.new(0, 14, 0, 30)
+                descLbl.ZIndex   = 2
+                descLbl.TextTruncate = Enum.TextTruncate.AtEnd
+            end
+            
+            local valLbl = label(tostring(value), 12, Enum.Font.GothamBold, Theme.TEXT, Enum.TextXAlignment.Right, row)
+            valLbl.Size     = UDim2.new(0, 40, 0, 20)
+            valLbl.Position = UDim2.new(1, -100, 0.5, -10)
             valLbl.ZIndex   = 2
             
             local trackBg = frame({
-                Size             = UDim2.new(1, -28, 0, 10),
-                Position         = UDim2.new(0, 14, 0, 36),
+                Size             = UDim2.new(0, 44, 0, 6),
+                Position         = UDim2.new(1, -54, 0.5, -3),
                 BackgroundColor3 = Theme.BG4,
                 ZIndex           = 2,
             }, row)
             corner(99, trackBg)
-            stroke(Theme.STROKE, 1, trackBg)
             
             local fill = frame({
                 Size             = UDim2.new((value - min) / (max - min), 0, 1, 0),
@@ -882,6 +904,14 @@ function VonixeLib:CreateWindow(config)
             }, trackBg)
             corner(99, fill)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, fill)
+            
+            local thumb = frame({
+                Size             = UDim2.new(0, 12, 0, 12),
+                Position         = UDim2.new(1, -6, 0.5, -6),
+                BackgroundColor3 = Theme.TEXT,
+                ZIndex           = 4,
+            }, fill)
+            corner(99, thumb)
             
             local SlObj = {}
             local function setValue(v, fireCallback)
@@ -895,29 +925,31 @@ function VonixeLib:CreateWindow(config)
                     task.spawn(sConfig.Callback, v)
                 end
             end
+            
             if sConfig.Maintenance then
                 applyOverlayLock(Window, row, "Maintenance")
             elseif sConfig.Locked then
                 applyOverlayLock(Window, row, "Premium")
             else
                 local draggingSlider = false
+                local function updateSl(i)
+                    local abs = trackBg.AbsolutePosition
+                    local siz = trackBg.AbsoluteSize
+                    local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
+                    setValue(min + ratio * (max - min), true)
+                end
+                
                 row.InputBegan:Connect(function(i)
                     if i.UserInputType == Enum.UserInputType.MouseButton1
                     or i.UserInputType == Enum.UserInputType.Touch then
                         draggingSlider = true
-                        local abs = trackBg.AbsolutePosition
-                        local siz = trackBg.AbsoluteSize
-                        local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
-                        setValue(min + ratio * (max - min), true)
+                        updateSl(i)
                     end
                 end)
                 UserInputService.InputChanged:Connect(function(i)
                     if draggingSlider and (i.UserInputType == Enum.UserInputType.MouseMovement
                     or i.UserInputType == Enum.UserInputType.Touch) then
-                        local abs = trackBg.AbsolutePosition
-                        local siz = trackBg.AbsoluteSize
-                        local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
-                        setValue(min + ratio * (max - min), true)
+                        updateSl(i)
                     end
                 end)
                 UserInputService.InputEnded:Connect(function(i)
@@ -926,6 +958,9 @@ function VonixeLib:CreateWindow(config)
                         draggingSlider = false
                     end
                 end)
+                
+                row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundTransparency = 0.95}) end)
+                row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundTransparency = 1}) end)
             end
             setValue(value, false)
             SlObj.Value = value
@@ -947,6 +982,8 @@ function VonixeLib:CreateWindow(config)
             end
             local opened = false
             local DdObj  = {} 
+            local hasDesc = dConfig.Desc ~= nil and dConfig.Desc ~= ""
+            local rowHeight = hasDesc and 54 or 38
             local wrapper = frame({
                 Size             = UDim2.new(1, 0, 0, 36),
                 BackgroundTransparency = 1,
@@ -954,17 +991,26 @@ function VonixeLib:CreateWindow(config)
                 ZIndex           = 10,
             }, tabContent)
             local row = frame({
-                Size             = UDim2.new(1, 0, 0, 40),
-                BackgroundColor3 = Theme.BG2,
+                Size             = UDim2.new(1, 0, 0, rowHeight),
+                BackgroundColor3 = Theme.TEXT,
+                BackgroundTransparency = 1,
                 ZIndex           = 10,
             }, wrapper)
             corner(8, row)
-            stroke(Theme.STROKE, 1, row)
             
             local nameLbl = label(dConfig.Title or "Dropdown", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
-            nameLbl.Size     = UDim2.new(0.5, -10, 1, 0)
-            nameLbl.Position = UDim2.new(0, 10, 0, 0)
+            nameLbl.Size     = UDim2.new(0.5, -10, 0, 16)
+            nameLbl.Position = UDim2.new(0, 14, 0, hasDesc and 10 or (rowHeight/2 - 8))
             nameLbl.ZIndex   = 11
+            
+            if hasDesc then
+                local descLbl = label(dConfig.Desc, 11, Enum.Font.Gotham, Theme.TEXT3, Enum.TextXAlignment.Left, row)
+                descLbl.Size     = UDim2.new(0.5, -10, 0, 14)
+                descLbl.Position = UDim2.new(0, 14, 0, 30)
+                descLbl.ZIndex   = 11
+                descLbl.TextTruncate = Enum.TextTruncate.AtEnd
+            end
+            
             local function formatValText(val)
                 if isMulti then
                     local str = table.concat(val, ", ")
@@ -976,8 +1022,8 @@ function VonixeLib:CreateWindow(config)
                 end
             end
             local valLbl = label(formatValText(selected), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
-            valLbl.Size     = UDim2.new(0.5, -30, 1, 0)
-            valLbl.Position = UDim2.new(0.5, 0, 0, 0)
+            valLbl.Size     = UDim2.new(0.5, -40, 0, 20)
+            valLbl.Position = UDim2.new(0.5, 10, 0.5, -10)
             valLbl.ZIndex   = 11
             local arrowFrame = Instance.new("Frame")
             arrowFrame.Size             = UDim2.new(0, 20, 0, 20)
@@ -1164,8 +1210,8 @@ function VonixeLib:CreateWindow(config)
                         task.delay(0.15, function() menu.Visible = false end)
                     end
                 end)
-                row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
-                row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+                row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundTransparency = 0.95}) end)
+                row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundTransparency = 1}) end)
             end
             DdObj.Value = selected
             function DdObj:SetValue(v)
@@ -1189,20 +1235,31 @@ function VonixeLib:CreateWindow(config)
             return DdObj
         end
         function Tab:AddInput(iConfig)
+            local hasDesc = iConfig.Desc ~= nil and iConfig.Desc ~= ""
+            local rowHeight = hasDesc and 74 or 56
             local row = frame({
-                Size             = UDim2.new(1, 0, 0, 58),
-                BackgroundColor3 = Theme.BG2,
+                Size             = UDim2.new(1, 0, 0, rowHeight),
+                BackgroundColor3 = Theme.TEXT,
+                BackgroundTransparency = 1,
             }, tabContent)
             corner(8, row)
-            stroke(Theme.STROKE, 1, row)
             
-            local nameLbl = label(iConfig.Title or "Input", 11, Enum.Font.GothamBold, Theme.TEXT3, Enum.TextXAlignment.Left, row)
+            local nameLbl = label(iConfig.Title or "Input", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
             nameLbl.Size     = UDim2.new(1, -28, 0, 16)
-            nameLbl.Position = UDim2.new(0, 14, 0, 8)
+            nameLbl.Position = UDim2.new(0, 14, 0, 10)
             nameLbl.ZIndex   = 2
+            
+            if hasDesc then
+                local descLbl = label(iConfig.Desc, 11, Enum.Font.Gotham, Theme.TEXT3, Enum.TextXAlignment.Left, row)
+                descLbl.Size     = UDim2.new(1, -28, 0, 14)
+                descLbl.Position = UDim2.new(0, 14, 0, 26)
+                descLbl.ZIndex   = 2
+                descLbl.TextTruncate = Enum.TextTruncate.AtEnd
+            end
+            
             local inputBox = Instance.new("TextBox")
-            inputBox.Size            = UDim2.new(1, -20, 0, 22)
-            inputBox.Position        = UDim2.new(0, 10, 0, 26)
+            inputBox.Size            = UDim2.new(1, -28, 0, 24)
+            inputBox.Position        = UDim2.new(0, 14, 0, hasDesc and 44 or 26)
             inputBox.BackgroundColor3 = Theme.INPUT_BG
             inputBox.BorderSizePixel = 0
             inputBox.Text            = iConfig.Value or ""

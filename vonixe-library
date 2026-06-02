@@ -2922,7 +2922,7 @@ function VonixeLib:CreateKeySystem(config)
         l.Text=txt;l.TextSize=sz;l.Font=font;l.TextColor3=col
         l.TextXAlignment=xa or Enum.TextXAlignment.Center;l.Parent=p;return l
     end
-    local overlay = mkFrame({Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.fromRGB(0,0,0),BackgroundTransparency=0.6,ZIndex=1,Active=true},sg)
+    local overlay = mkFrame({Size=UDim2.new(1,0,1,0),BackgroundColor3=Color3.fromRGB(0,0,0),BackgroundTransparency=0.6,ZIndex=1,Active=false},sg)
     local UIS = game:GetService("UserInputService")
     local isMobile = UIS.TouchEnabled or (UIS.TouchEnabled and not UIS.KeyboardEnabled)
     local W,H = 440,320
@@ -2973,29 +2973,14 @@ function VonixeLib:CreateKeySystem(config)
     closeIcoImg.BackgroundTransparency=1; closeIcoImg.Size=UDim2.new(1,0,1,0)
     closeIcoImg.ImageColor3=Color3.fromRGB(220,200,190)
     closeIcoImg.ScaleType=Enum.ScaleType.Fit; closeIcoImg.ZIndex=12; closeIcoImg.Parent=closeIco
-    task.spawn(function()
-        local ok,r=pcall(function()
-            local src=game:GetService("HttpService"):GetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
-            local lib=loadstring(src)(); lib.SetIconsType("lucide")
-            return lib.Icon("x")
-        end)
-        ok = true; r = {"rbxassetid://10733433644", {ImageRectSize=Vector2.new(0,0), ImageRectPosition=Vector2.new(0,0)}};
-            if ok and r and r[1] then
-            closeIcoImg.Image=r[1]
-            if r[2] and r[2].ImageRectSize and r[2].ImageRectSize.X>0 then
-                closeIcoImg.ImageRectSize=r[2].ImageRectSize
-                closeIcoImg.ImageRectOffset=r[2].ImageRectPosition or Vector2.new(0,0)
-            end
-        else
-            closeIcoImg:Destroy()
-            local xt=Instance.new("TextLabel")
-            xt.BackgroundTransparency=1; xt.Size=UDim2.new(1,0,1,0)
-            xt.Text="X"; xt.TextColor3=Color3.fromRGB(220,200,190)
-            xt.TextSize=12; xt.Font=Enum.Font.GothamBold
-            xt.TextXAlignment=Enum.TextXAlignment.Center
-            xt.ZIndex=12; xt.Parent=closeIco
-        end
-    end)
+    -- X icon: use simple text fallback (no external download needed)
+    closeIcoImg:Destroy()
+    local xt=Instance.new("TextLabel")
+    xt.BackgroundTransparency=1; xt.Size=UDim2.new(1,0,1,0)
+    xt.Text="X"; xt.TextColor3=Color3.fromRGB(220,200,190)
+    xt.TextSize=14; xt.Font=Enum.Font.GothamBold
+    xt.TextXAlignment=Enum.TextXAlignment.Center
+    xt.ZIndex=12; xt.Parent=closeIco
     local function setCloseBtnColor(col)
         if closeIcoImg and closeIcoImg.Parent then closeIcoImg.ImageColor3=col end
     end

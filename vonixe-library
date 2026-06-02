@@ -2815,6 +2815,7 @@ function VonixeLib:CreateWindow(config)
     
     UserInputService.InputBegan:Connect(function(i, gpe)
         if gpe then return end
+        if Window._binding then return end
         if i.UserInputType == Enum.UserInputType.Keyboard then
             local kName = i.KeyCode.Name
             for _, bind in ipairs(Window._keybinds) do

@@ -952,6 +952,10 @@ function VonixeLib:CreateWindow(config)
                             if strk then tween(strk, 0.1, {Color = Theme.STROKE}) end
                             Window._binding = false
                             tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
+                            local kbFlag = (tConfig.Flag or tConfig.Title)
+                            if kbFlag and Window.Flags[kbFlag .. "_Keybind"] then
+                                Window.Flags[kbFlag .. "_Keybind"].Value = kName
+                            end
                             conn:Disconnect()
                         elseif i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.MouseButton2 or i.UserInputType == Enum.UserInputType.Touch then
                             kbLbl.Text = bindObj.Key or "..."
@@ -979,7 +983,22 @@ function VonixeLib:CreateWindow(config)
             
             TogObj.Type = "Toggle"
             local flag = tConfig.Flag or tConfig.Title
-            if flag then Window.Flags[flag] = TogObj end
+            if flag then 
+                Window.Flags[flag] = TogObj 
+                if hasKeybind then
+                    Window.Flags[flag .. "_Keybind"] = {
+                        Type = "Keybind",
+                        Value = bindObj.Key,
+                        SetValue = function(self, v)
+                            if type(v) == "string" then
+                                bindObj.Key = v
+                                kbLbl.Text = v
+                                self.Value = v
+                            end
+                        end
+                    }
+                end
+            end
             
             return TogObj
         end
@@ -2819,7 +2838,7 @@ function VonixeLib:CreateWindow(config)
         if i.UserInputType == Enum.UserInputType.Keyboard then
             local kName = i.KeyCode.Name
             for _, bind in ipairs(Window._keybinds) do
-                if bind.Key == kName and bind.Callback then
+                if type(bind.Key) == "string" and string.lower(bind.Key) == string.lower(kName) and bind.Callback then
                     task.spawn(bind.Callback)
                 end
             end

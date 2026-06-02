@@ -590,18 +590,8 @@ function VonixeLib:CreateWindow(config)
         lockIcoImg.BackgroundTransparency = 1
         lockIcoImg.ImageColor3 = Color3.fromRGB(255, 200, 50)
         lockIcoImg.ScaleType = Enum.ScaleType.Fit
+        lockIcoImg.Image = "rbxassetid://7733765398" -- Lucide Crown Icon
         lockIcoImg.ZIndex = 21
-        
-        task.spawn(function()
-            local icoData = getIcon("crown")
-            if icoData then
-                lockIcoImg.Image = icoData[1]
-                if icoData[2] and icoData[2].ImageRectSize then
-                    lockIcoImg.ImageRectSize = icoData[2].ImageRectSize
-                    lockIcoImg.ImageRectOffset = icoData[2].ImageRectPosition or Vector2.new(0,0)
-                end
-            end
-        end)
         
         local lockText = label("[ PREMIUM ]", 13, Enum.Font.GothamBold, Color3.fromRGB(255, 200, 50), Enum.TextXAlignment.Left, lockContainer)
         lockText.Size = UDim2.new(0, 0, 0, 16)

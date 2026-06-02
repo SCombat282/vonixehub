@@ -365,13 +365,7 @@ function VonixeLib:CreateWindow(config)
         end
     end)
     camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
-    local bfr = frame({
-        Size             = UDim2.new(1, 4, 1, 4),
-        Position         = UDim2.new(0, -2, 0, -2),
-        BackgroundColor3 = Theme.ACCENT1,
-        ZIndex           = 0,
-    }, main)
-    corner(16, bfr)
+    local bfr = stroke(Theme.ACCENT1, 2, main)
     gradient(Theme.ACCENT1, Theme.ACCENT2, 135, bfr)
     local bgo = frame({
         Size             = UDim2.new(1, 0, 1, 0),
@@ -1632,8 +1626,8 @@ function VonixeLib:CreateWindow(config)
             tl.Size     = UDim2.new(0.5, 0, 1, 0)
             tl.Position = UDim2.new(0, 10, 0, 0)
             local track = frame({
-                Size             = UDim2.new(0.45, 0, 0, 6),
-                Position         = UDim2.new(0.5, 0, 0.5, -3),
+                Size             = UDim2.new(0.45, -50, 0, 8),
+                Position         = UDim2.new(0.5, 0, 0.5, -4),
                 BackgroundColor3 = Color3.fromRGB(30, 22, 14),
             }, wrapper)
             corner(99, track)
@@ -1643,9 +1637,9 @@ function VonixeLib:CreateWindow(config)
             }, track)
             corner(99, fill)
             gradient(col or Theme.ACCENT1, (col or Theme.ACCENT1):Lerp(Color3.new(1,1,1), 0.2), 0, fill)
-            local valLbl = label("0", 10, Enum.Font.GothamBold, col or Theme.ACCENT2, Enum.TextXAlignment.Right, wrapper)
-            valLbl.Size     = UDim2.new(0, 36, 1, 0)
-            valLbl.Position = UDim2.new(1, -40, 0, 0)
+            local valLbl = label("0", 11, Enum.Font.GothamBold, col or Theme.ACCENT2, Enum.TextXAlignment.Right, wrapper)
+            valLbl.Size     = UDim2.new(0, 46, 1, 0)
+            valLbl.Position = UDim2.new(1, -52, 0, 0)
             return {
                 SetValue = function(_, ratio, text)
                     tween(fill, 0.3, {Size = UDim2.new(math.clamp(ratio, 0, 1), 0, 1, 0)})

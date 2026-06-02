@@ -483,9 +483,16 @@ function VonixeLib:CreateWindow(config)
     end)
     UserInputService.InputBegan:Connect(function(i, gpe)
         if rbDragging then return end
-        if UserInputService:GetFocusedTextBox() then return end
+        
         if not Window._binding and i.UserInputType == Enum.UserInputType.Keyboard then
             local kName = i.KeyCode.Name
+            
+            -- Bypass GPE ONLY for the Menu Bind key so it works even when hovering UI or using ShiftLock
+            local menuBindObj = Window.Flags and Window.Flags["UI_MenuBind"]
+            local menuBindKey = menuBindObj and type(menuBindObj.Value) == "string" and menuBindObj.Value or "RightShift"
+            
+            if gpe and string.lower(kName) ~= string.lower(menuBindKey) then return end
+            
             for _, kb in ipairs(Window._keybinds) do
                 if type(kb.Key) == "string" and string.lower(kb.Key) == string.lower(kName) then
                     if kb.Callback then

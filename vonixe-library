@@ -557,6 +557,39 @@ function VonixeLib:CreateWindow(config)
         BackgroundTransparency = 1,
         ZIndex           = 3,
     }, bgo)
+    local function applyPremiumLock(windowObj, parentFrame)
+        local overlay = frame({
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+            BackgroundTransparency = 0.5,
+            ZIndex = 20,
+        }, parentFrame)
+        corner(8, overlay)
+        
+        local lockIcon = label("🔒 [ PREMIUM ]", 14, Enum.Font.GothamBold, Color3.fromRGB(255, 200, 50), Enum.TextXAlignment.Center, overlay)
+        lockIcon.Size = UDim2.new(1, 0, 1, 0)
+        lockIcon.ZIndex = 21
+
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 1, 0)
+        btn.BackgroundTransparency = 1
+        btn.Text = ""
+        btn.ZIndex = 22
+        btn.Parent = overlay
+
+        btn.MouseButton1Click:Connect(function()
+            if windowObj and windowObj.Notify then
+                windowObj:Notify({
+                    Title = "Premium Feature",
+                    Content = "Fitur ini khusus untuk pengguna Premium!",
+                    Type = "Warning",
+                    Duration = 3
+                })
+            end
+        end)
+        return overlay
+    end
+
     function Window:AddTab(tabConfig)
         local tabName = tabConfig.Title or "Tab"
         local tabIcon = tabConfig.Icon or ""
@@ -685,15 +718,19 @@ function VonixeLib:CreateWindow(config)
             btnLbl.Size     = UDim2.new(1, -20, 1, 0)
             btnLbl.Position = UDim2.new(0, 10, 0, 0)
             btnLbl.ZIndex   = 2
-            btn.MouseEnter:Connect(function() tween(btn, 0.1, {BackgroundColor3 = Theme.BG3}) end)
-            btn.MouseLeave:Connect(function() tween(btn, 0.1, {BackgroundColor3 = Theme.BG2}) end)
-            btn.MouseButton1Click:Connect(function()
-                tween(btn, 0.05, {BackgroundColor3 = Color3.fromRGB(30, 20, 10)})
-                task.delay(0.1, function() tween(btn, 0.1, {BackgroundColor3 = Theme.BG2}) end)
-                if bConfig.Callback then
-                    task.spawn(bConfig.Callback)
-                end
-            end)
+            if bConfig.Locked then
+                applyPremiumLock(Window, btn)
+            else
+                btn.MouseEnter:Connect(function() tween(btn, 0.1, {BackgroundColor3 = Theme.BG3}) end)
+                btn.MouseLeave:Connect(function() tween(btn, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+                btn.MouseButton1Click:Connect(function()
+                    tween(btn, 0.05, {BackgroundColor3 = Color3.fromRGB(30, 20, 10)})
+                    task.delay(0.1, function() tween(btn, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+                    if bConfig.Callback then
+                        task.spawn(bConfig.Callback)
+                    end
+                end)
+            end
             local BtnObj = {}
             function BtnObj:SetTitle(t) btnLbl.Text = t end
             return BtnObj
@@ -750,9 +787,13 @@ function VonixeLib:CreateWindow(config)
             clickArea.Text            = ""
             clickArea.ZIndex          = 4
             clickArea.Parent          = row
-            clickArea.MouseButton1Click:Connect(function() set(not value, true) end)
-            row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
-            row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+            if tConfig.Locked then
+                applyPremiumLock(Window, row)
+            else
+                clickArea.MouseButton1Click:Connect(function() set(not value, true) end)
+                row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
+                row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+            end
             TogObj.Value = value
             function TogObj:SetValue(v)
                 set(v, true)
@@ -826,32 +867,36 @@ function VonixeLib:CreateWindow(config)
                     task.spawn(sConfig.Callback, v)
                 end
             end
-            local draggingSlider = false
-            row.InputBegan:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1
-                or i.UserInputType == Enum.UserInputType.Touch then
-                    draggingSlider = true
-                    local abs = trackBg.AbsolutePosition
-                    local siz = trackBg.AbsoluteSize
-                    local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
-                    setValue(min + ratio * (max - min), true)
-                end
-            end)
-            UserInputService.InputChanged:Connect(function(i)
-                if draggingSlider and (i.UserInputType == Enum.UserInputType.MouseMovement
-                or i.UserInputType == Enum.UserInputType.Touch) then
-                    local abs = trackBg.AbsolutePosition
-                    local siz = trackBg.AbsoluteSize
-                    local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
-                    setValue(min + ratio * (max - min), true)
-                end
-            end)
-            UserInputService.InputEnded:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1
-                or i.UserInputType == Enum.UserInputType.Touch then
-                    draggingSlider = false
-                end
-            end)
+            if sConfig.Locked then
+                applyPremiumLock(Window, row)
+            else
+                local draggingSlider = false
+                row.InputBegan:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseButton1
+                    or i.UserInputType == Enum.UserInputType.Touch then
+                        draggingSlider = true
+                        local abs = trackBg.AbsolutePosition
+                        local siz = trackBg.AbsoluteSize
+                        local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
+                        setValue(min + ratio * (max - min), true)
+                    end
+                end)
+                UserInputService.InputChanged:Connect(function(i)
+                    if draggingSlider and (i.UserInputType == Enum.UserInputType.MouseMovement
+                    or i.UserInputType == Enum.UserInputType.Touch) then
+                        local abs = trackBg.AbsolutePosition
+                        local siz = trackBg.AbsoluteSize
+                        local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
+                        setValue(min + ratio * (max - min), true)
+                    end
+                end)
+                UserInputService.InputEnded:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseButton1
+                    or i.UserInputType == Enum.UserInputType.Touch then
+                        draggingSlider = false
+                    end
+                end)
+            end
             setValue(value, false)
             SlObj.Value = value
             function SlObj:SetValue(v) setValue(v, false) end
@@ -1078,21 +1123,25 @@ function VonixeLib:CreateWindow(config)
             clickArea.Text            = ""
             clickArea.ZIndex          = 12
             clickArea.Parent          = row
-            clickArea.MouseButton1Click:Connect(function()
-                opened = not opened
-                if opened then
-                    menu.Visible = true
-                    local targetH = updateMenuSize()
-                    tween(arrow, 0.2, {Rotation = 180})
-                    tween(menu, 0.2, {Size = UDim2.new(1, 0, 0, targetH)})
-                else
-                    tween(arrow, 0.15, {Rotation = 0})
-                    tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
-                    task.delay(0.15, function() menu.Visible = false end)
-                end
-            end)
-            row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
-            row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+            if dConfig.Locked then
+                applyPremiumLock(Window, row)
+            else
+                clickArea.MouseButton1Click:Connect(function()
+                    opened = not opened
+                    if opened then
+                        menu.Visible = true
+                        local targetH = updateMenuSize()
+                        tween(arrow, 0.2, {Rotation = 180})
+                        tween(menu, 0.2, {Size = UDim2.new(1, 0, 0, targetH)})
+                    else
+                        tween(arrow, 0.15, {Rotation = 0})
+                        tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                        task.delay(0.15, function() menu.Visible = false end)
+                    end
+                end)
+                row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
+                row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+            end
             DdObj.Value = selected
             function DdObj:SetValue(v)
                 selected = v
@@ -1151,23 +1200,28 @@ function VonixeLib:CreateWindow(config)
             corner(6, inputBox)
             stroke(Theme.STROKE2, 1, inputBox)
             padding(0, 8, 8, 0, inputBox)
-            inputBox.Focused:Connect(function()
-                tween(inputBox, 0.1, {BackgroundColor3 = Color3.fromRGB(24, 16, 10)})
-            end)
-            inputBox.FocusLost:Connect(function()
-                tween(inputBox, 0.1, {BackgroundColor3 = Theme.INPUT_BG})
-            end)
             local InObj = {}
             InObj.Value = inputBox.Text
-            inputBox.Changed:Connect(function(prop)
-                if prop == "Text" then InObj.Value = inputBox.Text end
-            end)
-            inputBox.FocusLost:Connect(function()
-                InObj.Value = inputBox.Text
-                if iConfig.Callback then
-                    task.spawn(iConfig.Callback, inputBox.Text)
-                end
-            end)
+            if iConfig.Locked then
+                inputBox.TextEditable = false
+                applyPremiumLock(Window, row)
+            else
+                inputBox.Focused:Connect(function()
+                    tween(inputBox, 0.1, {BackgroundColor3 = Color3.fromRGB(24, 16, 10)})
+                end)
+                inputBox.FocusLost:Connect(function()
+                    tween(inputBox, 0.1, {BackgroundColor3 = Theme.INPUT_BG})
+                end)
+                inputBox.Changed:Connect(function(prop)
+                    if prop == "Text" then InObj.Value = inputBox.Text end
+                end)
+                inputBox.FocusLost:Connect(function()
+                    InObj.Value = inputBox.Text
+                    if iConfig.Callback then
+                        task.spawn(iConfig.Callback, inputBox.Text)
+                    end
+                end)
+            end
             function InObj:SetValue(v) inputBox.Text = v; InObj.Value = v end
             function InObj:SetTitle(t) nameLbl.Text = t end
             return InObj

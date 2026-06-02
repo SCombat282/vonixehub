@@ -815,12 +815,14 @@ function VonixeLib:CreateWindow(config)
             nameLbl.Position = UDim2.new(0, 14, 0, 0)
             nameLbl.ZIndex   = 2
             
-            local track = frame({
-                Size             = UDim2.new(0, 44, 0, 22),
-                Position         = UDim2.new(1, -54, 0.5, -11),
-                BackgroundColor3 = value and Theme.TOGGLE_ON or Theme.TOGGLE_OFF,
-                ZIndex           = 2,
-            }, row)
+            local track = Instance.new("TextButton")
+            track.Size             = UDim2.new(0, 44, 0, 22)
+            track.Position         = UDim2.new(1, -54, 0.5, -11)
+            track.BackgroundColor3 = value and Theme.TOGGLE_ON or Theme.TOGGLE_OFF
+            track.Text             = ""
+            track.AutoButtonColor  = false
+            track.ZIndex           = 2
+            track.Parent           = row
             corner(99, track)
             
             local thumb = frame({
@@ -887,6 +889,7 @@ function VonixeLib:CreateWindow(config)
                 applyOverlayLock(Window, row, "Premium")
             else
                 clickArea.MouseButton1Click:Connect(function() set(not value, true) end)
+                track.MouseButton1Click:Connect(function() set(not value, true) end)
                 row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
                 row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
             end
@@ -1957,12 +1960,14 @@ function VonixeLib:CreateWindow(config)
                 BackgroundTransparency = 1,
             }, targetParent)
             
-            local box = frame({
-                Size             = UDim2.new(0, 18, 0, 18),
-                Position         = UDim2.new(0, 14, 0.5, -9),
-                BackgroundColor3 = value and Theme.TOGGLE_ON or Theme.BG2,
-                ZIndex           = 2,
-            }, row)
+            local box = Instance.new("TextButton")
+            box.Size             = UDim2.new(0, 18, 0, 18)
+            box.Position         = UDim2.new(0, 14, 0.5, -9)
+            box.BackgroundColor3 = value and Theme.TOGGLE_ON or Theme.BG2
+            box.Text             = ""
+            box.AutoButtonColor  = false
+            box.ZIndex           = 2
+            box.Parent           = row
             corner(4, box)
             stroke(value and Theme.TOGGLE_ON or Theme.STROKE, 1, box)
             
@@ -2061,6 +2066,10 @@ function VonixeLib:CreateWindow(config)
                 applyOverlayLock(Window, row, "Premium")
             else
                 clickArea.MouseButton1Click:Connect(function()
+                    if disabled then return end
+                    set(not value, true)
+                end)
+                box.MouseButton1Click:Connect(function()
                     if disabled then return end
                     set(not value, true)
                 end)

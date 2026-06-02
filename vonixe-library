@@ -1629,6 +1629,7 @@ function VonixeLib:CreateWindow(config)
                 hueThumb.Position = UDim2.new(0, -2, h, -2)
                 hexBox.Text = toHex(c)
                 rgbLbl.Text = math.floor(c.R*255) .. ", " .. math.floor(c.G*255) .. ", " .. math.floor(c.B*255)
+                CpObj.Value = c
                 if fireCb and cConfig.Callback then
                     task.spawn(cConfig.Callback, c)
                 end
@@ -2186,6 +2187,11 @@ function VonixeLib:CreateWindow(config)
             function ChkObj:SetValue(v) set(v, true) end
             function ChkObj:SetValueSilent(v) set(v, false); ChkObj.Value = v end
             function ChkObj:SetTitle(t) nameLbl.Text = t end
+            
+            ChkObj.Type = "Checkbox"
+            local flag = cConfig.Flag or cConfig.Title
+            if flag then Window.Flags[flag] = ChkObj end
+            
             return ChkObj
         end
         function Tab:AddKeybind(kConfig)
@@ -2247,6 +2253,7 @@ function VonixeLib:CreateWindow(config)
                         if strk then tween(strk, 0.1, {Color = Theme.STROKE}) end
                         Window._binding = false
                         tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
+                        KbObj.Value = kName
                         if kConfig.OnBind then task.spawn(kConfig.OnBind, kName) end
                         conn:Disconnect()
                     elseif i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.MouseButton2 or i.UserInputType == Enum.UserInputType.Touch then
@@ -2264,8 +2271,9 @@ function VonixeLib:CreateWindow(config)
             
             local KbObj = {}
             function KbObj:SetValue(v)
-                if type(v) == "string" then bindObj.Key = v; kbLbl.Text = v end
+                if type(v) == "string" then bindObj.Key = v; kbLbl.Text = v; KbObj.Value = v end
             end
+            KbObj.Value = bindObj.Key
             
             KbObj.Type = "Keybind"
             local flag = kConfig.Flag or kConfig.Title
@@ -2804,6 +2812,19 @@ function VonixeLib:CreateWindow(config)
         end
         return fakeSection
     end
+    
+    UserInputService.InputBegan:Connect(function(i, gpe)
+        if gpe then return end
+        if i.UserInputType == Enum.UserInputType.Keyboard then
+            local kName = i.KeyCode.Name
+            for _, bind in ipairs(Window._keybinds) do
+                if bind.Key == kName and bind.Callback then
+                    task.spawn(bind.Callback)
+                end
+            end
+        end
+    end)
+    
     return Window
 end
 function VonixeLib:CreateKeySystem(config)

@@ -1258,9 +1258,11 @@ function VonixeLib:CreateWindow(config)
         end
         function Tab:AddColorPicker(cConfig)
             local defaultColor = cConfig.Default or Color3.fromRGB(255, 255, 255)
-            local color = defaultColor
+            local h, s, v = defaultColor:ToHSV()
             local opened = false
             local CpObj = {}
+            local hasToggle = cConfig.HasToggle or false
+            local toggleValue = cConfig.ToggleValue or false
             
             local wrapper = frame({
                 Size             = UDim2.new(1, 0, 0, 40),
@@ -1289,12 +1291,31 @@ function VonixeLib:CreateWindow(config)
             
             local colorPreview = frame({
                 Size             = UDim2.new(0, 24, 0, 24),
-                Position         = UDim2.new(1, -34, 0.5, -12),
-                BackgroundColor3 = color,
+                Position         = hasToggle and UDim2.new(1, -88, 0.5, -12) or UDim2.new(1, -34, 0.5, -12),
+                BackgroundColor3 = Color3.fromHSV(h, s, v),
                 ZIndex           = 11,
             }, row)
             corner(6, colorPreview)
             stroke(Theme.STROKE2, 1, colorPreview)
+            
+            local track, thumb
+            if hasToggle then
+                track = frame({
+                    Size             = UDim2.new(0, 44, 0, 22),
+                    Position         = UDim2.new(1, -54, 0.5, -11),
+                    BackgroundColor3 = toggleValue and Theme.TOGGLE_ON or Theme.TOGGLE_OFF,
+                    ZIndex           = 11,
+                }, row)
+                corner(99, track)
+                
+                thumb = frame({
+                    Size             = UDim2.new(0, 16, 0, 16),
+                    Position         = toggleValue and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8),
+                    BackgroundColor3 = Theme.TEXT,
+                    ZIndex           = 12,
+                }, track)
+                corner(99, thumb)
+            end
             
             local menu = frame({
                 Size             = UDim2.new(1, 0, 0, 0),
@@ -1306,127 +1327,254 @@ function VonixeLib:CreateWindow(config)
             stroke(Theme.STROKE, 1, menu)
             menu.Visible = false
             
-            local menuLayout = Instance.new("UIListLayout")
-            menuLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            menuLayout.Padding   = UDim.new(0, 8)
-            menuLayout.Parent    = menu
+            local menuPad = padding(10, 10, 10, 10, menu)
             
-            padding(12, 12, 12, 12, menu)
+            local topArea = frame({
+                Size             = UDim2.new(1, 0, 0, 160),
+                BackgroundTransparency = 1,
+                ZIndex           = 10,
+            }, menu)
             
-            local function updateColorPreview()
-                tween(colorPreview, 0.1, {BackgroundColor3 = color})
-                if cConfig.Callback then
-                    task.spawn(cConfig.Callback, color)
-                end
+            local svMap = frame({
+                Size             = UDim2.new(1, -24, 1, 0),
+                BackgroundColor3 = Color3.fromHSV(h, 1, 1),
+                ZIndex           = 10,
+            }, topArea)
+            corner(6, svMap)
+            stroke(Theme.STROKE2, 1, svMap)
+            
+            local satLayer = frame({
+                Size             = UDim2.new(1, 0, 1, 0),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                ZIndex           = 11,
+            }, svMap)
+            corner(6, satLayer)
+            local satGrad = Instance.new("UIGradient")
+            satGrad.Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 0),
+                NumberSequenceKeypoint.new(1, 1)
+            }
+            satGrad.Parent = satLayer
+            
+            local valLayer = frame({
+                Size             = UDim2.new(1, 0, 1, 0),
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                ZIndex           = 12,
+            }, svMap)
+            corner(6, valLayer)
+            local valGrad = Instance.new("UIGradient")
+            valGrad.Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(1, 0)
+            }
+            valGrad.Rotation = 90
+            valGrad.Parent = valLayer
+            
+            local svThumb = frame({
+                Size             = UDim2.new(0, 8, 0, 8),
+                Position         = UDim2.new(s, -4, 1 - v, -4),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                ZIndex           = 14,
+            }, svMap)
+            corner(99, svThumb)
+            stroke(Color3.fromRGB(0,0,0), 1, svThumb)
+            
+            local hueSlider = frame({
+                Size             = UDim2.new(0, 16, 1, 0),
+                Position         = UDim2.new(1, -16, 0, 0),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                ZIndex           = 10,
+            }, topArea)
+            corner(6, hueSlider)
+            stroke(Theme.STROKE2, 1, hueSlider)
+            
+            local hueGrad = Instance.new("UIGradient")
+            hueGrad.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+                ColorSequenceKeypoint.new(0.167, Color3.fromRGB(255, 255, 0)),
+                ColorSequenceKeypoint.new(0.333, Color3.fromRGB(0, 255, 0)),
+                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+                ColorSequenceKeypoint.new(0.667, Color3.fromRGB(0, 0, 255)),
+                ColorSequenceKeypoint.new(0.833, Color3.fromRGB(255, 0, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
+            }
+            hueGrad.Rotation = 90
+            hueGrad.Parent = hueSlider
+            
+            local hueThumb = frame({
+                Size             = UDim2.new(1, 4, 0, 4),
+                Position         = UDim2.new(0, -2, h, -2),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                ZIndex           = 14,
+            }, hueSlider)
+            corner(2, hueThumb)
+            stroke(Color3.fromRGB(0,0,0), 1, hueThumb)
+            
+            local botArea = frame({
+                Size             = UDim2.new(1, 0, 0, 26),
+                Position         = UDim2.new(0, 0, 1, -26),
+                BackgroundTransparency = 1,
+                ZIndex           = 10,
+            }, menu)
+            
+            local hexBox = Instance.new("TextBox")
+            hexBox.Size            = UDim2.new(0.5, -4, 1, 0)
+            hexBox.Position        = UDim2.new(0, 0, 0, 0)
+            hexBox.BackgroundColor3 = Theme.BG2
+            hexBox.BorderSizePixel = 0
+            hexBox.TextColor3      = Theme.TEXT
+            hexBox.TextSize        = 11
+            hexBox.Font            = Enum.Font.GothamSemibold
+            hexBox.TextXAlignment  = Enum.TextXAlignment.Center
+            hexBox.ClearTextOnFocus = false
+            hexBox.ZIndex          = 11
+            hexBox.Parent          = botArea
+            corner(4, hexBox)
+            stroke(Theme.STROKE, 1, hexBox)
+            
+            local rgbLbl = label("255, 255, 255", 11, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Center, botArea)
+            rgbLbl.Size     = UDim2.new(0.5, -4, 1, 0)
+            rgbLbl.Position = UDim2.new(0.5, 4, 0, 0)
+            rgbLbl.BackgroundColor3 = Theme.BG2
+            rgbLbl.BackgroundTransparency = 0
+            rgbLbl.ZIndex   = 11
+            corner(4, rgbLbl)
+            stroke(Theme.STROKE, 1, rgbLbl)
+            
+            local function toHex(c)
+                return string.format("#%02x%02x%02x", math.floor(c.R*255), math.floor(c.G*255), math.floor(c.B*255))
             end
             
-            local function createColorSlider(title, colorName, initialVal)
-                local sRow = frame({
-                    Size             = UDim2.new(1, 0, 0, 24),
-                    BackgroundTransparency = 1,
-                    ZIndex           = 10,
-                }, menu)
-                
-                local sTitle = label(title, 11, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, sRow)
-                sTitle.Size = UDim2.new(0, 40, 1, 0)
-                
-                local sValLbl = label(tostring(math.floor(initialVal * 255)), 11, Enum.Font.GothamBold, Theme.TEXT, Enum.TextXAlignment.Right, sRow)
-                sValLbl.Size = UDim2.new(0, 30, 1, 0)
-                sValLbl.Position = UDim2.new(1, -30, 0, 0)
-                
-                local sTrackBg = frame({
-                    Size             = UDim2.new(1, -80, 0, 6),
-                    Position         = UDim2.new(0, 45, 0.5, -3),
-                    BackgroundColor3 = Theme.BG4,
-                    ZIndex           = 10,
-                }, sRow)
-                corner(99, sTrackBg)
-                
-                local sliderColor = colorName == "R" and Theme.RED or colorName == "G" and Theme.GREEN or colorName == "B" and Color3.fromRGB(80, 120, 255)
-                local sFill = frame({
-                    Size             = UDim2.new(initialVal, 0, 1, 0),
-                    BackgroundColor3 = sliderColor,
-                    ZIndex           = 11,
-                }, sTrackBg)
-                corner(99, sFill)
-                
-                local sThumb = frame({
-                    Size             = UDim2.new(0, 12, 0, 12),
-                    Position         = UDim2.new(initialVal, -6, 0.5, -6),
-                    BackgroundColor3 = Theme.TEXT,
-                    ZIndex           = 12,
-                }, sTrackBg)
-                corner(99, sThumb)
-                
-                local dragging = false
-                local function setSliderVal(i)
-                    local abs = sTrackBg.AbsolutePosition
-                    local siz = sTrackBg.AbsoluteSize
-                    local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
-                    tween(sFill, 0.1, {Size = UDim2.new(ratio, 0, 1, 0)})
-                    tween(sThumb, 0.1, {Position = UDim2.new(ratio, -6, 0.5, -6)})
-                    sValLbl.Text = tostring(math.floor(ratio * 255))
-                    
-                    local r = colorName == "R" and ratio or color.R
-                    local g = colorName == "G" and ratio or color.G
-                    local b = colorName == "B" and ratio or color.B
-                    color = Color3.new(r, g, b)
-                    updateColorPreview()
+            local function updateVisuals(fireCb)
+                local c = Color3.fromHSV(h, s, v)
+                svMap.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                tween(colorPreview, 0.1, {BackgroundColor3 = c})
+                svThumb.Position = UDim2.new(s, -4, 1 - v, -4)
+                hueThumb.Position = UDim2.new(0, -2, h, -2)
+                hexBox.Text = toHex(c)
+                rgbLbl.Text = math.floor(c.R*255) .. ", " .. math.floor(c.G*255) .. ", " .. math.floor(c.B*255)
+                if fireCb and cConfig.Callback then
+                    task.spawn(cConfig.Callback, c)
                 end
-                
-                sRow.InputBegan:Connect(function(i)
-                    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-                        dragging = true
-                        setSliderVal(i)
-                    end
-                end)
-                UserInputService.InputChanged:Connect(function(i)
-                    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-                        setSliderVal(i)
-                    end
-                end)
-                UserInputService.InputEnded:Connect(function(i)
-                    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-                        dragging = false
-                    end
-                end)
+            end
+            updateVisuals(false)
+            
+            local function setSV(input)
+                local abs = svMap.AbsolutePosition
+                local siz = svMap.AbsoluteSize
+                s = math.clamp((input.Position.X - abs.X) / siz.X, 0, 1)
+                v = 1 - math.clamp((input.Position.Y - abs.Y) / siz.Y, 0, 1)
+                updateVisuals(true)
             end
             
-            createColorSlider("R", "R", color.R)
-            createColorSlider("G", "G", color.G)
-            createColorSlider("B", "B", color.B)
+            local draggingSV = false
+            svMap.InputBegan:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+                    draggingSV = true
+                    setSV(i)
+                end
+            end)
+            
+            local function setH(input)
+                local abs = hueSlider.AbsolutePosition
+                local siz = hueSlider.AbsoluteSize
+                h = math.clamp((input.Position.Y - abs.Y) / siz.Y, 0, 1)
+                updateVisuals(true)
+            end
+            
+            local draggingH = false
+            hueSlider.InputBegan:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+                    draggingH = true
+                    setH(i)
+                end
+            end)
+            
+            UserInputService.InputChanged:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch then
+                    if draggingSV then setSV(i) end
+                    if draggingH then setH(i) end
+                end
+            end)
+            
+            UserInputService.InputEnded:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+                    draggingSV = false
+                    draggingH = false
+                end
+            end)
+            
+            hexBox.FocusLost:Connect(function()
+                local txt = hexBox.Text:gsub("#", "")
+                if #txt == 6 then
+                    local success, res = pcall(function()
+                        return Color3.fromRGB(tonumber(txt:sub(1,2), 16), tonumber(txt:sub(3,4), 16), tonumber(txt:sub(5,6), 16))
+                    end)
+                    if success and res then
+                        h, s, v = res:ToHSV()
+                        updateVisuals(true)
+                        return
+                    end
+                end
+                hexBox.Text = toHex(Color3.fromHSV(h, s, v))
+            end)
+            
+            local colorBtn = Instance.new("TextButton")
+            colorBtn.Size = UDim2.new(1, 0, 1, 0)
+            colorBtn.BackgroundTransparency = 1
+            colorBtn.Text = ""
+            colorBtn.ZIndex = 12
+            colorBtn.Parent = colorPreview
             
             local clickArea = Instance.new("TextButton")
             clickArea.Size            = UDim2.new(1, 0, 1, 0)
             clickArea.BackgroundTransparency = 1
             clickArea.Text            = ""
-            clickArea.ZIndex          = 12
+            clickArea.ZIndex          = 10
             clickArea.Parent          = row
+            
+            local function toggleMenu()
+                opened = not opened
+                if opened then
+                    menu.Visible = true
+                    tween(menu, 0.2, {Size = UDim2.new(1, 0, 0, 206)})
+                else
+                    tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                    task.delay(0.15, function() menu.Visible = false end)
+                end
+            end
+            
+            local function setToggle(v, fireCb)
+                toggleValue = v
+                CpObj.ToggleValue = v
+                if hasToggle then
+                    tween(track, 0.25, {BackgroundColor3 = v and Theme.TOGGLE_ON or Theme.TOGGLE_OFF}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                    tween(thumb, 0.25, {Position = v and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                end
+                if fireCb and cConfig.ToggleCallback then
+                    task.spawn(cConfig.ToggleCallback, v)
+                end
+            end
             
             if cConfig.Maintenance then
                 applyOverlayLock(Window, row, "Maintenance")
             elseif cConfig.Locked then
                 applyOverlayLock(Window, row, "Premium")
             else
-                clickArea.MouseButton1Click:Connect(function()
-                    opened = not opened
-                    if opened then
-                        menu.Visible = true
-                        local targetH = menuLayout.AbsoluteContentSize.Y + 24
-                        tween(menu, 0.2, {Size = UDim2.new(1, 0, 0, targetH)})
-                    else
-                        tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
-                        task.delay(0.15, function() menu.Visible = false end)
-                    end
-                end)
+                colorBtn.MouseButton1Click:Connect(toggleMenu)
+                if hasToggle then
+                    clickArea.MouseButton1Click:Connect(function() setToggle(not toggleValue, true) end)
+                else
+                    clickArea.MouseButton1Click:Connect(toggleMenu)
+                end
                 row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
                 row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
             end
             
-            CpObj.Value = color
+            CpObj.Value = Color3.fromHSV(h, s, v)
             function CpObj:SetValue(newColor)
-                color = newColor
-                updateColorPreview()
+                h, s, v = newColor:ToHSV()
+                updateVisuals(false)
             end
             function CpObj:SetTitle(t) nameLbl.Text = t end
             return CpObj

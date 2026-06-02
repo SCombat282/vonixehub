@@ -610,9 +610,9 @@ function VonixeLib:CreateWindow(config)
         elseif lockType == "Maintenance" then
             lockIcoImg.Image = "rbxassetid://10723434711"
             lockIcoImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
-            lockText.Text = "Maintenance"
+            lockText.Text = "[ MAINTENANCE ]"
             lockText.TextColor3 = Color3.fromRGB(255, 255, 255)
-            notifTitle = "[ MAINTENANCE ]"
+            notifTitle = "Maintenance"
             notifContent = "Fitur ini sedang dalam perbaikan!"
         end
 

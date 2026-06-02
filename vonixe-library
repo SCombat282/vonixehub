@@ -557,7 +557,7 @@ function VonixeLib:CreateWindow(config)
         BackgroundTransparency = 1,
         ZIndex           = 3,
     }, bgo)
-    local function applyPremiumLock(windowObj, parentFrame)
+    local function applyOverlayLock(windowObj, parentFrame, lockType)
         local overlay = frame({
             Size = UDim2.new(1, 0, 1, 0),
             BackgroundColor3 = Color3.fromRGB(0, 0, 0),
@@ -588,16 +588,33 @@ function VonixeLib:CreateWindow(config)
         local lockIcoImg = Instance.new("ImageLabel", iconFrame)
         lockIcoImg.Size = UDim2.new(1, 0, 1, 0)
         lockIcoImg.BackgroundTransparency = 1
-        lockIcoImg.ImageColor3 = Color3.fromRGB(255, 200, 50)
         lockIcoImg.ScaleType = Enum.ScaleType.Fit
-        lockIcoImg.Image = "rbxassetid://7733765398" -- Lucide Crown Icon
         lockIcoImg.ZIndex = 21
         
-        local lockText = label("[ PREMIUM ]", 13, Enum.Font.GothamBold, Color3.fromRGB(255, 200, 50), Enum.TextXAlignment.Left, lockContainer)
+        local lockText = label("", 13, Enum.Font.GothamBold, Color3.new(1,1,1), Enum.TextXAlignment.Left, lockContainer)
         lockText.Size = UDim2.new(0, 0, 0, 16)
         lockText.AutomaticSize = Enum.AutomaticSize.X
         lockText.ZIndex = 21
         lockText.LayoutOrder = 2
+
+        local notifTitle = ""
+        local notifContent = ""
+
+        if lockType == "Premium" then
+            lockIcoImg.Image = "rbxassetid://7733765398" -- Crown
+            lockIcoImg.ImageColor3 = Color3.fromRGB(255, 200, 50)
+            lockText.Text = "[ PREMIUM ]"
+            lockText.TextColor3 = Color3.fromRGB(255, 200, 50)
+            notifTitle = "Premium Feature"
+            notifContent = "Fitur ini khusus untuk pengguna Premium!"
+        elseif lockType == "Maintenance" then
+            lockIcoImg.Image = "rbxassetid://7733920510" -- Lock
+            lockIcoImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
+            lockText.Text = "Maintenance"
+            lockText.TextColor3 = Color3.fromRGB(255, 255, 255)
+            notifTitle = "Maintenance"
+            notifContent = "Fitur ini sedang dalam perbaikan (Maintenance)!"
+        end
 
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(1, 0, 1, 0)
@@ -609,8 +626,8 @@ function VonixeLib:CreateWindow(config)
         btn.MouseButton1Click:Connect(function()
             if windowObj and windowObj.Notify then
                 windowObj:Notify({
-                    Title = "Premium Feature",
-                    Content = "Fitur ini khusus untuk pengguna Premium!",
+                    Title = notifTitle,
+                    Content = notifContent,
                     Type = "Warning",
                     Duration = 3
                 })
@@ -747,8 +764,10 @@ function VonixeLib:CreateWindow(config)
             btnLbl.Size     = UDim2.new(1, -20, 1, 0)
             btnLbl.Position = UDim2.new(0, 10, 0, 0)
             btnLbl.ZIndex   = 2
-            if bConfig.Locked then
-                applyPremiumLock(Window, btn)
+            if bConfig.Maintenance then
+                applyOverlayLock(Window, btn, "Maintenance")
+            elseif bConfig.Locked then
+                applyOverlayLock(Window, btn, "Premium")
             else
                 btn.MouseEnter:Connect(function() tween(btn, 0.1, {BackgroundColor3 = Theme.BG3}) end)
                 btn.MouseLeave:Connect(function() tween(btn, 0.1, {BackgroundColor3 = Theme.BG2}) end)
@@ -816,8 +835,10 @@ function VonixeLib:CreateWindow(config)
             clickArea.Text            = ""
             clickArea.ZIndex          = 4
             clickArea.Parent          = row
-            if tConfig.Locked then
-                applyPremiumLock(Window, row)
+            if tConfig.Maintenance then
+                applyOverlayLock(Window, row, "Maintenance")
+            elseif tConfig.Locked then
+                applyOverlayLock(Window, row, "Premium")
             else
                 clickArea.MouseButton1Click:Connect(function() set(not value, true) end)
                 row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
@@ -896,8 +917,10 @@ function VonixeLib:CreateWindow(config)
                     task.spawn(sConfig.Callback, v)
                 end
             end
-            if sConfig.Locked then
-                applyPremiumLock(Window, row)
+            if sConfig.Maintenance then
+                applyOverlayLock(Window, row, "Maintenance")
+            elseif sConfig.Locked then
+                applyOverlayLock(Window, row, "Premium")
             else
                 local draggingSlider = false
                 row.InputBegan:Connect(function(i)
@@ -1152,8 +1175,10 @@ function VonixeLib:CreateWindow(config)
             clickArea.Text            = ""
             clickArea.ZIndex          = 12
             clickArea.Parent          = row
-            if dConfig.Locked then
-                applyPremiumLock(Window, row)
+            if dConfig.Maintenance then
+                applyOverlayLock(Window, row, "Maintenance")
+            elseif dConfig.Locked then
+                applyOverlayLock(Window, row, "Premium")
             else
                 clickArea.MouseButton1Click:Connect(function()
                     opened = not opened
@@ -1231,9 +1256,12 @@ function VonixeLib:CreateWindow(config)
             padding(0, 8, 8, 0, inputBox)
             local InObj = {}
             InObj.Value = inputBox.Text
-            if iConfig.Locked then
+            if iConfig.Maintenance then
                 inputBox.TextEditable = false
-                applyPremiumLock(Window, row)
+                applyOverlayLock(Window, row, "Maintenance")
+            elseif iConfig.Locked then
+                inputBox.TextEditable = false
+                applyOverlayLock(Window, row, "Premium")
             else
                 inputBox.Focused:Connect(function()
                     tween(inputBox, 0.1, {BackgroundColor3 = Color3.fromRGB(24, 16, 10)})

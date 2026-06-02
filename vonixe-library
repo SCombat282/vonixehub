@@ -326,6 +326,8 @@ function VonixeLib:CreateWindow(config)
     Window._tabs       = {}
     Window._selected   = nil
     Window._callbacks  = {}
+    Window._keybinds   = {}
+    Window._binding    = false
     local sg = Instance.new("ScreenGui")
     sg.Name          = "VonixeLib_" .. title
     sg.ResetOnSpawn  = false
@@ -475,6 +477,19 @@ function VonixeLib:CreateWindow(config)
             rbDragging = true
             rbDragStart = i.Position
             rbStartPos  = restoreBtn.Position
+        end
+    end)
+    UserInputService.InputBegan:Connect(function(i, gpe)
+        if rbDragging then return end
+        if gpe then return end
+        if not Window._binding and i.UserInputType == Enum.UserInputType.Keyboard then
+            for _, kb in ipairs(Window._keybinds) do
+                if kb.Key == i.KeyCode.Name then
+                    if kb.Callback then
+                        task.spawn(kb.Callback)
+                    end
+                end
+            end
         end
     end)
     UserInputService.InputChanged:Connect(function(i)
@@ -810,6 +825,31 @@ function VonixeLib:CreateWindow(config)
             }, track)
             corner(99, thumb)
             
+            local hasKeybind = tConfig.HasKeybind or false
+            local currentKey = tConfig.Keybind or nil
+            
+            local kbBox, kbLbl, kbBtn
+            if hasKeybind then
+                kbBox = frame({
+                    Size             = UDim2.new(0, 40, 0, 22),
+                    Position         = UDim2.new(1, -100, 0.5, -11),
+                    BackgroundColor3 = Theme.BG,
+                    ZIndex           = 3,
+                }, row)
+                corner(6, kbBox)
+                stroke(Theme.STROKE, 1, kbBox)
+                kbLbl = label(currentKey and currentKey.Name or "...", 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Center, kbBox)
+                kbLbl.Size = UDim2.new(1, 0, 1, 0)
+                kbLbl.ZIndex = 4
+                
+                kbBtn = Instance.new("TextButton")
+                kbBtn.Size = UDim2.new(1, 0, 1, 0)
+                kbBtn.BackgroundTransparency = 1
+                kbBtn.Text = ""
+                kbBtn.ZIndex = 5
+                kbBtn.Parent = kbBox
+            end
+            
             local TogObj = {}
             local function set(v, fireCallback)
                 value = v
@@ -837,6 +877,31 @@ function VonixeLib:CreateWindow(config)
                 clickArea.MouseButton1Click:Connect(function() set(not value, true) end)
                 row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
                 row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+            end
+            
+            if hasKeybind then
+                local bindObj = { Key = currentKey and currentKey.Name or nil, Callback = function() set(not value, true) end }
+                table.insert(Window._keybinds, bindObj)
+                
+                kbBtn.MouseButton1Click:Connect(function()
+                    kbLbl.Text = "..."
+                    tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG3})
+                    Window._binding = true
+                    
+                    local conn
+                    conn = UserInputService.InputBegan:Connect(function(i, gpe)
+                        if i.UserInputType == Enum.UserInputType.Keyboard then
+                            local kName = i.KeyCode.Name
+                            bindObj.Key = kName
+                            kbLbl.Text = kName
+                            Window._binding = false
+                            tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
+                            conn:Disconnect()
+                        end
+                    end)
+                end)
+                kbBtn.MouseEnter:Connect(function() tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG3}) end)
+                kbBtn.MouseLeave:Connect(function() if not Window._binding then tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG}) end end)
             end
             
             TogObj.Value = value
@@ -1849,6 +1914,31 @@ function VonixeLib:CreateWindow(config)
             nameLbl.Position = UDim2.new(0, 42, 0, 0)
             nameLbl.ZIndex   = 2
             
+            local hasKeybind = cConfig.HasKeybind or false
+            local currentKey = cConfig.Keybind or nil
+            
+            local kbBox, kbLbl, kbBtn
+            if hasKeybind then
+                kbBox = frame({
+                    Size             = UDim2.new(0, 40, 0, 22),
+                    Position         = UDim2.new(1, -54, 0.5, -11),
+                    BackgroundColor3 = Theme.BG,
+                    ZIndex           = 3,
+                }, row)
+                corner(6, kbBox)
+                stroke(Theme.STROKE, 1, kbBox)
+                kbLbl = label(currentKey and currentKey.Name or "...", 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Center, kbBox)
+                kbLbl.Size = UDim2.new(1, 0, 1, 0)
+                kbLbl.ZIndex = 4
+                
+                kbBtn = Instance.new("TextButton")
+                kbBtn.Size = UDim2.new(1, 0, 1, 0)
+                kbBtn.BackgroundTransparency = 1
+                kbBtn.Text = ""
+                kbBtn.ZIndex = 5
+                kbBtn.Parent = kbBox
+            end
+            
             local clickArea = Instance.new("TextButton")
             clickArea.Size            = UDim2.new(1, 0, 1, 0)
             clickArea.BackgroundTransparency = 1
@@ -1892,11 +1982,102 @@ function VonixeLib:CreateWindow(config)
                 end)
             end
             
+            if hasKeybind then
+                local bindObj = { Key = currentKey and currentKey.Name or nil, Callback = function() set(not value, true) end }
+                table.insert(Window._keybinds, bindObj)
+                
+                kbBtn.MouseButton1Click:Connect(function()
+                    kbLbl.Text = "..."
+                    tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG3})
+                    Window._binding = true
+                    
+                    local conn
+                    conn = UserInputService.InputBegan:Connect(function(i, gpe)
+                        if i.UserInputType == Enum.UserInputType.Keyboard then
+                            local kName = i.KeyCode.Name
+                            bindObj.Key = kName
+                            kbLbl.Text = kName
+                            Window._binding = false
+                            tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
+                            conn:Disconnect()
+                        end
+                    end)
+                end)
+                kbBtn.MouseEnter:Connect(function() tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG3}) end)
+                kbBtn.MouseLeave:Connect(function() if not Window._binding then tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG}) end end)
+            end
+            
             ChkObj.Value = value
             function ChkObj:SetValue(v) set(v, true) end
             function ChkObj:SetValueSilent(v) set(v, false); ChkObj.Value = v end
             function ChkObj:SetTitle(t) nameLbl.Text = t end
             return ChkObj
+        end
+        function Tab:AddKeybind(kConfig)
+            local targetParent = self._container or tabContent
+            local currentKey = kConfig.Default or kConfig.Keybind or nil
+            
+            local row = frame({
+                Size             = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = Theme.BG2,
+            }, targetParent)
+            corner(8, row)
+            stroke(Theme.STROKE, 1, row)
+            
+            local nameLbl = label(kConfig.Title or "Keybind", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
+            nameLbl.Size     = UDim2.new(1, -70, 1, 0)
+            nameLbl.Position = UDim2.new(0, 14, 0, 0)
+            nameLbl.ZIndex   = 2
+            
+            local kbBox = frame({
+                Size             = UDim2.new(0, 70, 0, 22),
+                Position         = UDim2.new(1, -84, 0.5, -11),
+                BackgroundColor3 = Theme.BG,
+                ZIndex           = 3,
+            }, row)
+            corner(6, kbBox)
+            stroke(Theme.STROKE, 1, kbBox)
+            
+            local kbLbl = label(currentKey and currentKey.Name or "...", 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Center, kbBox)
+            kbLbl.Size = UDim2.new(1, 0, 1, 0)
+            kbLbl.ZIndex = 4
+            
+            local kbBtn = Instance.new("TextButton")
+            kbBtn.Size = UDim2.new(1, 0, 1, 0)
+            kbBtn.BackgroundTransparency = 1
+            kbBtn.Text = ""
+            kbBtn.ZIndex = 5
+            kbBtn.Parent = kbBox
+            
+            local bindObj = { Key = currentKey and currentKey.Name or nil, Callback = function() if kConfig.Callback then task.spawn(kConfig.Callback, bindObj.Key) end end }
+            table.insert(Window._keybinds, bindObj)
+            
+            kbBtn.MouseButton1Click:Connect(function()
+                kbLbl.Text = "..."
+                tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG3})
+                Window._binding = true
+                
+                local conn
+                conn = UserInputService.InputBegan:Connect(function(i, gpe)
+                    if i.UserInputType == Enum.UserInputType.Keyboard then
+                        local kName = i.KeyCode.Name
+                        bindObj.Key = kName
+                        kbLbl.Text = kName
+                        Window._binding = false
+                        tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
+                        if kConfig.OnBind then task.spawn(kConfig.OnBind, kName) end
+                        conn:Disconnect()
+                    end
+                end)
+            end)
+            kbBtn.MouseEnter:Connect(function() tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG3}) end)
+            kbBtn.MouseLeave:Connect(function() if not Window._binding then tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG}) end end)
+            
+            local KbObj = {}
+            function KbObj:SetValue(v)
+                if type(v) == "string" then bindObj.Key = v; kbLbl.Text = v end
+            end
+            return KbObj
         end
         Tab.Button   = Tab.AddButton
         Tab.Toggle   = Tab.AddToggle

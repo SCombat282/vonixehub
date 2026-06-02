@@ -890,7 +890,11 @@ function VonixeLib:CreateWindow(config)
                 table.insert(Window._keybinds, bindObj)
                 
                 kbBtn.MouseButton1Click:Connect(function()
+                    if Window._binding then return end
                     kbLbl.Text = "..."
+                    kbLbl.TextColor3 = Theme.ACCENT2
+                    local strk = kbBox:FindFirstChildOfClass("UIStroke")
+                    if strk then tween(strk, 0.1, {Color = Theme.ACCENT2}) end
                     tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG3})
                     Window._binding = true
                     
@@ -898,8 +902,18 @@ function VonixeLib:CreateWindow(config)
                     conn = UserInputService.InputBegan:Connect(function(i, gpe)
                         if i.UserInputType == Enum.UserInputType.Keyboard then
                             local kName = i.KeyCode.Name
+                            if kName == "Unknown" then return end
                             bindObj.Key = kName
                             kbLbl.Text = kName
+                            kbLbl.TextColor3 = Theme.TEXT2
+                            if strk then tween(strk, 0.1, {Color = Theme.STROKE}) end
+                            Window._binding = false
+                            tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
+                            conn:Disconnect()
+                        elseif i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.MouseButton2 or i.UserInputType == Enum.UserInputType.Touch then
+                            kbLbl.Text = bindObj.Key or "..."
+                            kbLbl.TextColor3 = Theme.TEXT2
+                            if strk then tween(strk, 0.1, {Color = Theme.STROKE}) end
                             Window._binding = false
                             tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
                             conn:Disconnect()
@@ -1993,7 +2007,11 @@ function VonixeLib:CreateWindow(config)
                 table.insert(Window._keybinds, bindObj)
                 
                 kbBtn.MouseButton1Click:Connect(function()
+                    if Window._binding then return end
                     kbLbl.Text = "..."
+                    kbLbl.TextColor3 = Theme.ACCENT2
+                    local strk = kbBox:FindFirstChildOfClass("UIStroke")
+                    if strk then tween(strk, 0.1, {Color = Theme.ACCENT2}) end
                     tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG3})
                     Window._binding = true
                     
@@ -2001,8 +2019,18 @@ function VonixeLib:CreateWindow(config)
                     conn = UserInputService.InputBegan:Connect(function(i, gpe)
                         if i.UserInputType == Enum.UserInputType.Keyboard then
                             local kName = i.KeyCode.Name
+                            if kName == "Unknown" then return end
                             bindObj.Key = kName
                             kbLbl.Text = kName
+                            kbLbl.TextColor3 = Theme.TEXT2
+                            if strk then tween(strk, 0.1, {Color = Theme.STROKE}) end
+                            Window._binding = false
+                            tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
+                            conn:Disconnect()
+                        elseif i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.MouseButton2 or i.UserInputType == Enum.UserInputType.Touch then
+                            kbLbl.Text = bindObj.Key or "..."
+                            kbLbl.TextColor3 = Theme.TEXT2
+                            if strk then tween(strk, 0.1, {Color = Theme.STROKE}) end
                             Window._binding = false
                             tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
                             conn:Disconnect()
@@ -2059,7 +2087,11 @@ function VonixeLib:CreateWindow(config)
             table.insert(Window._keybinds, bindObj)
             
             kbBtn.MouseButton1Click:Connect(function()
+                if Window._binding then return end
                 kbLbl.Text = "..."
+                kbLbl.TextColor3 = Theme.ACCENT2
+                local strk = kbBox:FindFirstChildOfClass("UIStroke")
+                if strk then tween(strk, 0.1, {Color = Theme.ACCENT2}) end
                 tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG3})
                 Window._binding = true
                 
@@ -2067,11 +2099,21 @@ function VonixeLib:CreateWindow(config)
                 conn = UserInputService.InputBegan:Connect(function(i, gpe)
                     if i.UserInputType == Enum.UserInputType.Keyboard then
                         local kName = i.KeyCode.Name
+                        if kName == "Unknown" then return end
                         bindObj.Key = kName
                         kbLbl.Text = kName
+                        kbLbl.TextColor3 = Theme.TEXT2
+                        if strk then tween(strk, 0.1, {Color = Theme.STROKE}) end
                         Window._binding = false
                         tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
                         if kConfig.OnBind then task.spawn(kConfig.OnBind, kName) end
+                        conn:Disconnect()
+                    elseif i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.MouseButton2 or i.UserInputType == Enum.UserInputType.Touch then
+                        kbLbl.Text = bindObj.Key or "..."
+                        kbLbl.TextColor3 = Theme.TEXT2
+                        if strk then tween(strk, 0.1, {Color = Theme.STROKE}) end
+                        Window._binding = false
+                        tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG})
                         conn:Disconnect()
                     end
                 end)

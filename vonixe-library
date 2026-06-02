@@ -485,8 +485,9 @@ function VonixeLib:CreateWindow(config)
         if rbDragging then return end
         if gpe then return end
         if not Window._binding and i.UserInputType == Enum.UserInputType.Keyboard then
+            local kName = i.KeyCode.Name
             for _, kb in ipairs(Window._keybinds) do
-                if kb.Key == i.KeyCode.Name then
+                if type(kb.Key) == "string" and string.lower(kb.Key) == string.lower(kName) then
                     if kb.Callback then
                         task.spawn(kb.Callback)
                     end
@@ -2832,19 +2833,6 @@ function VonixeLib:CreateWindow(config)
         end
         return fakeSection
     end
-    
-    UserInputService.InputBegan:Connect(function(i, gpe)
-        if gpe then return end
-        if Window._binding then return end
-        if i.UserInputType == Enum.UserInputType.Keyboard then
-            local kName = i.KeyCode.Name
-            for _, bind in ipairs(Window._keybinds) do
-                if type(bind.Key) == "string" and string.lower(bind.Key) == string.lower(kName) and bind.Callback then
-                    task.spawn(bind.Callback)
-                end
-            end
-        end
-    end)
     
     function Window:ToggleVisibility()
         if main.Visible then

@@ -645,6 +645,12 @@ function VonixeLib:CreateWindow(config)
         return overlay
     end
 
+    function Window:ToggleVisibility()
+        if sg then
+            sg.Enabled = not sg.Enabled
+        end
+    end
+
     function Window:AddTab(tabConfig)
         local tabName = tabConfig.Title or "Tab"
         local tabIcon = tabConfig.Icon or ""
@@ -863,7 +869,7 @@ function VonixeLib:CreateWindow(config)
             set(value, false)
             
             local clickArea = Instance.new("TextButton")
-            clickArea.Size            = UDim2.new(1, 0, 1, 0)
+            clickArea.Size            = UDim2.new(1, hasKeybind and -110 or -60, 1, 0)
             clickArea.BackgroundTransparency = 1
             clickArea.Text            = ""
             clickArea.ZIndex          = 4
@@ -1940,7 +1946,7 @@ function VonixeLib:CreateWindow(config)
             end
             
             local clickArea = Instance.new("TextButton")
-            clickArea.Size            = UDim2.new(1, 0, 1, 0)
+            clickArea.Size            = UDim2.new(1, hasKeybind and -60 or 0, 1, 0)
             clickArea.BackgroundTransparency = 1
             clickArea.Text            = ""
             clickArea.ZIndex          = 4

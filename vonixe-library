@@ -780,28 +780,28 @@ function VonixeLib:CreateWindow(config)
         function Tab:AddToggle(tConfig)
             local value = tConfig.Value or false
             local row = frame({
-                Size             = UDim2.new(1, 0, 0, 34),
+                Size             = UDim2.new(1, 0, 0, 40),
                 BackgroundColor3 = Theme.BG2,
             }, tabContent)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
             
             local nameLbl = label(tConfig.Title or "Toggle", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
-            nameLbl.Size     = UDim2.new(1, -70, 0, 16)
-            nameLbl.Position = UDim2.new(0, 12, 0, 9)
+            nameLbl.Size     = UDim2.new(1, -70, 1, 0)
+            nameLbl.Position = UDim2.new(0, 14, 0, 0)
             nameLbl.ZIndex   = 2
             
             local track = frame({
-                Size             = UDim2.new(0, 36, 0, 18),
-                Position         = UDim2.new(1, -48, 0.5, -9),
+                Size             = UDim2.new(0, 44, 0, 22),
+                Position         = UDim2.new(1, -54, 0.5, -11),
                 BackgroundColor3 = value and Theme.TOGGLE_ON or Theme.TOGGLE_OFF,
                 ZIndex           = 2,
             }, row)
             corner(99, track)
             
             local thumb = frame({
-                Size             = UDim2.new(0, 12, 0, 12),
-                Position         = value and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6),
+                Size             = UDim2.new(0, 16, 0, 16),
+                Position         = value and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8),
                 BackgroundColor3 = Theme.TEXT,
                 ZIndex           = 3,
             }, track)
@@ -812,7 +812,7 @@ function VonixeLib:CreateWindow(config)
                 value = v
                 TogObj.Value = v
                 tween(track, 0.25, {BackgroundColor3 = v and Theme.TOGGLE_ON or Theme.TOGGLE_OFF}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                tween(thumb, 0.25, {Position = v and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                tween(thumb, 0.25, {Position = v and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
                 if fireCallback and tConfig.Callback then
                     task.spawn(tConfig.Callback, v)
                 end
@@ -853,7 +853,7 @@ function VonixeLib:CreateWindow(config)
             local value = math.clamp(sConfig.Value or sConfig.Default or min, min, max)
             local step  = sConfig.Step or 1
             local row = frame({
-                Size             = UDim2.new(1, 0, 0, 44),
+                Size             = UDim2.new(1, 0, 0, 56),
                 BackgroundColor3 = Theme.BG2,
             }, tabContent)
             corner(8, row)
@@ -861,21 +861,22 @@ function VonixeLib:CreateWindow(config)
             
             local nameLbl = label(sConfig.Title or "Slider", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
             nameLbl.Size     = UDim2.new(1, -60, 0, 20)
-            nameLbl.Position = UDim2.new(0, 12, 0, 4)
+            nameLbl.Position = UDim2.new(0, 14, 0, 10)
             nameLbl.ZIndex   = 2
             
-            local valLbl = label(tostring(value), 12, Enum.Font.GothamBold, Theme.TEXT, Enum.TextXAlignment.Right, row)
+            local valLbl = label(tostring(value), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
             valLbl.Size     = UDim2.new(0, 50, 0, 20)
-            valLbl.Position = UDim2.new(1, -60, 0, 4)
+            valLbl.Position = UDim2.new(1, -62, 0, 10)
             valLbl.ZIndex   = 2
             
             local trackBg = frame({
-                Size             = UDim2.new(1, -24, 0, 8),
-                Position         = UDim2.new(0, 12, 0, 28),
+                Size             = UDim2.new(1, -28, 0, 10),
+                Position         = UDim2.new(0, 14, 0, 36),
                 BackgroundColor3 = Theme.BG4,
                 ZIndex           = 2,
             }, row)
             corner(99, trackBg)
+            stroke(Theme.STROKE, 1, trackBg)
             
             local fill = frame({
                 Size             = UDim2.new((value - min) / (max - min), 0, 1, 0),
@@ -884,14 +885,6 @@ function VonixeLib:CreateWindow(config)
             }, trackBg)
             corner(99, fill)
             gradient(Theme.ACCENT1, Theme.ACCENT2, 0, fill)
-            
-            local thumb = frame({
-                Size             = UDim2.new(0, 12, 0, 12),
-                Position         = UDim2.new((value - min) / (max - min), -6, 0.5, -6),
-                BackgroundColor3 = Theme.TEXT,
-                ZIndex           = 4,
-            }, trackBg)
-            corner(99, thumb)
             
             local SlObj = {}
             local function setValue(v, fireCallback)
@@ -912,24 +905,23 @@ function VonixeLib:CreateWindow(config)
                 applyOverlayLock(Window, row, "Premium")
             else
                 local draggingSlider = false
-                local function updateSl(i)
-                    local abs = trackBg.AbsolutePosition
-                    local siz = trackBg.AbsoluteSize
-                    local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
-                    setValue(min + ratio * (max - min), true)
-                end
-                
                 row.InputBegan:Connect(function(i)
                     if i.UserInputType == Enum.UserInputType.MouseButton1
                     or i.UserInputType == Enum.UserInputType.Touch then
                         draggingSlider = true
-                        updateSl(i)
+                        local abs = trackBg.AbsolutePosition
+                        local siz = trackBg.AbsoluteSize
+                        local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
+                        setValue(min + ratio * (max - min), true)
                     end
                 end)
                 UserInputService.InputChanged:Connect(function(i)
                     if draggingSlider and (i.UserInputType == Enum.UserInputType.MouseMovement
                     or i.UserInputType == Enum.UserInputType.Touch) then
-                        updateSl(i)
+                        local abs = trackBg.AbsolutePosition
+                        local siz = trackBg.AbsoluteSize
+                        local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
+                        setValue(min + ratio * (max - min), true)
                     end
                 end)
                 UserInputService.InputEnded:Connect(function(i)
@@ -963,13 +955,13 @@ function VonixeLib:CreateWindow(config)
             local opened = false
             local DdObj  = {} 
             local wrapper = frame({
-                Size             = UDim2.new(1, 0, 0, 34),
+                Size             = UDim2.new(1, 0, 0, 36),
                 BackgroundTransparency = 1,
                 AutomaticSize    = Enum.AutomaticSize.Y,
                 ZIndex           = 10,
             }, tabContent)
             local row = frame({
-                Size             = UDim2.new(1, 0, 0, 34),
+                Size             = UDim2.new(1, 0, 0, 40),
                 BackgroundColor3 = Theme.BG2,
                 ZIndex           = 10,
             }, wrapper)
@@ -978,7 +970,7 @@ function VonixeLib:CreateWindow(config)
             
             local nameLbl = label(dConfig.Title or "Dropdown", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
             nameLbl.Size     = UDim2.new(0.5, -10, 1, 0)
-            nameLbl.Position = UDim2.new(0, 12, 0, 0)
+            nameLbl.Position = UDim2.new(0, 10, 0, 0)
             nameLbl.ZIndex   = 11
             
             local function formatValText(val)
@@ -992,7 +984,7 @@ function VonixeLib:CreateWindow(config)
                 end
             end
             local valLbl = label(formatValText(selected), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
-            valLbl.Size     = UDim2.new(0.5, -34, 1, 0)
+            valLbl.Size     = UDim2.new(0.5, -30, 1, 0)
             valLbl.Position = UDim2.new(0.5, 0, 0, 0)
             valLbl.ZIndex   = 11
             local arrowFrame = Instance.new("Frame")
@@ -1206,20 +1198,20 @@ function VonixeLib:CreateWindow(config)
         end
         function Tab:AddInput(iConfig)
             local row = frame({
-                Size             = UDim2.new(1, 0, 0, 46),
+                Size             = UDim2.new(1, 0, 0, 58),
                 BackgroundColor3 = Theme.BG2,
             }, tabContent)
             corner(8, row)
             stroke(Theme.STROKE, 1, row)
             
-            local nameLbl = label(iConfig.Title or "Input", 11, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
+            local nameLbl = label(iConfig.Title or "Input", 11, Enum.Font.GothamBold, Theme.TEXT3, Enum.TextXAlignment.Left, row)
             nameLbl.Size     = UDim2.new(1, -28, 0, 16)
-            nameLbl.Position = UDim2.new(0, 12, 0, 4)
+            nameLbl.Position = UDim2.new(0, 14, 0, 8)
             nameLbl.ZIndex   = 2
             
             local inputBox = Instance.new("TextBox")
-            inputBox.Size            = UDim2.new(1, -24, 0, 20)
-            inputBox.Position        = UDim2.new(0, 12, 0, 20)
+            inputBox.Size            = UDim2.new(1, -20, 0, 22)
+            inputBox.Position        = UDim2.new(0, 10, 0, 26)
             inputBox.BackgroundColor3 = Theme.INPUT_BG
             inputBox.BorderSizePixel = 0
             inputBox.Text            = iConfig.Value or ""

@@ -328,6 +328,8 @@ function VonixeLib:CreateWindow(config)
     Window._callbacks  = {}
     Window._keybinds   = {}
     Window._binding    = false
+    Window.Flags       = {}
+    Window.ConfigFolder = config.ConfigFolder or "VonixeHub"
     local sg = Instance.new("ScreenGui")
     sg.Name          = "VonixeLib_" .. title
     sg.ResetOnSpawn  = false
@@ -661,8 +663,17 @@ function VonixeLib:CreateWindow(config)
     end
 
     function Window:ToggleVisibility()
-        if sg then
-            sg.Enabled = not sg.Enabled
+        if main.Visible then
+            tween(main, 0.25, {Size = UDim2.new(0, W, 0, 0)}, Enum.EasingStyle.Quint)
+            task.delay(0.25, function()
+                main.Visible = false
+                restoreBtn.Visible = true
+            end)
+        else
+            restoreBtn.Visible = false
+            main.Visible = true
+            main.Size = UDim2.new(0, W, 0, 0)
+            tween(main, 0.3, {Size = UDim2.new(0, W, 0, H)}, Enum.EasingStyle.Quint)
         end
     end
 
@@ -670,21 +681,6 @@ function VonixeLib:CreateWindow(config)
         if main:FindFirstChildWhichIsA("UICorner") then main:FindFirstChildWhichIsA("UICorner").CornerRadius = UDim.new(0, radius) end
         if bgo:FindFirstChildWhichIsA("UICorner") then bgo:FindFirstChildWhichIsA("UICorner").CornerRadius = UDim.new(0, math.max(0, radius - 1)) end
         if sidebar:FindFirstChildWhichIsA("UICorner") then sidebar:FindFirstChildWhichIsA("UICorner").CornerRadius = UDim.new(0, math.max(0, radius - 1)) end
-    end
-
-    Window._lockGui = false
-    function Window:SetLockGui(state)
-        Window._lockGui = state
-        if state then
-            RunService:BindToRenderStep("VonixeHub_LockGui", 3000, function()
-                if sg and sg.Enabled and Window._lockGui then
-                    UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-                    UserInputService.MouseIconEnabled = true
-                end
-            end)
-        else
-            pcall(function() RunService:UnbindFromRenderStep("VonixeHub_LockGui") end)
-        end
     end
 
     function Window:AddTab(tabConfig)
@@ -792,7 +788,9 @@ function VonixeLib:CreateWindow(config)
                 Position         = UDim2.new(0, 4, 0, 16),
                 BackgroundColor3 = Theme.STROKE,
             }, sec)
-            return sec
+            local SecObj = {}
+            function SecObj:SetTitle(t) secLbl.Text = t:upper() end
+            return SecObj
         end
         function Tab:AddButton(bConfig)
             local targetParent = self._container or tabContent
@@ -978,6 +976,11 @@ function VonixeLib:CreateWindow(config)
                 TogObj.Value = v
             end
             function TogObj:SetTitle(t) nameLbl.Text = t end
+            
+            TogObj.Type = "Toggle"
+            local flag = tConfig.Flag or tConfig.Title
+            if flag then Window.Flags[flag] = TogObj end
+            
             return TogObj
         end
         function Tab:AddSlider(sConfig)
@@ -1070,8 +1073,14 @@ function VonixeLib:CreateWindow(config)
             end
             setValue(value, false)
             SlObj.Value = value
-            function SlObj:SetValue(v) setValue(v, false) end
+            function SlObj:SetValue(v) setValue(v, true) end
+            function SlObj:SetValueSilent(v) setValue(v, false) end
             function SlObj:SetTitle(t) nameLbl.Text = t end
+            
+            SlObj.Type = "Slider"
+            local flag = sConfig.Flag or sConfig.Title
+            if flag then Window.Flags[flag] = SlObj end
+            
             return SlObj
         end
         function Tab:AddDropdown(dConfig)
@@ -1329,6 +1338,11 @@ function VonixeLib:CreateWindow(config)
                 end
             end
             DdObj.SetOptions = DdObj.Refresh
+            
+            DdObj.Type = "Dropdown"
+            local flag = dConfig.Flag or dConfig.Title
+            if flag then Window.Flags[flag] = DdObj end
+            
             return DdObj
         end
         function Tab:AddInput(iConfig)
@@ -1390,6 +1404,11 @@ function VonixeLib:CreateWindow(config)
             end
             function InObj:SetValue(v) inputBox.Text = v; InObj.Value = v end
             function InObj:SetTitle(t) nameLbl.Text = t end
+            
+            InObj.Type = "Input"
+            local flag = iConfig.Flag or iConfig.Title
+            if flag then Window.Flags[flag] = InObj end
+            
             return InObj
         end
         function Tab:AddColorPicker(cConfig)
@@ -1784,6 +1803,11 @@ function VonixeLib:CreateWindow(config)
                 updateVisuals(false)
             end
             function CpObj:SetTitle(t) nameLbl.Text = t end
+            
+            CpObj.Type = "ColorPicker"
+            local flag = cConfig.Flag or cConfig.Title
+            if flag then Window.Flags[flag] = CpObj end
+            
             return CpObj
         end
         function Tab:AddMissionBar()
@@ -2242,6 +2266,11 @@ function VonixeLib:CreateWindow(config)
             function KbObj:SetValue(v)
                 if type(v) == "string" then bindObj.Key = v; kbLbl.Text = v end
             end
+            
+            KbObj.Type = "Keybind"
+            local flag = kConfig.Flag or kConfig.Title
+            if flag then Window.Flags[flag] = KbObj end
+            
             return KbObj
         end
         Tab.Button   = Tab.AddButton
@@ -2574,6 +2603,200 @@ function VonixeLib:CreateWindow(config)
         end
         return Monitor
     end
+    function Window:SaveConfig(name)
+        local HttpService = game:GetService("HttpService")
+        local configFolder = Window.ConfigFolder or "VonixeHub"
+        local configsFolder = configFolder .. "/Configs"
+        local path = configsFolder .. "/" .. name .. ".json"
+        
+        local data = {}
+        for flag, obj in pairs(Window.Flags) do
+            if obj.Type == "ColorPicker" then
+                data[flag] = {r = obj.Value.R, g = obj.Value.G, b = obj.Value.B}
+            else
+                data[flag] = obj.Value
+            end
+        end
+        
+        pcall(function()
+            if writefile then writefile(path, HttpService:JSONEncode(data)) end
+        end)
+    end
+
+    function Window:LoadConfig(name)
+        local HttpService = game:GetService("HttpService")
+        local configFolder = Window.ConfigFolder or "VonixeHub"
+        local configsFolder = configFolder .. "/Configs"
+        local path = configsFolder .. "/" .. name .. ".json"
+        
+        pcall(function()
+            if isfile and isfile(path) then
+                local data = HttpService:JSONDecode(readfile(path))
+                for flag, val in pairs(data) do
+                    local obj = Window.Flags[flag]
+                    if obj then
+                        if obj.Type == "ColorPicker" and type(val) == "table" and val.r and val.g and val.b then
+                            pcall(function() obj:SetValue(Color3.new(val.r, val.g, val.b)) end)
+                        else
+                            pcall(function() obj:SetValue(val) end)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+
+    function Window:BuildSettingsTab()
+        local SettingsTab = Window:AddTab({ Title = "Settings", Icon = "settings" })
+        local MenuSettings = SettingsTab:AddGroupbox({ Title = "Menu Settings" })
+        MenuSettings:AddSlider({
+            Title = "Corner Radius", Min = 0, Max = 20, Default = 14, Flag = "UI_CornerRadius",
+            Callback = function(v) Window:SetCornerRadius(v) end
+        })
+        MenuSettings:AddKeybind({
+            Title = "Menu bind", Keybind = Enum.KeyCode.RightShift, Flag = "UI_MenuBind",
+            Callback = function(key) Window:ToggleVisibility() end
+        })
+        
+        local ConfigGroup = SettingsTab:AddGroupbox({ Title = "Configuration" })
+        local configFolder = Window.ConfigFolder or "VonixeHub"
+        local configsFolder = configFolder .. "/Configs"
+        
+        local function ensureFolders()
+            pcall(function()
+                if makefolder then
+                    if not isfolder(configFolder) then makefolder(configFolder) end
+                    if not isfolder(configsFolder) then makefolder(configsFolder) end
+                end
+            end)
+        end
+        ensureFolders()
+        
+        local function getConfigs()
+            local list = {}
+            pcall(function()
+                if listfiles then
+                    for _, file in ipairs(listfiles(configsFolder)) do
+                        if file:match("%.json$") then
+                            local name = file:match("([^/\\]+)%.json$")
+                            if name then table.insert(list, name) end
+                        end
+                    end
+                end
+            end)
+            if #list == 0 then table.insert(list, "---") end
+            return list
+        end
+        
+        local configNameInp = ConfigGroup:AddInput({ Title = "Config name", Default = "", Flag = "UI_ConfigName" })
+        ConfigGroup:AddButton({
+            Title = "Create config",
+            Callback = function()
+                local name = configNameInp.Value
+                if name == "" then return end
+                Window:SaveConfig(name)
+                Window._configDropdown:Refresh(getConfigs())
+                Window._configDropdown:SetValue(name)
+                Window:Notify({Title="Success", Content="Created config: " .. name, Type="Success"})
+            end
+        })
+        
+        Window._configDropdown = ConfigGroup:AddDropdown({
+            Title = "Config list",
+            Options = getConfigs(),
+            Default = "---",
+            Flag = "UI_ConfigList"
+        })
+        
+        ConfigGroup:AddButton({
+            Title = "Load config",
+            Callback = function()
+                local name = Window._configDropdown.Value
+                if name and name ~= "---" then
+                    Window:LoadConfig(name)
+                    Window:Notify({Title="Success", Content="Loaded config: " .. name, Type="Success"})
+                end
+            end
+        })
+        ConfigGroup:AddButton({
+            Title = "Overwrite config",
+            Callback = function()
+                local name = Window._configDropdown.Value
+                if name and name ~= "---" then
+                    Window:SaveConfig(name)
+                    Window:Notify({Title="Success", Content="Overwrote config: " .. name, Type="Success"})
+                end
+            end
+        })
+        ConfigGroup:AddButton({
+            Title = "Delete config",
+            Callback = function()
+                local name = Window._configDropdown.Value
+                if name and name ~= "---" then
+                    pcall(function()
+                        if delfile then delfile(configsFolder .. "/" .. name .. ".json") end
+                    end)
+                    Window._configDropdown:Refresh(getConfigs())
+                    Window._configDropdown:SetValue("---")
+                    Window:Notify({Title="Success", Content="Deleted config: " .. name, Type="Success"})
+                end
+            end
+        })
+        ConfigGroup:AddButton({
+            Title = "Refresh list",
+            Callback = function()
+                Window._configDropdown:Refresh(getConfigs())
+                Window:Notify({Title="Success", Content="Refreshed config list", Type="Success"})
+            end
+        })
+        
+        local autoloadFile = configsFolder .. "/autoload.txt"
+        local function getAutoload()
+            local al = "none"
+            pcall(function()
+                if isfile and isfile(autoloadFile) then
+                    al = readfile(autoloadFile)
+                end
+            end)
+            return al
+        end
+        
+        local autoloadSection = ConfigGroup:AddSection({ Title = "Current autoload config: " .. getAutoload() })
+        
+        ConfigGroup:AddButton({
+            Title = "Set as autoload",
+            Callback = function()
+                local name = Window._configDropdown.Value
+                if name and name ~= "---" then
+                    pcall(function()
+                        if writefile then writefile(autoloadFile, name) end
+                    end)
+                    autoloadSection:SetTitle("Current autoload config: " .. name)
+                    Window:Notify({Title="Success", Content="Set autoload to: " .. name, Type="Success"})
+                end
+            end
+        })
+        ConfigGroup:AddButton({
+            Title = "Reset autoload",
+            Callback = function()
+                pcall(function()
+                    if isfile and isfile(autoloadFile) then delfile(autoloadFile) end
+                end)
+                autoloadSection:SetTitle("Current autoload config: none")
+                Window:Notify({Title="Success", Content="Autoload config reset", Type="Success"})
+            end
+        })
+        
+        local al = getAutoload()
+        if al ~= "none" then
+            task.spawn(function()
+                task.wait(1)
+                Window:LoadConfig(al)
+                Window:Notify({Title="Autoload", Content="Loaded autoload config: " .. al, Type="Success"})
+            end)
+        end
+    end
+
     Window.Section = function(self, cfg)
         local fakeSection = {}
         fakeSection.Tab = function(self2, tabCfg)

@@ -1359,6 +1359,7 @@ function VonixeLib:CreateWindow(config)
             local h, s, v = defaultColor:ToHSV()
             local opened = false
             local CpObj = {}
+            local disabled = false
             local hasToggle = cConfig.HasToggle or false
             local hasCheckbox = cConfig.HasCheckbox or false
             local toggleValue = cConfig.ToggleValue or false
@@ -1679,16 +1680,50 @@ function VonixeLib:CreateWindow(config)
                 end
             end
             
+            local dependsOn = cConfig.DependsOn or nil
+            local disabledOverlay
+            if dependsOn then
+                disabledOverlay = frame({
+                    Size = UDim2.new(1, 0, 1, 0),
+                    BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                    BackgroundTransparency = 0.6,
+                    ZIndex = 15,
+                }, row)
+                corner(8, disabledOverlay)
+                disabledOverlay.Visible = not (dependsOn.Value == true)
+                disabled = not (dependsOn.Value == true)
+            end
+            
+            function CpObj:SetEnabled(enabled)
+                disabled = not enabled
+                if disabledOverlay then
+                    disabledOverlay.Visible = not enabled
+                end
+            end
+            
+            if dependsOn and dependsOn._dependents then
+                table.insert(dependsOn._dependents, CpObj)
+            end
+            
             if cConfig.Maintenance then
                 applyOverlayLock(Window, row, "Maintenance")
             elseif cConfig.Locked then
                 applyOverlayLock(Window, row, "Premium")
             else
-                colorBtn.MouseButton1Click:Connect(toggleMenu)
+                colorBtn.MouseButton1Click:Connect(function()
+                    if disabled then return end
+                    toggleMenu()
+                end)
                 if hasToggle or hasCheckbox then
-                    clickArea.MouseButton1Click:Connect(function() setToggle(not toggleValue, true) end)
+                    clickArea.MouseButton1Click:Connect(function()
+                        if disabled then return end
+                        setToggle(not toggleValue, true)
+                    end)
                 else
-                    clickArea.MouseButton1Click:Connect(toggleMenu)
+                    clickArea.MouseButton1Click:Connect(function()
+                        if disabled then return end
+                        toggleMenu()
+                    end)
                 end
                 
                 if hasCheckbox then

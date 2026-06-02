@@ -928,8 +928,9 @@ function VonixeLib:CreateWindow(config)
                 row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
             end
             
+            local bindObj
             if hasKeybind then
-                local bindObj = { Key = currentKey and currentKey.Name or nil, Callback = function() set(not value, true) end }
+                bindObj = { Key = currentKey and currentKey.Name or nil, Callback = function() set(not value, true) end }
                 table.insert(Window._keybinds, bindObj)
                 
                 kbBtn.MouseButton1Click:Connect(function()

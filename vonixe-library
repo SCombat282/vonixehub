@@ -1308,10 +1308,9 @@ function VonixeLib:CreateWindow(config)
                 corner(4, cbox)
                 stroke(toggleValue and Theme.TOGGLE_ON or Theme.STROKE, 1, cbox)
                 
-                ccheck = label(getIcon("check"), 12, Enum.Font.Gotham, Theme.BG, Enum.TextXAlignment.Center, cbox)
-                ccheck.Size = UDim2.new(1, 0, 1, 0)
-                ccheck.TextTransparency = toggleValue and 0 or 1
-                ccheck.ZIndex = 12
+                ccheck = mkIcon("check", 14, Theme.BG, cbox, 12)
+                ccheck.Position = UDim2.new(0.5, -7, 0.5, -7)
+                ccheck.Visible = toggleValue
                 
                 nameLbl.TextColor3 = toggleValue and Theme.TEXT or Theme.TEXT2
             end
@@ -1581,7 +1580,7 @@ function VonixeLib:CreateWindow(config)
                     tween(cbox, 0.15, {BackgroundColor3 = v and Theme.TOGGLE_ON or Theme.BG2})
                     local s = cbox:FindFirstChildWhichIsA("UIStroke")
                     if s then tween(s, 0.15, {Color = v and Theme.TOGGLE_ON or Theme.STROKE}) end
-                    tween(ccheck, 0.15, {TextTransparency = v and 0 or 1})
+                    ccheck.Visible = v
                     tween(nameLbl, 0.15, {TextColor3 = v and Theme.TEXT or Theme.TEXT2})
                 end
                 if fireCb and cConfig.ToggleCallback then
@@ -1792,9 +1791,8 @@ function VonixeLib:CreateWindow(config)
             titleLbl.Size = UDim2.new(1, -36, 1, 0)
             
             if gConfig.Icon then
-                local icn = label("", 14, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Center, topBar)
-                icn.Text = getIcon(gConfig.Icon)
-                icn.Size = UDim2.new(0, 36, 1, 0)
+                local icn = mkIcon(gConfig.Icon, 16, Theme.TEXT2, topBar, 2)
+                icn.Position = UDim2.new(0, 10, 0.5, -8)
                 titleLbl.Position = UDim2.new(0, 36, 0, 0)
             else
                 titleLbl.Position = UDim2.new(0, 14, 0, 0)
@@ -1842,10 +1840,9 @@ function VonixeLib:CreateWindow(config)
             corner(4, box)
             stroke(value and Theme.TOGGLE_ON or Theme.STROKE, 1, box)
             
-            local check = label(getIcon("check"), 12, Enum.Font.Gotham, Theme.BG, Enum.TextXAlignment.Center, box)
-            check.Size = UDim2.new(1, 0, 1, 0)
-            check.TextTransparency = value and 0 or 1
-            check.ZIndex = 3
+            local check = mkIcon("check", 14, Theme.BG, box, 3)
+            check.Position = UDim2.new(0.5, -7, 0.5, -7)
+            check.Visible = value
             
             local nameLbl = label(cConfig.Title or "Checkbox", 12, Enum.Font.Gotham, value and Theme.TEXT or Theme.TEXT2, Enum.TextXAlignment.Left, row)
             nameLbl.Size     = UDim2.new(1, -50, 1, 0)
@@ -1867,13 +1864,13 @@ function VonixeLib:CreateWindow(config)
                     tween(box, 0.15, {BackgroundColor3 = Theme.TOGGLE_ON})
                     local s = box:FindFirstChildWhichIsA("UIStroke")
                     if s then tween(s, 0.15, {Color = Theme.TOGGLE_ON}) end
-                    tween(check, 0.15, {TextTransparency = 0})
+                    check.Visible = true
                     tween(nameLbl, 0.15, {TextColor3 = Theme.TEXT})
                 else
                     tween(box, 0.15, {BackgroundColor3 = Theme.BG2})
                     local s = box:FindFirstChildWhichIsA("UIStroke")
                     if s then tween(s, 0.15, {Color = Theme.STROKE}) end
-                    tween(check, 0.15, {TextTransparency = 1})
+                    check.Visible = false
                     tween(nameLbl, 0.15, {TextColor3 = Theme.TEXT2})
                 end
                 if fireCallback and cConfig.Callback then

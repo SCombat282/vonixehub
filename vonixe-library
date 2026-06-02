@@ -2979,8 +2979,7 @@ function VonixeLib:CreateKeySystem(config)
             local lib=loadstring(src)(); lib.SetIconsType("lucide")
             return lib.Icon("x")
         end)
-        if true then
-            r = {"rbxassetid://10733433644", {ImageRectSize=Vector2.new(0,0), ImageRectPosition=Vector2.new(0,0)}};
+        ok = true; r = {"rbxassetid://10733433644", {ImageRectSize=Vector2.new(0,0), ImageRectPosition=Vector2.new(0,0)}};
             if ok and r and r[1] then
             closeIcoImg.Image=r[1]
             if r[2] and r[2].ImageRectSize and r[2].ImageRectSize.X>0 then

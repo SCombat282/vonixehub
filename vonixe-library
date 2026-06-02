@@ -2197,6 +2197,7 @@ function VonixeLib:CreateWindow(config)
         function Tab:AddKeybind(kConfig)
             local targetParent = self._container or tabContent
             local currentKey = kConfig.Default or kConfig.Keybind or nil
+            local KbObj = {}
             
             local row = frame({
                 Size             = UDim2.new(1, 0, 0, 40),
@@ -2269,7 +2270,6 @@ function VonixeLib:CreateWindow(config)
             kbBtn.MouseEnter:Connect(function() tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG3}) end)
             kbBtn.MouseLeave:Connect(function() if not Window._binding then tween(kbBox, 0.1, {BackgroundColor3 = Theme.BG}) end end)
             
-            local KbObj = {}
             function KbObj:SetValue(v)
                 if type(v) == "string" then bindObj.Key = v; kbLbl.Text = v; KbObj.Value = v end
             end
@@ -2825,6 +2825,21 @@ function VonixeLib:CreateWindow(config)
             end
         end
     end)
+    
+    function Window:ToggleVisibility()
+        if main.Visible then
+            tween(main, 0.25, {Size = UDim2.new(0, W, 0, 0)}, Enum.EasingStyle.Quint)
+            task.delay(0.25, function()
+                main.Visible = false
+                restoreBtn.Visible = true
+            end)
+        else
+            restoreBtn.Visible = false
+            main.Visible = true
+            main.Size = UDim2.new(0, W, 0, 0)
+            tween(main, 0.3, {Size = UDim2.new(0, W, 0, H)}, Enum.EasingStyle.Quint)
+        end
+    end
     
     return Window
 end

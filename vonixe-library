@@ -1256,6 +1256,181 @@ function VonixeLib:CreateWindow(config)
             function InObj:SetTitle(t) nameLbl.Text = t end
             return InObj
         end
+        function Tab:AddColorPicker(cConfig)
+            local defaultColor = cConfig.Default or Color3.fromRGB(255, 255, 255)
+            local color = defaultColor
+            local opened = false
+            local CpObj = {}
+            
+            local wrapper = frame({
+                Size             = UDim2.new(1, 0, 0, 40),
+                BackgroundTransparency = 1,
+                AutomaticSize    = Enum.AutomaticSize.Y,
+                ZIndex           = 10,
+            }, tabContent)
+            
+            local wLayout = Instance.new("UIListLayout")
+            wLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            wLayout.Padding   = UDim.new(0, 4)
+            wLayout.Parent    = wrapper
+            
+            local row = frame({
+                Size             = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = Theme.BG2,
+                ZIndex           = 10,
+            }, wrapper)
+            corner(8, row)
+            stroke(Theme.STROKE, 1, row)
+            
+            local nameLbl = label(cConfig.Title or "Color Picker", 13, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, row)
+            nameLbl.Size     = UDim2.new(0.5, -10, 1, 0)
+            nameLbl.Position = UDim2.new(0, 14, 0, 0)
+            nameLbl.ZIndex   = 11
+            
+            local colorPreview = frame({
+                Size             = UDim2.new(0, 24, 0, 24),
+                Position         = UDim2.new(1, -34, 0.5, -12),
+                BackgroundColor3 = color,
+                ZIndex           = 11,
+            }, row)
+            corner(6, colorPreview)
+            stroke(Theme.STROKE2, 1, colorPreview)
+            
+            local menu = frame({
+                Size             = UDim2.new(1, 0, 0, 0),
+                BackgroundColor3 = Theme.BG,
+                ClipsDescendants = true,
+                ZIndex           = 9,
+            }, wrapper)
+            corner(8, menu)
+            stroke(Theme.STROKE, 1, menu)
+            menu.Visible = false
+            
+            local menuLayout = Instance.new("UIListLayout")
+            menuLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            menuLayout.Padding   = UDim.new(0, 8)
+            menuLayout.Parent    = menu
+            
+            padding(12, 12, 12, 12, menu)
+            
+            local function updateColorPreview()
+                tween(colorPreview, 0.1, {BackgroundColor3 = color})
+                if cConfig.Callback then
+                    task.spawn(cConfig.Callback, color)
+                end
+            end
+            
+            local function createColorSlider(title, colorName, initialVal)
+                local sRow = frame({
+                    Size             = UDim2.new(1, 0, 0, 24),
+                    BackgroundTransparency = 1,
+                    ZIndex           = 10,
+                }, menu)
+                
+                local sTitle = label(title, 11, Enum.Font.GothamSemibold, Theme.TEXT2, Enum.TextXAlignment.Left, sRow)
+                sTitle.Size = UDim2.new(0, 40, 1, 0)
+                
+                local sValLbl = label(tostring(math.floor(initialVal * 255)), 11, Enum.Font.GothamBold, Theme.TEXT, Enum.TextXAlignment.Right, sRow)
+                sValLbl.Size = UDim2.new(0, 30, 1, 0)
+                sValLbl.Position = UDim2.new(1, -30, 0, 0)
+                
+                local sTrackBg = frame({
+                    Size             = UDim2.new(1, -80, 0, 6),
+                    Position         = UDim2.new(0, 45, 0.5, -3),
+                    BackgroundColor3 = Theme.BG4,
+                    ZIndex           = 10,
+                }, sRow)
+                corner(99, sTrackBg)
+                
+                local sliderColor = colorName == "R" and Theme.RED or colorName == "G" and Theme.GREEN or colorName == "B" and Color3.fromRGB(80, 120, 255)
+                local sFill = frame({
+                    Size             = UDim2.new(initialVal, 0, 1, 0),
+                    BackgroundColor3 = sliderColor,
+                    ZIndex           = 11,
+                }, sTrackBg)
+                corner(99, sFill)
+                
+                local sThumb = frame({
+                    Size             = UDim2.new(0, 12, 0, 12),
+                    Position         = UDim2.new(initialVal, -6, 0.5, -6),
+                    BackgroundColor3 = Theme.TEXT,
+                    ZIndex           = 12,
+                }, sTrackBg)
+                corner(99, sThumb)
+                
+                local dragging = false
+                local function setSliderVal(i)
+                    local abs = sTrackBg.AbsolutePosition
+                    local siz = sTrackBg.AbsoluteSize
+                    local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
+                    tween(sFill, 0.1, {Size = UDim2.new(ratio, 0, 1, 0)})
+                    tween(sThumb, 0.1, {Position = UDim2.new(ratio, -6, 0.5, -6)})
+                    sValLbl.Text = tostring(math.floor(ratio * 255))
+                    
+                    local r = colorName == "R" and ratio or color.R
+                    local g = colorName == "G" and ratio or color.G
+                    local b = colorName == "B" and ratio or color.B
+                    color = Color3.new(r, g, b)
+                    updateColorPreview()
+                end
+                
+                sRow.InputBegan:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+                        dragging = true
+                        setSliderVal(i)
+                    end
+                end)
+                UserInputService.InputChanged:Connect(function(i)
+                    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+                        setSliderVal(i)
+                    end
+                end)
+                UserInputService.InputEnded:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+                        dragging = false
+                    end
+                end)
+            end
+            
+            createColorSlider("R", "R", color.R)
+            createColorSlider("G", "G", color.G)
+            createColorSlider("B", "B", color.B)
+            
+            local clickArea = Instance.new("TextButton")
+            clickArea.Size            = UDim2.new(1, 0, 1, 0)
+            clickArea.BackgroundTransparency = 1
+            clickArea.Text            = ""
+            clickArea.ZIndex          = 12
+            clickArea.Parent          = row
+            
+            if cConfig.Maintenance then
+                applyOverlayLock(Window, row, "Maintenance")
+            elseif cConfig.Locked then
+                applyOverlayLock(Window, row, "Premium")
+            else
+                clickArea.MouseButton1Click:Connect(function()
+                    opened = not opened
+                    if opened then
+                        menu.Visible = true
+                        local targetH = menuLayout.AbsoluteContentSize.Y + 24
+                        tween(menu, 0.2, {Size = UDim2.new(1, 0, 0, targetH)})
+                    else
+                        tween(menu, 0.15, {Size = UDim2.new(1, 0, 0, 0)})
+                        task.delay(0.15, function() menu.Visible = false end)
+                    end
+                end)
+                row.MouseEnter:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG3}) end)
+                row.MouseLeave:Connect(function() tween(row, 0.1, {BackgroundColor3 = Theme.BG2}) end)
+            end
+            
+            CpObj.Value = color
+            function CpObj:SetValue(newColor)
+                color = newColor
+                updateColorPreview()
+            end
+            function CpObj:SetTitle(t) nameLbl.Text = t end
+            return CpObj
+        end
         function Tab:AddMissionBar()
             local card = frame({
                 Size             = UDim2.new(1, 0, 0, 66),

@@ -1082,6 +1082,7 @@ function VonixeLib:CreateWindow(config)
             local SlObj = {}
             local function setValue(v, fireCallback)
                 v = math.clamp(math.floor(v / step + 0.5) * step, min, max)
+                v = math.round(v * 100000) / 100000 -- Fix floating point issues
                 value = v
                 SlObj.Value = v
                 local ratio = (v - min) / (max - min)

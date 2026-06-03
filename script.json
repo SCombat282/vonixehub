@@ -1,32 +1,7 @@
 [
   {
-    "Name": "Indo Strike",
-    "PlaceId": 78632820802305,
+    "Name": "Violence District",
+    "PlaceId": 93978595733734,
     "Url": "https://raw.githubusercontent.com/SCombat282/vonixehub/main/IndoStrike"
-  },
-  {
-    "Name": "Sawah Indo",
-    "PlaceId": 83369512629707,
-    "Url": "https://raw.githubusercontent.com/SCombat282/vonixehub/main/SawahIndo"
-  },
-  {
-    "Name": "Be a Lucky Block",
-    "PlaceId": 124473577469410,
-    "Url": "https://raw.githubusercontent.com/SCombat282/vonixehub/main/BeALuckyBlock"
-  },
-  {
-    "Name": "Fizhar",
-    "PlaceId": 121442629947656,
-    "Url": "https://raw.githubusercontent.com/SCombat282/vonixehub/main/fizhar"
-  },
-  {
-    "Name": "Sailor Piece",
-    "PlaceId": 77747658251236,
-    "Url": "https://raw.githubusercontent.com/SCombat282/vonixehub/main/SailorPiece"
-  },
-  {
-    "Name": "Bite By Night",
-    "PlaceId": 70845479499574,
-    "Url": "https://raw.githubusercontent.com/SCombat282/vonixehub/main/bitebynight"
   }
 ]

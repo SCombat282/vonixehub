@@ -1047,7 +1047,14 @@ function VonixeLib:CreateWindow(config)
             nameLbl.Position = UDim2.new(0, 14, 0, 10)
             nameLbl.ZIndex   = 2
             
-            local valLbl = label(tostring(value), 12, Enum.Font.GothamBold, Theme.ACCENT2, Enum.TextXAlignment.Right, row)
+            local valLbl = Instance.new("TextBox")
+            valLbl.BackgroundTransparency = 1
+            valLbl.Text = tostring(value)
+            valLbl.TextSize = 12
+            valLbl.Font = Enum.Font.GothamBold
+            valLbl.TextColor3 = Theme.ACCENT2
+            valLbl.TextXAlignment = Enum.TextXAlignment.Right
+            valLbl.Parent = row
             valLbl.Size     = UDim2.new(0, 50, 0, 20)
             valLbl.Position = UDim2.new(1, -62, 0, 10)
             valLbl.ZIndex   = 2
@@ -1081,6 +1088,15 @@ function VonixeLib:CreateWindow(config)
                     task.spawn(sConfig.Callback, v)
                 end
             end
+            
+            valLbl.FocusLost:Connect(function()
+                local num = tonumber(valLbl.Text)
+                if num then
+                    setValue(num, true)
+                else
+                    valLbl.Text = tostring(value)
+                end
+            end)
             
             if sConfig.Maintenance then
                 applyOverlayLock(Window, row, "Maintenance")

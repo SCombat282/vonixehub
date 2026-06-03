@@ -1048,16 +1048,19 @@ function VonixeLib:CreateWindow(config)
             nameLbl.ZIndex   = 2
             
             local valLbl = Instance.new("TextBox")
-            valLbl.BackgroundTransparency = 1
+            valLbl.BackgroundTransparency = 0
+            valLbl.BackgroundColor3 = Theme.BG4
             valLbl.Text = tostring(value)
             valLbl.TextSize = 12
             valLbl.Font = Enum.Font.GothamBold
             valLbl.TextColor3 = Theme.ACCENT2
-            valLbl.TextXAlignment = Enum.TextXAlignment.Right
+            valLbl.TextXAlignment = Enum.TextXAlignment.Center
             valLbl.Parent = row
-            valLbl.Size     = UDim2.new(0, 50, 0, 20)
-            valLbl.Position = UDim2.new(1, -62, 0, 10)
+            valLbl.Size     = UDim2.new(0, 42, 0, 20)
+            valLbl.Position = UDim2.new(1, -54, 0, 10)
             valLbl.ZIndex   = 2
+            corner(4, valLbl)
+            stroke(Theme.STROKE, 1, valLbl)
             
             local trackBg = frame({
                 Size             = UDim2.new(1, -28, 0, 10),

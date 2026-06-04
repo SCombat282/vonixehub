@@ -22,17 +22,36 @@ end
 local Icons = nil
 task.spawn(function()
     local src = nil
-    local ok1, res1 = pcall(function()
-        return game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
-    end)
-    if ok1 and res1 then
-        src = res1
+    
+    -- Coba baca dari cache file executor dulu (anti rate-limit Github)
+    if isfile and readfile and isfile("VonixeIcons_v2.txt") then
+        local ok, res = pcall(readfile, "VonixeIcons_v2.txt")
+        if ok and res and #res > 100 then
+            src = res
+        end
     end
+    
+    -- Kalo belom punya cache, download dari Github
+    if not src then
+        local ok1, res1 = pcall(function()
+            return game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
+        end)
+        if ok1 and res1 then
+            src = res1
+            -- Simpen hasil download ke file biar next hop ga usah download lagi
+            if writefile then pcall(writefile, "VonixeIcons_v2.txt", src) end
+        end
+    end
+    
+    -- Kalo game:HttpGet gagal, pake HttpService
     if not src then
         local ok2, res2 = pcall(function()
             return game:GetService("HttpService"):GetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
         end)
-        if ok2 and res2 then src = res2 end
+        if ok2 and res2 then 
+            src = res2 
+            if writefile then pcall(writefile, "VonixeIcons_v2.txt", src) end
+        end
     end
     if src then
         local ok3, lib = pcall(loadstring, src)

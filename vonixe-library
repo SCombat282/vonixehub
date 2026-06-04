@@ -54,6 +54,13 @@ task.spawn(function()
         end
     end
     if src then
+        -- INJEKSI CACHING KE DALAM FUNGSI GET MILIK MAIN-V2.LUA (Biar icon lucide dll juga di cache)
+        local cacheInjection1 = "local fn='VonixeIcon_'..(url:match('main/([^/]+)/dist') or 'main')..'.txt' if isfile and readfile and isfile(fn) then local c=readfile(fn) if c and #c>100 then return c end end local r=game:HttpGet(url) if writefile and r and #r>100 then pcall(writefile,fn,r) end return r"
+        local cacheInjection2 = "local fn='VonixeIcon_'..(url:match('main/([^/]+)/dist') or 'main')..'.txt' if isfile and readfile and isfile(fn) then local c=readfile(fn) if c and #c>100 then return c end end local r=game:GetService('HttpService'):GetAsync(url) if writefile and r and #r>100 then pcall(writefile,fn,r) end return r"
+        
+        src = string.gsub(src, "return game:HttpGet%(url%)", cacheInjection1)
+        src = string.gsub(src, "return HttpService:GetAsync%(url%)", cacheInjection2)
+
         local ok3, lib = pcall(loadstring, src)
         if ok3 and lib then
             local ok4, libInst = pcall(lib)

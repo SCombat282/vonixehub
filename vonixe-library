@@ -1872,6 +1872,7 @@ function VonixeLib:CreateWindow(config)
                 updateVisuals(false)
             end
             function CpObj:SetTitle(t) nameLbl.Text = t end
+            function CpObj:SetToggle(v, cb) setToggle(v, cb) end
             
             CpObj.Type = "ColorPicker"
             local flag = cConfig.Flag or cConfig.Title
@@ -2688,7 +2689,11 @@ function VonixeLib:CreateWindow(config)
         local data = {}
         for flag, obj in pairs(Window.Flags) do
             if obj.Type == "ColorPicker" then
-                data[flag] = {r = obj.Value.R, g = obj.Value.G, b = obj.Value.B}
+                local cpData = {r = obj.Value.R, g = obj.Value.G, b = obj.Value.B}
+                if obj.ToggleValue ~= nil then
+                    cpData.t = obj.ToggleValue
+                end
+                data[flag] = cpData
             else
                 data[flag] = obj.Value
             end
@@ -2713,6 +2718,9 @@ function VonixeLib:CreateWindow(config)
                     if obj then
                         if obj.Type == "ColorPicker" and type(val) == "table" and val.r and val.g and val.b then
                             pcall(function() obj:SetValue(Color3.new(val.r, val.g, val.b)) end)
+                            if val.t ~= nil and obj.SetToggle then
+                                pcall(function() obj:SetToggle(val.t, true) end)
+                            end
                         else
                             pcall(function() obj:SetValue(val) end)
                         end

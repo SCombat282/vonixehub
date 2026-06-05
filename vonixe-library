@@ -1076,7 +1076,7 @@ function VonixeLib:CreateWindow(config)
             local valLbl = Instance.new("TextBox")
             valLbl.BackgroundTransparency = 0
             valLbl.BackgroundColor3 = Theme.BG4
-            valLbl.Text = tostring(value)
+            valLbl.Text = step % 1 == 0 and tostring(value) or string.format("%.1f", value)
             valLbl.TextSize = 12
             valLbl.Font = Enum.Font.GothamBold
             valLbl.TextColor3 = Theme.ACCENT2
@@ -1113,7 +1113,7 @@ function VonixeLib:CreateWindow(config)
                 SlObj.Value = v
                 local ratio = (v - min) / (max - min)
                 tween(fill, 0.15, {Size = UDim2.new(ratio, 0, 1, 0)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                valLbl.Text = tostring(v)
+                valLbl.Text = step % 1 == 0 and tostring(v) or string.format("%.1f", v)
                 if fireCallback and sConfig.Callback then
                     task.spawn(sConfig.Callback, v)
                 end
@@ -1124,7 +1124,7 @@ function VonixeLib:CreateWindow(config)
                 if num then
                     setValue(num, true)
                 else
-                    valLbl.Text = tostring(value)
+                    valLbl.Text = step % 1 == 0 and tostring(value) or string.format("%.1f", value)
                 end
             end)
             
@@ -1417,7 +1417,7 @@ function VonixeLib:CreateWindow(config)
             function DdObj:SetValue(v)
                 selected = v
                 DdObj.Value = v
-                valLbl.Text = tostring(v)
+                valLbl.Text = step % 1 == 0 and tostring(v) or string.format("%.1f", v)
                 valLbl.Text = formatValText(v)
                 for _, vFunc in pairs(optViews) do vFunc(false) end
             end
@@ -1466,6 +1466,7 @@ function VonixeLib:CreateWindow(config)
             inputBox.Font            = Enum.Font.Gotham
             inputBox.TextXAlignment  = Enum.TextXAlignment.Left
             inputBox.ClearTextOnFocus = false
+            inputBox.ClipsDescendants = true
             inputBox.ZIndex          = 2
             inputBox.Parent          = row
             corner(6, inputBox)
@@ -3171,3 +3172,4 @@ function VonixeLib:CreateKeySystem(config)
     return verified
 end
 return VonixeLib
+

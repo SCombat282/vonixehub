@@ -1497,7 +1497,11 @@ function VonixeLib:CreateWindow(config)
                     end
                 end)
             end
-            function InObj:SetValue(v) inputBox.Text = v; InObj.Value = v end
+            function InObj:SetValue(v) 
+                inputBox.Text = v
+                InObj.Value = v 
+                if iConfig.Callback then task.spawn(iConfig.Callback, v) end
+            end
             function InObj:SetTitle(t) nameLbl.Text = t end
             
             InObj.Type = "Input"

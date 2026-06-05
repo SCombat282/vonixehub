@@ -11,7 +11,41 @@ local function setScrolling(gui, enabled)
     end
 end
 local TweenService     = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+local _TrackedConns = getgenv().Vonixe_UIS_Conns or {}
+getgenv().Vonixe_UIS_Conns = _TrackedConns
+for _, c in ipairs(_TrackedConns) do pcall(function() c:Disconnect() end) end
+table.clear(_TrackedConns)
+
+local RealUIS = game:GetService("UserInputService")
+local UserInputService = setmetatable({}, {
+    __index = function(_, k)
+        local val = RealUIS[k]
+        if typeof(val) == "RBXScriptSignal" then
+            return setmetatable({}, {
+                __index = function(_, method)
+                    if method == "Connect" then
+                        return function(_, func)
+                            local conn = val:Connect(func)
+                            table.insert(_TrackedConns, conn)
+                            return conn
+                        end
+                    end
+                    if type(val[method]) == "function" then
+                        return function(_, ...) return val[method](val, ...) end
+                    end
+                    return val[method]
+                end
+            })
+        end
+        if type(val) == "function" then
+            return function(_, ...) return val(RealUIS, ...) end
+        end
+        return val
+    end,
+    __newindex = function(_, k, v)
+        RealUIS[k] = v
+    end
+})
 local RunService       = game:GetService("RunService")
 local Players          = game:GetService("Players")
 local Player           = Players.LocalPlayer

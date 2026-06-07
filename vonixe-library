@@ -121,6 +121,25 @@ local textFallback = {
     ["map-pin"]         = "◎",  ["shopping-cart"] = "🛒",
     ["layout-dashboard"]= "⊞",
 }
+
+-- Global watcher untuk pending icons (ganti 30+ concurrent task loop jadi 1)
+local _pendingIcons = {}
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if Icons then
+            for i = #_pendingIcons, 1, -1 do
+                local data = _pendingIcons[i]
+                if not data.container.Parent then
+                    table.remove(_pendingIcons, i)
+                elseif data.apply() then
+                    table.remove(_pendingIcons, i)
+                end
+            end
+        end
+    end
+end)
+
 local function mkIcon(name, size, col, parent, zindex)
     local container = Instance.new("Frame")
     container.BackgroundTransparency = 1
@@ -168,17 +187,18 @@ local function mkIcon(name, size, col, parent, zindex)
         txt.Parent         = container
     end
     local applied = applyIcon()
-    task.spawn(function()
-        if not applied then
-            for _ = 1, 15 do
-                task.wait(0.2)
-                if applyIcon() then return end
+    if not applied then
+        table.insert(_pendingIcons, {container = container, apply = applyIcon})
+        task.delay(3, function()
+            for i, d in ipairs(_pendingIcons) do
+                if d.container == container then
+                    if container.Parent then useFallback() end
+                    table.remove(_pendingIcons, i)
+                    break
+                end
             end
-            if container and container.Parent then
-                useFallback()
-            end
-        end
-    end)
+        end)
+    end
     return container
 end
 local Theme = {
@@ -202,7 +222,15 @@ local Theme = {
     GREEN       = Color3.fromRGB(80, 220, 120),
     YELLOW      = Color3.fromRGB(255, 200, 50),
     RED         = Color3.fromRGB(255, 80, 80),
+    
 }
+-- Pre-cache TweenInfo yang sering dipakai (hindari object baru tiap hover)
+local _TI_Fast   = TweenInfo.new(0.1,  Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local _TI_Medium = TweenInfo.new(0.15, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local _TI_Slow   = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local _TI_Linear = TweenInfo.new(0.3,  Enum.EasingStyle.Linear)
+local _TI_Drag = TweenInfo.new(0.02, Enum.EasingStyle.Linear)
+
 local function getParent()
     if gethui then return gethui() end
     if game:GetService("CoreGui"):FindFirstChild("RobloxGui") then return game:GetService("CoreGui") end
@@ -308,10 +336,18 @@ local function listLayout(dir, halign, valign, pad, p)
     return ll
 end
 local function tween(obj, t, props, style, dir)
-    TweenService:Create(obj,
-        TweenInfo.new(t, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out),
-        props
-    ):Play()
+    local ti
+    if not style and not dir then
+        if t == 0.1  then ti = _TI_Fast
+        elseif t == 0.15 then ti = _TI_Medium
+        elseif t == 0.25 then ti = _TI_Slow
+        elseif t == 0.3  then ti = _TI_Linear
+        end
+    end
+    if not ti then
+        ti = TweenInfo.new(t, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out)
+    end
+    TweenService:Create(obj, ti, props):Play()
 end
 local function frame(props, p)
     local f = Instance.new("Frame")
@@ -341,7 +377,7 @@ local function makeDragConn(dragFrame, moveFrame)
     local function update(input)
         if not dragging then return end
         local delta = input.Position - dragStart
-        TweenService:Create(moveFrame, TweenInfo.new(0.02, Enum.EasingStyle.Linear), {
+        TweenService:Create(moveFrame, _TI_Drag, {
             Position = UDim2.new(
                 startPos.X.Scale, startPos.X.Offset + delta.X,
                 startPos.Y.Scale, startPos.Y.Offset + delta.Y

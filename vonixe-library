@@ -2001,18 +2001,10 @@ function VonixeLib:CreateWindow(config)
             local progLbl = label("", 10, Enum.Font.GothamBold, Theme.TEXT3, Enum.TextXAlignment.Right, card)
             progLbl.Size     = UDim2.new(1, -20, 0, 14)
             progLbl.Position = UDim2.new(0, 10, 0, 50)
-            local pulseConn
+            local pulseConn = { Disconnect = function() end }
             local function setPulse(col, active)
-                if pulseConn then pcall(function() pulseConn:Disconnect() end) end
                 dot.BackgroundColor3 = col
-                if active then
-                    local t = 0
-                    local bright = col:Lerp(Color3.new(1,1,1), 0.4)
-                    pulseConn = RunService.Heartbeat:Connect(function(dt)
-                        t = t + dt * 3
-                        dot.BackgroundColor3 = col:Lerp(bright, (math.sin(t)+1)/2*0.5)
-                    end)
-                end
+                -- Animasi denyut (pulse) dinonaktifkan permanen untuk menghemat baterai & FPS di Mobile
             end
             setPulse(Theme.TEXT3, false)
             local tierColors = {
@@ -2566,17 +2558,9 @@ function VonixeLib:CreateWindow(config)
             BackgroundColor3 = Theme.GREEN,
         }, statusBanner)
         corner(99, statusBar)
-        local pulseConn
+        local pulseConn = { Disconnect = function() end }
         local function startPulse(col)
-            if pulseConn then pcall(function() pulseConn:Disconnect() end) end
             statusBar.BackgroundColor3 = col
-            local bright = col:Lerp(Color3.new(1,1,1), 0.3)
-            local t = 0
-            pulseConn = RunService.Heartbeat:Connect(function(dt)
-                t = t + dt * 2
-                local a = (math.sin(t) + 1) / 2
-                statusBar.BackgroundColor3 = col:Lerp(bright, a * 0.4)
-            end)
         end
         startPulse(Theme.TEXT3)
         local statusDot = frame({
@@ -3095,12 +3079,7 @@ function VonixeLib:CreateKeySystem(config)
     logoImg.Size=UDim2.new(1,0,1,0);logoImg.BackgroundTransparency=1
     logoImg.Image=logoId;logoImg.ScaleType=Enum.ScaleType.Fit
     logoImg.ZIndex=5;logoImg.Parent=logoFrame
-    local t2=0
-    local pulseConn=RunService.Heartbeat:Connect(function(dt)
-        t2=t2+dt*2
-        local a=(math.sin(t2)+1)/2
-        logoStroke.Color=Color3.fromRGB(220,60,0):Lerp(Color3.fromRGB(255,200,50),a*0.6)
-    end)
+    local pulseConn = { Disconnect = function() end } -- Dummy object to avoid breaking the close button
     closeBtn.MouseButton1Click:Connect(function()
         pulseConn:Disconnect()
         tw(card,0.25,{Size=UDim2.new(0,W,0,0)})

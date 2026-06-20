@@ -515,7 +515,12 @@ function VonixeLib:CreateWindow(config)
     end
     local closeBtn = makeIconBtn(-36, "x",     Color3.fromRGB(50, 20, 20),  Color3.fromRGB(180, 40, 40))
     local minBtn   = makeIconBtn(-70, "minus",  Color3.fromRGB(35, 28, 10),  Color3.fromRGB(100, 70, 10))
-    closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
+    closeBtn.MouseButton1Click:Connect(function()
+        if Window.OnUnload then pcall(Window.OnUnload) end
+        for _, c in ipairs(_TrackedConns) do pcall(function() c:Disconnect() end) end
+        table.clear(_TrackedConns)
+        sg:Destroy()
+    end)
     local restoreBtn = Instance.new("ImageButton")
     restoreBtn.Size            = UDim2.new(0, 32, 0, 32)
     restoreBtn.Position        = UDim2.new(0.5, -16, 0, 10)
@@ -844,7 +849,29 @@ function VonixeLib:CreateWindow(config)
             tabContent.Visible = true
             Window._selected = Tab
         end
-        tabBtn.MouseButton1Click:Connect(selectTab)
+        local tPos, tMoved = nil, false
+        tabBtn.InputBegan:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.Touch then
+                tPos = i.Position
+                tMoved = false
+            end
+        end)
+        tabBtn.InputChanged:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.Touch and tPos then
+                if (i.Position - tPos).Magnitude > 8 then tMoved = true end
+            end
+        end)
+        tabBtn.InputEnded:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.Touch then
+                if tPos and not tMoved then selectTab() end
+                tPos = nil
+            end
+        end)
+        tabBtn.MouseButton1Click:Connect(function()
+            if game:GetService("UserInputService"):GetLastInputType() ~= Enum.UserInputType.Touch then
+                selectTab()
+            end
+        end)
         tabBtn.MouseEnter:Connect(function()
             if Window._selected ~= Tab then
                 tween(tabBtn, 0.1, {BackgroundTransparency = 0.93})
@@ -1168,18 +1195,31 @@ function VonixeLib:CreateWindow(config)
                 applyOverlayLock(Window, row, "Premium")
             else
                 local draggingSlider = false
+                local touchStartPos = nil
+                
                 row.InputBegan:Connect(function(i)
-                    if i.UserInputType == Enum.UserInputType.MouseButton1
-                    or i.UserInputType == Enum.UserInputType.Touch then
+                    if i.UserInputType == Enum.UserInputType.MouseButton1 then
                         draggingSlider = true
                         setScrolling(row, false)
                         local abs = trackBg.AbsolutePosition
                         local siz = trackBg.AbsoluteSize
                         local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
                         setValue(min + ratio * (max - min), true)
+                    elseif i.UserInputType == Enum.UserInputType.Touch then
+                        touchStartPos = i.Position
                     end
                 end)
                 UserInputService.InputChanged:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.Touch and touchStartPos and not draggingSlider then
+                        local delta = i.Position - touchStartPos
+                        if math.abs(delta.X) > 10 and math.abs(delta.X) > math.abs(delta.Y) then
+                            draggingSlider = true
+                            setScrolling(row, false)
+                        elseif math.abs(delta.Y) > 10 then
+                            touchStartPos = nil
+                        end
+                    end
+                    
                     if draggingSlider and (i.UserInputType == Enum.UserInputType.MouseMovement
                     or i.UserInputType == Enum.UserInputType.Touch) then
                         local abs = trackBg.AbsolutePosition
@@ -1189,9 +1229,20 @@ function VonixeLib:CreateWindow(config)
                     end
                 end)
                 UserInputService.InputEnded:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.Touch and touchStartPos and not draggingSlider then
+                        -- It was a tap, only activate if they tapped exactly on the track
+                        local abs = trackBg.AbsolutePosition
+                        local siz = trackBg.AbsoluteSize
+                        if i.Position.Y >= abs.Y - 15 and i.Position.Y <= abs.Y + siz.Y + 15 then
+                            local ratio = math.clamp((i.Position.X - abs.X) / siz.X, 0, 1)
+                            setValue(min + ratio * (max - min), true)
+                        end
+                    end
+                    
                     if i.UserInputType == Enum.UserInputType.MouseButton1
                     or i.UserInputType == Enum.UserInputType.Touch then
                         draggingSlider = false
+                        touchStartPos = nil
                         setScrolling(row, true)
                     end
                 end)

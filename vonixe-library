@@ -2185,6 +2185,30 @@ function VonixeLib:CreateWindow(config)
             
             padding(8, 8, 8, 8, content)
             
+            local arrowFrame = Instance.new("Frame")
+            arrowFrame.Size             = UDim2.new(0, 20, 0, 20)
+            arrowFrame.Position         = UDim2.new(1, -26, 0.5, -10)
+            arrowFrame.BackgroundTransparency = 1
+            arrowFrame.ZIndex           = 2
+            arrowFrame.Parent           = topBar
+            local arrow = mkIcon("chevron-down", 14, Theme.TEXT3, arrowFrame, 3)
+            arrow.AnchorPoint = Vector2.new(0.5, 0.5)
+            arrow.Position    = UDim2.new(0.5, 0, 0.5, 0)
+            
+            local toggleBtn = Instance.new("TextButton")
+            toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+            toggleBtn.BackgroundTransparency = 1
+            toggleBtn.Text = ""
+            toggleBtn.ZIndex = 5
+            toggleBtn.Parent = topBar
+            
+            local opened = true
+            toggleBtn.MouseButton1Click:Connect(function()
+                opened = not opened
+                content.Visible = opened
+                tween(arrow, 0.2, {Rotation = opened and 0 or -90})
+            end)
+            
             local GroupObj = {}
             GroupObj._container = content
             setmetatable(GroupObj, {__index = Tab})

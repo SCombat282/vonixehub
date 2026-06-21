@@ -2202,7 +2202,12 @@ function VonixeLib:CreateWindow(config)
             toggleBtn.ZIndex = 5
             toggleBtn.Parent = topBar
             
-            local opened = true
+            local opened = gConfig.State
+            if opened == nil then opened = true end
+            
+            content.Visible = opened
+            arrow.Rotation = opened and 0 or -90
+            
             toggleBtn.MouseButton1Click:Connect(function()
                 opened = not opened
                 content.Visible = opened

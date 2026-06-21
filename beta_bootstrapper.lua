@@ -67,7 +67,7 @@ local function loadPortal()
     local HttpService = game:GetService("HttpService")
     local MANIFEST_URL = "https://raw.githubusercontent.com/SCombat282/vonixehub/main/beta_script.json"
 
-    local finalUrl = MANIFEST_URL
+    local finalUrl = MANIFEST_URL .. "?t=" .. tostring(os.time())
 
     local ok, raw = pcall(function() return game:HttpGet(finalUrl) end)
     if ok then
@@ -79,7 +79,11 @@ local function loadPortal()
             for _, s in pairs(list) do
                 if s.PlaceId and tostring(s.PlaceId) == currentPlaceId and s.Url then
                     warn("[Vonixe Hub] Game supported! Auto-executing script...")
-                    loadstring(game:HttpGet(s.Url))()
+                    local scriptUrl = s.Url
+                    if scriptUrl:find("githubusercontent") then
+                        scriptUrl = scriptUrl .. "?t=" .. tostring(os.time())
+                    end
+                    loadstring(game:HttpGet(scriptUrl))()
                     return 
                 end
             end

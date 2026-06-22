@@ -962,19 +962,46 @@ function VonixeLib:CreateWindow(config)
             titleLbl.Size = UDim2.new(1, -24, 0, 15)
             titleLbl.Position = UDim2.new(0, 12, 0, 10)
             
-            local infoStr = ""
+            local infoContainer = frame({
+                Size = UDim2.new(0.7, 0, 0, 60),
+                Position = UDim2.new(0, 12, 0, 32),
+                BackgroundTransparency = 1
+            }, card)
+            
+            local list = Instance.new("UIListLayout", infoContainer)
+            list.Padding = UDim.new(0, 4)
+            list.SortOrder = Enum.SortOrder.LayoutOrder
+            
             if type(cConfig.Content) == "table" then
                 for i, v in ipairs(cConfig.Content) do
-                    infoStr = infoStr .. "• " .. tostring(v) .. (i < #cConfig.Content and "\n" or "")
+                    local row = frame({
+                        Size = UDim2.new(1, 0, 0, 14),
+                        BackgroundTransparency = 1,
+                        LayoutOrder = i
+                    }, infoContainer)
+                    
+                    local iconName = "chevron-right"
+                    local textStr = ""
+                    if type(v) == "table" then
+                        iconName = v[1] or "chevron-right"
+                        textStr = tostring(v[2] or "")
+                    else
+                        textStr = tostring(v)
+                    end
+                    
+                    local icon = mkIcon(iconName, 12, Theme.ACCENT2 or Color3.fromRGB(200,200,200), row, 2)
+                    icon.AnchorPoint = Vector2.new(0, 0.5)
+                    icon.Position = UDim2.new(0, 0, 0.5, 0)
+                    
+                    local rowLbl = label(textStr, 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, row)
+                    rowLbl.Size = UDim2.new(1, -18, 1, 0)
+                    rowLbl.Position = UDim2.new(0, 18, 0, 0)
                 end
             else
-                infoStr = tostring(cConfig.Content or "Card Content")
+                local infoLbl = label(tostring(cConfig.Content or "Card Content"), 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, infoContainer)
+                infoLbl.Size = UDim2.new(1, 0, 1, 0)
+                infoLbl.TextYAlignment = Enum.TextYAlignment.Top
             end
-            
-            local infoLbl = label(infoStr, 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, card)
-            infoLbl.Size = UDim2.new(0.7, 0, 0, 60)
-            infoLbl.Position = UDim2.new(0, 12, 0, 32)
-            infoLbl.TextYAlignment = Enum.TextYAlignment.Top
             
             local actionBtn = Instance.new("TextButton")
             actionBtn.Text = cConfig.ButtonText or "Action"

@@ -948,6 +948,59 @@ function VonixeLib:CreateWindow(config)
             function BtnObj:SetTitle(t) btnLbl.Text = t end
             return BtnObj
         end
+        function Tab:AddCard(cConfig)
+            local targetParent = self._container or tabContent
+            local card = frame({
+                Size             = UDim2.new(1, 0, 0, 95),
+                BackgroundColor3 = Theme.BG2,
+            }, targetParent)
+            corner(6, card)
+            stroke(Theme.STROKE, 1, card)
+            
+            local titleColor = cConfig.TitleColor or Theme.RED or Color3.fromRGB(255, 60, 60)
+            local titleLbl = label(cConfig.Title or "Card Title", 14, Enum.Font.GothamBold, titleColor, Enum.TextXAlignment.Left, card)
+            titleLbl.Size = UDim2.new(1, -24, 0, 15)
+            titleLbl.Position = UDim2.new(0, 12, 0, 10)
+            
+            local infoStr = ""
+            if type(cConfig.Content) == "table" then
+                for i, v in ipairs(cConfig.Content) do
+                    infoStr = infoStr .. "• " .. tostring(v) .. (i < #cConfig.Content and "\n" or "")
+                end
+            else
+                infoStr = tostring(cConfig.Content or "Card Content")
+            end
+            
+            local infoLbl = label(infoStr, 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, card)
+            infoLbl.Size = UDim2.new(0.7, 0, 0, 60)
+            infoLbl.Position = UDim2.new(0, 12, 0, 32)
+            infoLbl.TextYAlignment = Enum.TextYAlignment.Top
+            
+            local actionBtn = Instance.new("TextButton")
+            actionBtn.Text = cConfig.ButtonText or "Action"
+            actionBtn.Size = UDim2.new(0, 80, 0, 30)
+            actionBtn.Position = UDim2.new(1, -95, 0.5, -15)
+            actionBtn.BackgroundColor3 = Theme.BG3 or Color3.fromRGB(15, 10, 10)
+            actionBtn.TextColor3 = Theme.TEXT or Color3.fromRGB(220, 220, 220)
+            actionBtn.Font = Enum.Font.GothamSemibold
+            actionBtn.TextSize = 13
+            actionBtn.Parent = card
+            corner(6, actionBtn)
+            stroke(Theme.STROKE, 1, actionBtn)
+            
+            actionBtn.MouseEnter:Connect(function() tween(actionBtn, 0.1, {BackgroundColor3 = Theme.BG or Color3.fromRGB(30, 20, 20)}) end)
+            actionBtn.MouseLeave:Connect(function() tween(actionBtn, 0.1, {BackgroundColor3 = Theme.BG3 or Color3.fromRGB(15, 10, 10)}) end)
+            
+            actionBtn.MouseButton1Click:Connect(function()
+                if cConfig.Callback then task.spawn(cConfig.Callback) end
+            end)
+            
+            local CardObj = { Frame = card }
+            function CardObj:Destroy()
+                if card and card.Parent then card:Destroy() end
+            end
+            return CardObj
+        end
         function Tab:AddToggle(tConfig)
             local targetParent = self._container or tabContent
             local value = tConfig.Value or false
@@ -1318,8 +1371,8 @@ function VonixeLib:CreateWindow(config)
             arrowFrame.ZIndex           = 11
             arrowFrame.Parent           = row
             local arrow = mkIcon("chevron-down", 14, Theme.TEXT3, arrowFrame, 12)
-            arrow.AnchorPoint = Vector2.new(0, 0)
-            arrow.Position    = UDim2.new(0, 3, 0, 3)
+            arrow.AnchorPoint = Vector2.new(0.5, 0.5)
+            arrow.Position    = UDim2.new(0, 10, 0, 10)
             local menu = frame({
                 Size             = UDim2.new(1, 0, 0, 0),
                 Position         = UDim2.new(0, 0, 0, 38),
@@ -2193,8 +2246,8 @@ function VonixeLib:CreateWindow(config)
             arrowFrame.ZIndex           = 2
             arrowFrame.Parent           = topBar
             local arrow = mkIcon("chevron-down", 14, Theme.TEXT3, arrowFrame, 3)
-            arrow.AnchorPoint = Vector2.new(0, 0)
-            arrow.Position    = UDim2.new(0, 3, 0, 3)
+            arrow.AnchorPoint = Vector2.new(0.5, 0.5)
+            arrow.Position    = UDim2.new(0, 10, 0, 10)
             
             local toggleBtn = Instance.new("TextButton")
             toggleBtn.Size = UDim2.new(1, 0, 1, 0)

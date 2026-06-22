@@ -724,14 +724,14 @@ function VonixeLib:CreateWindow(config)
             lockText.Text = "[ PREMIUM ]"
             lockText.TextColor3 = Color3.fromRGB(255, 200, 50)
             notifTitle = "Premium Feature"
-            notifContent = "Fitur ini khusus untuk pengguna Premium!"
+            notifContent = "This feature is for Premium users only!"
         elseif lockType == "Maintenance" then
             lockIcoImg.Image = "rbxassetid://10723434711"
             lockIcoImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
             lockText.Text = "[ MAINTENANCE ]"
             lockText.TextColor3 = Color3.fromRGB(255, 255, 255)
             notifTitle = "Maintenance"
-            notifContent = "Fitur ini sedang dalam perbaikan!"
+            notifContent = "This feature is currently under maintenance!"
         end
 
         local btn = Instance.new("TextButton")
@@ -835,7 +835,52 @@ function VonixeLib:CreateWindow(config)
                 end
             end
         end
+
+        if tabConfig.Locked then
+            local lockIcoImg = Instance.new("ImageLabel", tabBtn)
+            lockIcoImg.Size = UDim2.new(0, 14, 0, 14)
+            lockIcoImg.AnchorPoint = Vector2.new(1, 0.5)
+            lockIcoImg.Position = UDim2.new(1, -10, 0.5, 0)
+            lockIcoImg.BackgroundTransparency = 1
+            lockIcoImg.ScaleType = Enum.ScaleType.Fit
+            lockIcoImg.Image = "rbxassetid://7733765398"
+            lockIcoImg.ImageColor3 = Color3.fromRGB(255, 200, 50)
+            lockIcoImg.ZIndex = 10
+        elseif tabConfig.Maintenance then
+            local lockIcoImg = Instance.new("ImageLabel", tabBtn)
+            lockIcoImg.Size = UDim2.new(0, 14, 0, 14)
+            lockIcoImg.AnchorPoint = Vector2.new(1, 0.5)
+            lockIcoImg.Position = UDim2.new(1, -10, 0.5, 0)
+            lockIcoImg.BackgroundTransparency = 1
+            lockIcoImg.ScaleType = Enum.ScaleType.Fit
+            lockIcoImg.Image = "rbxassetid://10723434711"
+            lockIcoImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
+            lockIcoImg.ZIndex = 10
+        end
+
         local function selectTab()
+            if tabConfig.Locked then
+                if Window.Notify then
+                    Window:Notify({
+                        Title = "Premium Feature",
+                        Content = "This tab is for Premium users only!",
+                        Type = "Warning",
+                        Duration = 3
+                    })
+                end
+                return
+            elseif tabConfig.Maintenance then
+                if Window.Notify then
+                    Window:Notify({
+                        Title = "Maintenance",
+                        Content = "This tab is currently under maintenance!",
+                        Type = "Warning",
+                        Duration = 3
+                    })
+                end
+                return
+            end
+
             for _, t in ipairs(Window._tabs) do
                 tween(t._btn, 0.15, {BackgroundTransparency = 1})
                 tween(t._activeBar, 0.15, {BackgroundTransparency = 1})

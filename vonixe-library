@@ -836,7 +836,12 @@ function VonixeLib:CreateWindow(config)
             end
         end
 
+        local tabOverlay = nil
         if tabConfig.Locked then
+            tabOverlay = applyOverlayLock(Window, contentArea, "Premium")
+            tabOverlay.Visible = false
+            Tab._overlay = tabOverlay
+            
             local lockIcoImg = Instance.new("ImageLabel", tabBtn)
             lockIcoImg.Size = UDim2.new(0, 14, 0, 14)
             lockIcoImg.AnchorPoint = Vector2.new(1, 0.5)
@@ -847,6 +852,10 @@ function VonixeLib:CreateWindow(config)
             lockIcoImg.ImageColor3 = Color3.fromRGB(255, 200, 50)
             lockIcoImg.ZIndex = 10
         elseif tabConfig.Maintenance then
+            tabOverlay = applyOverlayLock(Window, contentArea, "Maintenance")
+            tabOverlay.Visible = false
+            Tab._overlay = tabOverlay
+            
             local lockIcoImg = Instance.new("ImageLabel", tabBtn)
             lockIcoImg.Size = UDim2.new(0, 14, 0, 14)
             lockIcoImg.AnchorPoint = Vector2.new(1, 0.5)
@@ -859,40 +868,20 @@ function VonixeLib:CreateWindow(config)
         end
 
         local function selectTab()
-            if tabConfig.Locked then
-                if Window.Notify then
-                    Window:Notify({
-                        Title = "Premium Feature",
-                        Content = "This tab is for Premium users only!",
-                        Type = "Warning",
-                        Duration = 3
-                    })
-                end
-                return
-            elseif tabConfig.Maintenance then
-                if Window.Notify then
-                    Window:Notify({
-                        Title = "Maintenance",
-                        Content = "This tab is currently under maintenance!",
-                        Type = "Warning",
-                        Duration = 3
-                    })
-                end
-                return
-            end
-
             for _, t in ipairs(Window._tabs) do
                 tween(t._btn, 0.15, {BackgroundTransparency = 1})
                 tween(t._activeBar, 0.15, {BackgroundTransparency = 1})
                 t._nameLbl.TextColor3 = Theme.TEXT3
                 setIconColor(t._iconDot, Theme.TEXT3)
                 t._content.Visible = false
+                if t._overlay then t._overlay.Visible = false end
             end
             tween(tabBtn, 0.15, {BackgroundTransparency = 0.85})
             tween(activeBar, 0.15, {BackgroundTransparency = 0})
             tabNameLbl.TextColor3 = Theme.TEXT
             setIconColor(iconDot, Theme.ACCENT2)
             tabContent.Visible = true
+            if tabOverlay then tabOverlay.Visible = true end
             Window._selected = Tab
         end
         local tPos, tMoved = nil, false

@@ -1,0 +1,244 @@
+-- Auto Hop Pet Tracker (Silent Data Collector)
+repeat task.wait() until game:IsLoaded()
+task.wait(12) -- Beri waktu cukup untuk save data loading
+
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local apiUrl = "https://vonixe-hub.vercel.app/api/pets"
+
+local isHopping = false
+
+local function ServerHop()
+    if isHopping then return end
+    isHopping = true
+
+    warn("[AutoHop] Memulai proses Server Hop...")
+    task.spawn(function()
+        task.wait(15)
+        isHopping = false
+    end)
+
+    math.randomseed(os.time() + tick() * 1000)
+
+    local req = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+    local available = {}
+    local cursor = ""
+
+    local visitedFile = "AutoHop_Visited.json"
+    local visitedServers = {}
+    pcall(function()
+        if isfile and readfile and isfile(visitedFile) then
+            visitedServers = HttpService:JSONDecode(readfile(visitedFile))
+        end
+    end)
+    
+    visitedServers[game.JobId] = os.time()
+    
+    for id, t in pairs(visitedServers) do
+        if os.time() - t > 21600 then visitedServers[id] = nil end
+    end
+    
+    pcall(function()
+        if writefile then writefile(visitedFile, HttpService:JSONEncode(visitedServers)) end
+    end)
+
+    -- Pakai Asc lalu skip halaman secara acak agar dapat server beda-beda
+    local chosenSort = "Asc"
+
+    -- Skip halaman awal secara acak (1 sampai 15 halaman) agar tidak dapat server itu-itu saja
+    local skipPages = math.random(1, 15)
+    local tempCursor = ""
+
+    if skipPages > 0 then
+        for i = 1, skipPages do
+            local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=" .. chosenSort .. "&limit=100"
+            if tempCursor ~= "" then url = url .. "&cursor=" .. tempCursor end
+
+            local ok, res = pcall(function()
+                if req then
+                    local r = req({Url = url, Method = "GET"})
+                    if r and r.Body then return HttpService:JSONDecode(r.Body) end
+                else
+                    return HttpService:JSONDecode(game:HttpGet(url))
+                end
+            end)
+
+            if ok and type(res) == "table" and res.nextPageCursor then
+                tempCursor = res.nextPageCursor
+            else
+                break
+            end
+        end
+        cursor = tempCursor
+    end
+
+    -- Scan hingga 10 halaman untuk pool server yang lebih besar
+    for i = 1, 10 do
+        local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=" .. chosenSort .. "&limit=100"
+        if cursor ~= "" then url = url .. "&cursor=" .. cursor end
+
+        local success, result = pcall(function()
+            if req then
+                local response = req({Url = url, Method = "GET"})
+                if response and response.Body then return HttpService:JSONDecode(response.Body) end
+            else
+                return HttpService:JSONDecode(game:HttpGet(url))
+            end
+        end)
+
+        if success and type(result) == "table" and result.data then
+            for _, v in ipairs(result.data) do
+                if type(v) == "table" and v.playing and v.maxPlayers
+                    and v.playing <= 6
+                    and v.playing >= 3
+                    and not visitedServers[v.id] then
+                    table.insert(available, v.id)
+                end
+            end
+
+            if result.nextPageCursor then
+                cursor = result.nextPageCursor
+            else
+                break
+            end
+        else
+            break
+        end
+    end
+
+    -- Fisher-Yates shuffle biar distribusi server benar-benar acak
+    for i = #available, 2, -1 do
+        local j = math.random(1, i)
+        available[i], available[j] = available[j], available[i]
+    end
+
+    local foundServer = available[1]
+
+    if foundServer then
+        warn("[AutoHop] Melompat ke server: " .. tostring(foundServer) .. " (dari " .. #available .. " server tersedia)")
+        if queue_on_teleport then
+            pcall(function() queue_on_teleport('loadstring(readfile("auto_hop_pet.lua"))()') end)
+        elseif syn and syn.queue_on_teleport then
+            pcall(function() syn.queue_on_teleport('loadstring(readfile("auto_hop_pet.lua"))()') end)
+        end
+        local ok, err = pcall(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, foundServer, Players.LocalPlayer)
+        end)
+        if not ok then
+            warn("[AutoHop] Teleport gagal: " .. tostring(err) .. ", retry dalam 5 detik...")
+            task.wait(5)
+            isHopping = false
+            ServerHop()
+        end
+    else
+        warn("[AutoHop] Server API habis, memaksa blind hop acak tanpa menghapus history baru...")
+        -- Jangan hapus file di sini agar server baru tidak ikut terhapus
+        local ok, err = pcall(function()
+            TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
+        end)
+        if not ok then
+            warn("[AutoHop] Teleport gagal: " .. tostring(err) .. ", retry dalam 5 detik...")
+            task.wait(5)
+            isHopping = false
+            ServerHop()
+        end
+    end
+end
+
+local function ScanAndPost()
+    local wildSpawns = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("WildPetSpawns")
+    if not wildSpawns then return end
+
+    local pets = wildSpawns:GetChildren()
+    if #pets == 0 then return end
+
+    local foundNames = {}
+    local foundRarities = {}
+    local foundPrices = {}
+
+    local petData = nil
+    pcall(function()
+        local rs = game:GetService("ReplicatedStorage")
+        local petDataMod = rs:FindFirstChild("PetData", true) or rs:FindFirstChild("Pets", true)
+        if petDataMod then petData = require(petDataMod) end
+    end)
+
+    for _, model in ipairs(pets) do
+        local petNameMatch = model:GetAttribute("PetName")
+        if petNameMatch then
+            local rarity = "Common"
+            local price = "Free"
+
+            if petData and petData[petNameMatch] then
+                local pInfo = petData[petNameMatch]
+                if pInfo.Rarity then rarity = tostring(pInfo.Rarity) end
+                if pInfo.BasePrice then price = tostring(pInfo.BasePrice) end
+            else
+                if model:FindFirstChild("RootPart") and model.RootPart:FindFirstChild("BuyPrompt") then
+                    local actionText = model.RootPart.BuyPrompt.ActionText
+                    local matchPrice = string.match(actionText, "%d+[,%.]?%d*")
+                    if matchPrice then price = matchPrice else price = actionText end
+                end
+            end
+
+            table.insert(foundNames, petNameMatch)
+            table.insert(foundRarities, rarity)
+            table.insert(foundPrices, price)
+        end
+    end
+
+    if #foundNames > 0 then
+        local people = tostring(#Players:GetPlayers()) .. "/" .. tostring(Players.MaxPlayers)
+        local payload = HttpService:JSONEncode({
+            jobId = game.JobId,
+            petType = table.concat(foundNames, ", "),
+            rarity = table.concat(foundRarities, ", "),
+            price = table.concat(foundPrices, ", "),
+            people = people
+        })
+
+        local req = request or http_request or (syn and syn.request)
+        if req then
+            pcall(function()
+                req({
+                    Url = apiUrl, Method = "POST",
+                    Headers = { ["Content-Type"] = "application/json" },
+                    Body = payload
+                })
+            end)
+        end
+    end
+end
+
+-- Handle teleport failure (kicked/save data error) → auto retry
+TeleportService.TeleportInitFailed:Connect(function(player, result, errMsg)
+    if player == Players.LocalPlayer then
+        warn("[AutoHop] Teleport init failed: " .. tostring(errMsg) .. ", retrying in 5s...")
+        task.wait(5)
+        isHopping = false
+        ServerHop()
+    end
+end)
+
+-- Anti-Crash Delta: Deteksi Kick/Error Prompt dan langsung paksa Hop sebelum game force close
+pcall(function()
+    game:GetService("GuiService").ErrorMessageChanged:Connect(function()
+        warn("[AutoHop] Terdeteksi Kick/Disconnect! Memaksa Server Hop...")
+        isHopping = false
+        ServerHop()
+    end)
+    
+    game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
+        if child.Name == 'ErrorPrompt' then
+            warn("[AutoHop] ErrorPrompt muncul! Memaksa Server Hop...")
+            isHopping = false
+            ServerHop()
+        end
+    end)
+end)
+
+-- Eksekusi
+ScanAndPost()
+task.wait(2)
+ServerHop()

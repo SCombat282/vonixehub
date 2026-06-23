@@ -393,32 +393,6 @@ function VonixeLib:CreateWindow(config)
     end
     local sideW = config.SidebarWidth or (isMobile and 140 or 140)
     local Window = {}
-    
-    -- --- LIVE USERS TRACKER HEARTBEAT ---
-    task.spawn(function()
-        local req = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-        if not req then return end
-        while true do
-            pcall(function()
-                local payload = game:GetService("HttpService"):JSONEncode({
-                    userId = game:GetService("Players").LocalPlayer.UserId,
-                    username = game:GetService("Players").LocalPlayer.Name,
-                    scriptName = subtitle ~= "" and subtitle or title,
-                    placeId = game.PlaceId,
-                    jobId = game.JobId
-                })
-                req({
-                    Url = "http://176.100.37.77:30049/api/live/heartbeat",
-                    Method = "POST",
-                    Headers = { ["Content-Type"] = "application/json" },
-                    Body = payload
-                })
-            end)
-            task.wait(60)
-        end
-    end)
-    -- ------------------------------------
-
     Window._tabs       = {}
     Window._selected   = nil
     Window._callbacks  = {}
@@ -750,14 +724,14 @@ function VonixeLib:CreateWindow(config)
             lockText.Text = "[ PREMIUM ]"
             lockText.TextColor3 = Color3.fromRGB(255, 200, 50)
             notifTitle = "Premium Feature"
-            notifContent = "Fitur ini khusus untuk pengguna Premium!"
+            notifContent = "This feature is for Premium users only!"
         elseif lockType == "Maintenance" then
             lockIcoImg.Image = "rbxassetid://10723434711"
             lockIcoImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
             lockText.Text = "[ MAINTENANCE ]"
             lockText.TextColor3 = Color3.fromRGB(255, 255, 255)
             notifTitle = "Maintenance"
-            notifContent = "Fitur ini sedang dalam perbaikan!"
+            notifContent = "This feature is currently under maintenance!"
         end
 
         local btn = Instance.new("TextButton")
@@ -861,6 +835,38 @@ function VonixeLib:CreateWindow(config)
                 end
             end
         end
+
+        local tabOverlay = nil
+        if tabConfig.Locked then
+            tabOverlay = applyOverlayLock(Window, contentArea, "Premium")
+            tabOverlay.Visible = false
+            Tab._overlay = tabOverlay
+            
+            local lockIcoImg = Instance.new("ImageLabel", tabBtn)
+            lockIcoImg.Size = UDim2.new(0, 14, 0, 14)
+            lockIcoImg.AnchorPoint = Vector2.new(1, 0.5)
+            lockIcoImg.Position = UDim2.new(1, -25, 0.5, 0)
+            lockIcoImg.BackgroundTransparency = 1
+            lockIcoImg.ScaleType = Enum.ScaleType.Fit
+            lockIcoImg.Image = "rbxassetid://7733765398"
+            lockIcoImg.ImageColor3 = Color3.fromRGB(255, 200, 50)
+            lockIcoImg.ZIndex = 10
+        elseif tabConfig.Maintenance then
+            tabOverlay = applyOverlayLock(Window, contentArea, "Maintenance")
+            tabOverlay.Visible = false
+            Tab._overlay = tabOverlay
+            
+            local lockIcoImg = Instance.new("ImageLabel", tabBtn)
+            lockIcoImg.Size = UDim2.new(0, 14, 0, 14)
+            lockIcoImg.AnchorPoint = Vector2.new(1, 0.5)
+            lockIcoImg.Position = UDim2.new(1, -25, 0.5, 0)
+            lockIcoImg.BackgroundTransparency = 1
+            lockIcoImg.ScaleType = Enum.ScaleType.Fit
+            lockIcoImg.Image = "rbxassetid://10723434711"
+            lockIcoImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
+            lockIcoImg.ZIndex = 10
+        end
+
         local function selectTab()
             for _, t in ipairs(Window._tabs) do
                 tween(t._btn, 0.15, {BackgroundTransparency = 1})
@@ -868,12 +874,14 @@ function VonixeLib:CreateWindow(config)
                 t._nameLbl.TextColor3 = Theme.TEXT3
                 setIconColor(t._iconDot, Theme.TEXT3)
                 t._content.Visible = false
+                if t._overlay then t._overlay.Visible = false end
             end
             tween(tabBtn, 0.15, {BackgroundTransparency = 0.85})
             tween(activeBar, 0.15, {BackgroundTransparency = 0})
             tabNameLbl.TextColor3 = Theme.TEXT
             setIconColor(iconDot, Theme.ACCENT2)
             tabContent.Visible = true
+            if tabOverlay then tabOverlay.Visible = true end
             Window._selected = Tab
         end
         local tPos, tMoved = nil, false
@@ -973,6 +981,87 @@ function VonixeLib:CreateWindow(config)
             local BtnObj = {}
             function BtnObj:SetTitle(t) btnLbl.Text = t end
             return BtnObj
+        end
+        function Tab:AddCard(cConfig)
+            local targetParent = self._container or tabContent
+            local card = frame({
+                Size             = UDim2.new(1, 0, 0, 95),
+                BackgroundColor3 = Theme.BG2,
+                LayoutOrder      = cConfig.LayoutOrder or 0,
+            }, targetParent)
+            corner(6, card)
+            stroke(Theme.STROKE, 1, card)
+            
+            local titleColor = cConfig.TitleColor or Theme.RED or Color3.fromRGB(255, 60, 60)
+            local titleLbl = label(cConfig.Title or "Card Title", 14, Enum.Font.GothamBold, titleColor, Enum.TextXAlignment.Left, card)
+            titleLbl.Size = UDim2.new(1, -24, 0, 15)
+            titleLbl.Position = UDim2.new(0, 12, 0, 10)
+            
+            local infoContainer = frame({
+                Size = UDim2.new(0.7, 0, 0, 60),
+                Position = UDim2.new(0, 12, 0, 32),
+                BackgroundTransparency = 1
+            }, card)
+            
+            local list = Instance.new("UIListLayout", infoContainer)
+            list.Padding = UDim.new(0, 4)
+            list.SortOrder = Enum.SortOrder.LayoutOrder
+            
+            if type(cConfig.Content) == "table" then
+                for i, v in ipairs(cConfig.Content) do
+                    local row = frame({
+                        Size = UDim2.new(1, 0, 0, 14),
+                        BackgroundTransparency = 1,
+                        LayoutOrder = i
+                    }, infoContainer)
+                    
+                    local iconName = "chevron-right"
+                    local textStr = ""
+                    if type(v) == "table" then
+                        iconName = v[1] or "chevron-right"
+                        textStr = tostring(v[2] or "")
+                    else
+                        textStr = tostring(v)
+                    end
+                    
+                    local icon = mkIcon(iconName, 12, Theme.ACCENT2 or Color3.fromRGB(200,200,200), row, 2)
+                    icon.AnchorPoint = Vector2.new(0, 0.5)
+                    icon.Position = UDim2.new(0, 0, 0.5, 0)
+                    
+                    local rowLbl = label(textStr, 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, row)
+                    rowLbl.Size = UDim2.new(1, -18, 1, 0)
+                    rowLbl.Position = UDim2.new(0, 18, 0, 0)
+                end
+            else
+                local infoLbl = label(tostring(cConfig.Content or "Card Content"), 12, Enum.Font.Gotham, Theme.TEXT2, Enum.TextXAlignment.Left, infoContainer)
+                infoLbl.Size = UDim2.new(1, 0, 1, 0)
+                infoLbl.TextYAlignment = Enum.TextYAlignment.Top
+            end
+            
+            local actionBtn = Instance.new("TextButton")
+            actionBtn.Text = cConfig.ButtonText or "Action"
+            actionBtn.Size = UDim2.new(0, 80, 0, 30)
+            actionBtn.Position = UDim2.new(1, -95, 0.5, -15)
+            actionBtn.BackgroundColor3 = Theme.BG3 or Color3.fromRGB(15, 10, 10)
+            actionBtn.TextColor3 = Theme.TEXT or Color3.fromRGB(220, 220, 220)
+            actionBtn.Font = Enum.Font.GothamSemibold
+            actionBtn.TextSize = 13
+            actionBtn.Parent = card
+            corner(6, actionBtn)
+            stroke(Theme.STROKE, 1, actionBtn)
+            
+            actionBtn.MouseEnter:Connect(function() tween(actionBtn, 0.1, {BackgroundColor3 = Theme.BG or Color3.fromRGB(30, 20, 20)}) end)
+            actionBtn.MouseLeave:Connect(function() tween(actionBtn, 0.1, {BackgroundColor3 = Theme.BG3 or Color3.fromRGB(15, 10, 10)}) end)
+            
+            actionBtn.MouseButton1Click:Connect(function()
+                if cConfig.Callback then task.spawn(cConfig.Callback) end
+            end)
+            
+            local CardObj = { Frame = card }
+            function CardObj:Destroy()
+                if card and card.Parent then card:Destroy() end
+            end
+            return CardObj
         end
         function Tab:AddToggle(tConfig)
             local targetParent = self._container or tabContent
@@ -1344,8 +1433,8 @@ function VonixeLib:CreateWindow(config)
             arrowFrame.ZIndex           = 11
             arrowFrame.Parent           = row
             local arrow = mkIcon("chevron-down", 14, Theme.TEXT3, arrowFrame, 12)
-            arrow.AnchorPoint = Vector2.new(0, 0)
-            arrow.Position    = UDim2.new(0, 3, 0, 3)
+            arrow.AnchorPoint = Vector2.new(0.5, 0.5)
+            arrow.Position    = UDim2.new(0, 10, 0, 10)
             local menu = frame({
                 Size             = UDim2.new(1, 0, 0, 0),
                 Position         = UDim2.new(0, 0, 0, 38),
@@ -2219,8 +2308,8 @@ function VonixeLib:CreateWindow(config)
             arrowFrame.ZIndex           = 2
             arrowFrame.Parent           = topBar
             local arrow = mkIcon("chevron-down", 14, Theme.TEXT3, arrowFrame, 3)
-            arrow.AnchorPoint = Vector2.new(0, 0)
-            arrow.Position    = UDim2.new(0, 3, 0, 3)
+            arrow.AnchorPoint = Vector2.new(0.5, 0.5)
+            arrow.Position    = UDim2.new(0, 10, 0, 10)
             
             local toggleBtn = Instance.new("TextButton")
             toggleBtn.Size = UDim2.new(1, 0, 1, 0)
@@ -3059,6 +3148,41 @@ function VonixeLib:CreateWindow(config)
         end
     end
     
+    -- --- LIVE USERS TRACKER HEARTBEAT ---
+    task.spawn(function()
+        local function getReq()
+            return (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+        end
+        local req = getReq()
+        if type(req) ~= "function" then return end
+        
+        while true do
+            pcall(function()
+                local Players = game:GetService("Players")
+                local lp = Players.LocalPlayer
+                if not lp then return end
+                
+                local HttpService = game:GetService("HttpService")
+                local payload = HttpService:JSONEncode({
+                    userId = lp.UserId,
+                    username = lp.Name,
+                    scriptName = tostring(subtitle ~= "" and subtitle or title),
+                    placeId = game.PlaceId,
+                    jobId = game.JobId
+                })
+                
+                req({
+                    Url = "http://176.100.37.77:30049/api/live/heartbeat",
+                    Method = "POST",
+                    Headers = { ["Content-Type"] = "application/json" },
+                    Body = payload
+                })
+            end)
+            task.wait(30)
+        end
+    end)
+    -- ------------------------------------
+    
     return Window
 end
 function VonixeLib:CreateKeySystem(config)
@@ -3296,5 +3420,3 @@ function VonixeLib:CreateKeySystem(config)
     return verified
 end
 return VonixeLib
-
-

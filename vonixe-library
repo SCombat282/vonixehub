@@ -525,7 +525,8 @@ function VonixeLib:CreateWindow(config)
         promptOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         promptOverlay.BackgroundTransparency = 1
         promptOverlay.ZIndex = 100
-        promptOverlay.Parent = sg
+        promptOverlay.Parent = main
+        corner(14, promptOverlay)
         
         local promptBox = Instance.new("Frame")
         promptBox.Size = UDim2.new(0, 240, 0, 110)

@@ -515,11 +515,100 @@ function VonixeLib:CreateWindow(config)
     end
     local closeBtn = makeIconBtn(-36, "x",     Color3.fromRGB(50, 20, 20),  Color3.fromRGB(180, 40, 40))
     local minBtn   = makeIconBtn(-70, "minus",  Color3.fromRGB(35, 28, 10),  Color3.fromRGB(100, 70, 10))
+    local isPromptingClose = false
     closeBtn.MouseButton1Click:Connect(function()
-        if Window.OnUnload then pcall(Window.OnUnload) end
-        for _, c in ipairs(_TrackedConns) do pcall(function() c:Disconnect() end) end
-        table.clear(_TrackedConns)
-        sg:Destroy()
+        if isPromptingClose then return end
+        isPromptingClose = true
+        
+        local promptOverlay = Instance.new("Frame")
+        promptOverlay.Size = UDim2.new(1, 0, 1, 0)
+        promptOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        promptOverlay.BackgroundTransparency = 1
+        promptOverlay.ZIndex = 100
+        promptOverlay.Parent = sg
+        
+        local promptBox = Instance.new("Frame")
+        promptBox.Size = UDim2.new(0, 240, 0, 110)
+        promptBox.Position = UDim2.new(0.5, -120, 0.5, -35) -- start lower for pop-up effect
+        promptBox.BackgroundColor3 = Color3.fromRGB(20, 15, 10)
+        promptBox.BackgroundTransparency = 1
+        promptBox.ZIndex = 101
+        promptBox.Parent = promptOverlay
+        corner(8, promptBox)
+        
+        local uiStroke = Instance.new("UIStroke")
+        uiStroke.Color = Color3.fromRGB(80, 50, 30)
+        uiStroke.Thickness = 1
+        uiStroke.Transparency = 1
+        uiStroke.Parent = promptBox
+        
+        local promptText = Instance.new("TextLabel")
+        promptText.Size = UDim2.new(1, 0, 0, 50)
+        promptText.Position = UDim2.new(0, 0, 0, 10)
+        promptText.BackgroundTransparency = 1
+        promptText.Text = "Are you sure you want to close?"
+        promptText.TextColor3 = Color3.fromRGB(255, 255, 255)
+        promptText.TextTransparency = 1
+        promptText.Font = Enum.Font.GothamBold
+        promptText.TextSize = 14
+        promptText.ZIndex = 102
+        promptText.Parent = promptBox
+        
+        local function createBtn(txt, x, bg, hover)
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(0, 90, 0, 30)
+            btn.Position = UDim2.new(0, x, 0, 65)
+            btn.BackgroundColor3 = bg
+            btn.BackgroundTransparency = 1
+            btn.Text = txt
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.TextTransparency = 1
+            btn.Font = Enum.Font.GothamBold
+            btn.TextSize = 13
+            btn.ZIndex = 102
+            btn.Parent = promptBox
+            corner(6, btn)
+            
+            btn.MouseEnter:Connect(function() tween(btn, 0.1, {BackgroundColor3 = hover}) end)
+            btn.MouseLeave:Connect(function() tween(btn, 0.1, {BackgroundColor3 = bg}) end)
+            return btn
+        end
+        
+        local yesBtn = createBtn("Yes", 20, Color3.fromRGB(180, 40, 40), Color3.fromRGB(220, 50, 50))
+        local noBtn = createBtn("No", 130, Color3.fromRGB(40, 30, 25), Color3.fromRGB(60, 45, 35))
+        
+        -- Animation IN
+        tween(promptOverlay, 0.2, {BackgroundTransparency = 0.5})
+        tween(promptBox, 0.3, {BackgroundTransparency = 0, Position = UDim2.new(0.5, -120, 0.5, -55)})
+        tween(uiStroke, 0.3, {Transparency = 0})
+        tween(promptText, 0.3, {TextTransparency = 0})
+        tween(yesBtn, 0.3, {BackgroundTransparency = 0, TextTransparency = 0})
+        tween(noBtn, 0.3, {BackgroundTransparency = 0, TextTransparency = 0})
+        
+        yesBtn.MouseButton1Click:Connect(function()
+            if Window.OnUnload then pcall(Window.OnUnload) end
+            for _, c in ipairs(_TrackedConns) do pcall(function() c:Disconnect() end) end
+            table.clear(_TrackedConns)
+            
+            -- Animation OUT before destroy
+            tween(promptOverlay, 0.2, {BackgroundTransparency = 1})
+            tween(promptBox, 0.2, {BackgroundTransparency = 1, Position = UDim2.new(0.5, -120, 0.5, -35)})
+            task.wait(0.2)
+            sg:Destroy()
+        end)
+        
+        noBtn.MouseButton1Click:Connect(function()
+            -- Animation OUT
+            tween(promptOverlay, 0.2, {BackgroundTransparency = 1})
+            tween(promptBox, 0.2, {BackgroundTransparency = 1, Position = UDim2.new(0.5, -120, 0.5, -35)})
+            tween(uiStroke, 0.2, {Transparency = 1})
+            tween(promptText, 0.2, {TextTransparency = 1})
+            tween(yesBtn, 0.2, {BackgroundTransparency = 1, TextTransparency = 1})
+            tween(noBtn, 0.2, {BackgroundTransparency = 1, TextTransparency = 1})
+            task.wait(0.2)
+            promptOverlay:Destroy()
+            isPromptingClose = false
+        end)
     end)
     local restoreBtn = Instance.new("ImageButton")
     restoreBtn.Size            = UDim2.new(0, 32, 0, 32)

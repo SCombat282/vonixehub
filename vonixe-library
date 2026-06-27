@@ -721,12 +721,28 @@ function VonixeLib:CreateWindow(config)
             tween(main, 0.3, {Size = UDim2.new(0, W, 0, H)}, Enum.EasingStyle.Quint)
         end
     end)
+    local function _handleMinimizeUI()
+        main.Visible = false
+        local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+        if isMobile then
+            restoreBtn.Visible = true
+        else
+            restoreBtn.Visible = false
+            local menuBindObj = Window.Flags and Window.Flags["UI_MenuBind"]
+            local menuBindKey = menuBindObj and type(menuBindObj.Value) == "string" and menuBindObj.Value or "RightShift"
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Vonixe Hub Minimized",
+                    Text = "Press [" .. menuBindKey .. "] to open again.",
+                    Duration = 5
+                })
+            end)
+        end
+    end
+
     minBtn.MouseButton1Click:Connect(function()
         tween(main, 0.25, {Size = UDim2.new(0, W, 0, 0)}, Enum.EasingStyle.Quint)
-        task.delay(0.25, function()
-            main.Visible = false
-            restoreBtn.Visible = true
-        end)
+        task.delay(0.25, _handleMinimizeUI)
     end)
     local sep = frame({
         Size             = UDim2.new(1, -32, 0, 1),
@@ -862,10 +878,7 @@ function VonixeLib:CreateWindow(config)
     function Window:ToggleVisibility()
         if main.Visible then
             tween(main, 0.25, {Size = UDim2.new(0, W, 0, 0)}, Enum.EasingStyle.Quint)
-            task.delay(0.25, function()
-                main.Visible = false
-                restoreBtn.Visible = true
-            end)
+            task.delay(0.25, _handleMinimizeUI)
         else
             restoreBtn.Visible = false
             main.Visible = true
@@ -3241,10 +3254,7 @@ function VonixeLib:CreateWindow(config)
     function Window:ToggleVisibility()
         if main.Visible then
             tween(main, 0.25, {Size = UDim2.new(0, W, 0, 0)}, Enum.EasingStyle.Quint)
-            task.delay(0.25, function()
-                main.Visible = false
-                restoreBtn.Visible = true
-            end)
+            task.delay(0.25, _handleMinimizeUI)
         else
             restoreBtn.Visible = false
             main.Visible = true

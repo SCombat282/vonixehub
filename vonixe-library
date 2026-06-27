@@ -731,11 +731,13 @@ function VonixeLib:CreateWindow(config)
             local menuBindObj = Window.Flags and Window.Flags["UI_MenuBind"]
             local menuBindKey = menuBindObj and type(menuBindObj.Value) == "string" and menuBindObj.Value or "RightShift"
             pcall(function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Vonixe Hub Minimized",
-                    Text = "Press [" .. menuBindKey .. "] to open again.",
-                    Duration = 5
-                })
+                if Window and Window.Notify then
+                    Window:Notify({
+                        Title = "Minimized",
+                        Content = "Press [" .. menuBindKey .. "] to open.",
+                        Duration = 5
+                    })
+                end
             end)
         end
     end
